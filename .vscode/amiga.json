@@ -1,0 +1,20 @@
+{
+    "includePath": [
+        "${workspaceFolder}/**"
+    ],
+    "defines": [
+        "__GNUC__=12",
+        "BARTMAN_GCC",
+        "_DEBUG",
+        "UNICODE",
+        "_UNICODE",
+        "AMIGA",
+        "ACE_DEBUG",
+        "ACE_DEBUG_UAE",
+        "__CODE_CHECKER__"
+    ],
+    "shrinkler": {
+        "fast": "-h -o -1",
+        "slow": "-h -f dff180 -9"
+    }
+}

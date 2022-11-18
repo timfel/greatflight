@@ -32,6 +32,14 @@ if(ELF2HUNK)
     TARGET ${GAME_LINKED} POST_BUILD
     COMMAND ${ELF2HUNK} ${GAME_LINKED} ${GAME_EXE}
   )
+	FILE(
+    WRITE ${PROJECT_BINARY_DIR}/disassemble.cmake
+    "EXECUTE_PROCESS(COMMAND ${OBJDUMP} --disassemble -S ${GAME_LINKED} OUTPUT_FILE ${TARGET_NAME}.s)"
+  )
+  add_custom_command(
+    TARGET ${GAME_LINKED} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} ARGS -P ${PROJECT_BINARY_DIR}/disassemble.cmake
+  )
 else()
   # Just produce the executable with Bebbo compiler
   SET(GAME_LINKED ${TARGET_NAME})
@@ -40,3 +48,45 @@ else()
 endif()
 
 target_link_libraries(${GAME_LINKED} ace)
+
+# resources
+execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/resources/imgs)
+execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/resources/maps)
+execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/resources/units)
+
+add_custom_command(
+  TARGET ${GAME_LINKED} POST_BUILD
+	COMMAND ${CMAKE_COMMAND} ARGS -E copy ${PROJECT_SOURCE_DIR}/resources/maps/game.map ${PROJECT_BINARY_DIR}/resources/maps/game.map
+	COMMAND ${CMAKE_COMMAND} ARGS -E copy ${PROJECT_SOURCE_DIR}/resources/maps/game2.map ${PROJECT_BINARY_DIR}/resources/maps/game2.map
+)
+
+convertTileset(
+       INTERLEAVED
+       TARGET ${GAME_LINKED}
+       SOURCE ${PROJECT_SOURCE_DIR}/resources/for.png
+       TILE_PATHS ${PROJECT_SOURCE_DIR}/resources/for.png
+       DESTINATION ${PROJECT_BINARY_DIR}/resources/imgs/for.bm
+       SIZE 16
+       PALETTE ${PROJECT_BINARY_DIR}/resources/imgs/for.plt)
+
+convertTileset(
+       INTERLEAVED
+       TARGET ${GAME_LINKED}
+       SOURCE ${PROJECT_SOURCE_DIR}/resources/spearthrower.png
+       TILE_PATHS ${PROJECT_SOURCE_DIR}/resources/spearthrower.png
+       DESTINATION ${PROJECT_BINARY_DIR}/spearthrower.png
+       SIZE 32
+       PALETTE ${PROJECT_BINARY_DIR}/resources/imgs/for.plt
+)
+
+convertBitmaps(
+       INTERLEAVED
+       TARGET ${GAME_LINKED}
+       PALETTE ${PROJECT_BINARY_DIR}/resources/imgs/for.plt
+       MASK_COLOR "#ff55ff"
+       SOURCES ${PROJECT_BINARY_DIR}/spearthrower.png
+       DESTINATIONS ${PROJECT_BINARY_DIR}/resources/units/spearthrower.bm
+       MASKS ${PROJECT_BINARY_DIR}/resources/units/spearthrower.msk
+)
+
+convertPalette(${GAME_LINKED} ${PROJECT_SOURCE_DIR}/resources/for.gpl ${PROJECT_BINARY_DIR}/resources/imgs/for.plt)

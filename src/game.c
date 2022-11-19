@@ -3,6 +3,7 @@
 #include "map.h"
 #include "units.h"
 #include "actions.h"
+#include "mouse_sprite.h"
 #include <ace/managers/copper.h>
 #include <ace/managers/log.h>
 #include <ace/managers/mouse.h>
@@ -126,32 +127,11 @@ void initBobs(void) {
     bobNewReallocateBgBuffers();
 }
 
-/* real boring sprite data */
-UWORD CHIP s_spriteData[] = {
-    0, 0,           /* position control           */
-    0b1000000000000000, 0x0000,
-    0b1100000000000000, 0x0000,
-    0b1110000000000000, 0x0000,
-    0b1111000000000000, 0x0000,
-    0b1111100000000000, 0x0000,
-    0b1111110000000000, 0x0000,
-    0b1111111000000000, 0x0000,
-    0b1111111100000000, 0x0000,
-    0b1111111110000000, 0x0000,
-    0b1111111111000000, 0x0000,
-    0b1111111111100000, 0x0000,
-    0b1111111111110000, 0x0000,
-    0b0000110000000000, 0x0000,
-    0b0000011000000000, 0x0000,
-    0b0000011000000000, 0x0000,
-    0, 0            /* reserved, must init to 0 0 */
-};
-
 void gameGsCreate(void) {
     viewLoad(0);
 
     spritePos = 0;
-    tileStartPos = spritePos + 2;
+    tileStartPos = spritePos + mouseSpriteGetRawCopplistInstructionCountLength();
     mapColorsPos = tileStartPos + tileBufferGetRawCopperlistInstructionCountStart(BPP);
     tileBreakPos = mapColorsPos + COLORS;
     simplePos = tileBreakPos + tileBufferGetRawCopperlistInstructionCountBreak(BPP);
@@ -163,13 +143,7 @@ void gameGsCreate(void) {
                          TAG_VIEW_COPLIST_RAW_COUNT, copListLength,
                          TAG_DONE);
 
-    ULONG ulSpriteData = (ULONG)s_spriteData;
-    tCopCmd *pCmds = &s_pView->pCopList->pBackBfr->pList[spritePos];
-    copSetMove(&pCmds[0].sMove, &g_pSprFetch[0].uwHi, ulSpriteData << 16);
-    copSetMove(&pCmds[1].sMove, &g_pSprFetch[0].uwLo, ulSpriteData & 0xFFFF);
-    pCmds = &s_pView->pCopList->pFrontBfr->pList[spritePos];
-    copSetMove(&pCmds[0].sMove, &g_pSprFetch[0].uwHi, ulSpriteData << 16);
-    copSetMove(&pCmds[1].sMove, &g_pSprFetch[0].uwLo, ulSpriteData & 0xFFFF);
+    mouseSpriteSetup(s_pView, spritePos);
 
     loadMap("game2");
 
@@ -333,14 +307,7 @@ void gameGsLoop(void) {
     copProcessBlocks();
     vPortWaitForEnd(s_pVpPanel);
 
-    UWORD hstart = mouseX + 128;
-    UWORD vstart = mouseY + 44;
-    UWORD vstop = vstart + 15;
-    s_spriteData[0] = ((vstart & 0xff) << 8) | ((hstart >> 1) & 0xff); /* VSTART bits 7-0, HSTART bits 8-1 */
-    s_spriteData[1] = ((vstop & 0xff) << 8) | /* VSTOP = height + VSTART bits 7-0 */
-                    ((vstart >> 8) & 1) << 2 | /* VSTART hight bit 8 */
-                    ((vstop >> 8) & 1) << 1 | /* VSTOP high bit 8 */
-                    (hstart & 1); /* HSTART low bit 0 */
+    mouseSpriteUpdate(mouseX, mouseY);
 
     GameCycle++;
 }
@@ -350,8 +317,10 @@ void gameGsDestroy(void) {
 
     // This will also destroy all associated viewports and viewport managers
     viewDestroy(s_pView);
+
     unitDelete(s_pSpearman);
     unitManagerDestroy();
+
     bobNewManagerDestroy();
     bitmapDestroy(s_pMapBitmap);
 }

@@ -9,7 +9,6 @@ tStateManager *g_pGameStateManager = 0;
 tState *g_pGameState = 0;
 
 void genericCreate(void) {
-  // Here goes your startup code
   logWrite("Hello, Amiga!\n");
   keyCreate(); // We'll use keyboard
   mouseCreate(MOUSE_PORT_1 | MOUSE_PORT_2);
@@ -21,16 +20,14 @@ void genericCreate(void) {
 }
 
 void genericProcess(void) {
-  // Here goes code done each game frame
   keyProcess();
   mouseProcess();
   stateProcess(g_pGameStateManager); // Process current gamestate's loop
 }
 
 void genericDestroy(void) {
-  // Here goes your cleanup code
   stateManagerDestroy(g_pGameStateManager);
   stateDestroy(g_pGameState);
-  keyDestroy(); // We don't need it anymore
+  keyDestroy();
   logWrite("Goodbye, Amiga!\n");
 }

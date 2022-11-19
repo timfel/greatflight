@@ -51,13 +51,9 @@ static uint16_t s_pMapPalette[COLORS];
 #define MAP_HEIGHT 200
 #define PANEL_HEIGHT 48
 
-static UWORD spritePos;
-static UWORD tileStartPos;
-static UWORD mapColorsPos;
-static UWORD tileBreakPos;
-static UWORD simplePos;
-static UWORD panelColorsPos;
-static UWORD copListLength;
+static UWORD s_uwTilebufCoplistStart;
+static UWORD s_uwMapColorsCoplistStart;
+static UWORD s_uwTilebufCoplistBreak;
 
 void loadMap(const char* name) {
     char* mapname = MAPDIR LONGEST_MAPNAME;
@@ -77,11 +73,11 @@ void loadMap(const char* name) {
     logWrite("Loading map: %s %s\n", palname, imgname);
     // create map area
     paletteLoad(palname, s_pMapPalette, COLORS);
-    tCopCmd *pCmds = &s_pView->pCopList->pBackBfr->pList[mapColorsPos];
+    tCopCmd *pCmds = &s_pView->pCopList->pBackBfr->pList[s_uwMapColorsCoplistStart];
     for (uint8_t i = 0; i < COLORS; i++) {
         copSetMove(&pCmds[i].sMove, &g_pCustom->color[i], s_pMapPalette[i]);
     }
-    pCmds = &s_pView->pCopList->pFrontBfr->pList[mapColorsPos];
+    pCmds = &s_pView->pCopList->pFrontBfr->pList[s_uwMapColorsCoplistStart];
     for (uint8_t i = 0; i < COLORS; i++) {
         copSetMove(&pCmds[i].sMove, &g_pCustom->color[i], s_pMapPalette[i]);
     }
@@ -101,8 +97,8 @@ void loadMap(const char* name) {
                                     TAG_TILEBUFFER_TILESET, s_pMapBitmap,
                                     TAG_TILEBUFFER_IS_DBLBUF, 1,
                                     TAG_TILEBUFFER_REDRAW_QUEUE_LENGTH, 6,
-                                    TAG_TILEBUFFER_COPLIST_OFFSET_START, tileStartPos,
-                                    TAG_TILEBUFFER_COPLIST_OFFSET_BREAK, tileBreakPos,
+                                    TAG_TILEBUFFER_COPLIST_OFFSET_START, s_uwTilebufCoplistStart,
+                                    TAG_TILEBUFFER_COPLIST_OFFSET_BREAK, s_uwTilebufCoplistBreak,
                                     TAG_END);
     s_pMainCamera = s_pMapBuffer->pCamera;
     cameraSetCoord(s_pMainCamera, 0, 0);
@@ -130,13 +126,13 @@ void initBobs(void) {
 void gameGsCreate(void) {
     viewLoad(0);
 
-    spritePos = 0;
-    tileStartPos = spritePos + mouseSpriteGetRawCopplistInstructionCountLength();
-    mapColorsPos = tileStartPos + tileBufferGetRawCopperlistInstructionCountStart(BPP);
-    tileBreakPos = mapColorsPos + COLORS;
-    simplePos = tileBreakPos + tileBufferGetRawCopperlistInstructionCountBreak(BPP);
-    panelColorsPos = simplePos + simpleBufferGetRawCopperlistInstructionCount(BPP);
-    copListLength = panelColorsPos;
+    uint16_t spritePos = 0;
+    s_uwTilebufCoplistStart = spritePos + mouseSpriteGetRawCopplistInstructionCountLength();
+    s_uwMapColorsCoplistStart = s_uwTilebufCoplistStart + tileBufferGetRawCopperlistInstructionCountStart(BPP);
+    s_uwTilebufCoplistBreak = s_uwMapColorsCoplistStart + COLORS;
+    uint16_t simplePos = s_uwTilebufCoplistBreak + tileBufferGetRawCopperlistInstructionCountBreak(BPP);
+    uint16_t panelColorsPos = simplePos + simpleBufferGetRawCopperlistInstructionCount(BPP);
+    uint16_t copListLength = panelColorsPos;
 
     s_pView = viewCreate(0,
                          TAG_VIEW_COPLIST_MODE, VIEW_COPLIST_MODE_RAW,

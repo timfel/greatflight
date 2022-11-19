@@ -32,7 +32,6 @@ void mouseSpriteSetup(tView *pView, uint16_t copListStart) {
     pCmds = &pView->pCopList->pFrontBfr->pList[copListStart];
     copSetMove(&pCmds[0].sMove, &g_pSprFetch[0].uwHi, ulSpriteData << 16);
     copSetMove(&pCmds[1].sMove, &g_pSprFetch[0].uwLo, ulSpriteData & 0xFFFF);
-    return 2;
 }
 
 void mouseSpriteUpdate(uint16_t mouseX, uint16_t mouseY) {

@@ -25,11 +25,6 @@ typedef UWORD* tileInfo;
 #define tileInfoIsUnitMacro(x) BTST(*x, 1)
 #define tileInfoIsDiscovered(x) BTST(*x, 0)
 
-#ifdef ACE_DEBUG
-
-#else
-#endif
-
 struct tileInfoFull {
     unsigned isBuilding:1;
     unsigned isUnit:1;

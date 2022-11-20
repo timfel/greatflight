@@ -102,6 +102,7 @@ Unit *unitManagerUnitAt(Unit *pUnitListHead, tUbCoordYX tile) {
             }
         }
     }
+    return NULL;
 }
 
 Unit * unitNew(Unit *pUnitListHead, enum UnitTypes typeIdx) {

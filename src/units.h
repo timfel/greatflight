@@ -4,6 +4,7 @@
 #include "bob_new.h"
 #include "map.h"
 
+#include <stdint.h>
 #include <ace/utils/bitmap.h>
 #include <ace/utils/file.h>
 
@@ -31,9 +32,9 @@ typedef struct {
         const char *maskPath;
         tBitMap *mask;
     };
-    UBYTE maxHP;
-    UBYTE speed;
-    UBYTE hasMana;
+    uint8_t maxHP;
+    uint8_t speed;
+    uint8_t hasMana;
 } UnitType;
 
 enum UnitTypes {
@@ -57,38 +58,37 @@ enum UnitTypes {
     elemental,
     ogre,
     slime,
-    thief
+    thief,
+    unitTypeCount
 };
 
 typedef struct {
-    UBYTE hp;
-    UBYTE mana;
+    uint8_t hp;
+    uint8_t mana;
 } UnitStats;
 
-_Static_assert(sizeof(UnitStats) == sizeof(UWORD), "unit stats is not 1 word");
+_Static_assert(sizeof(UnitStats) == sizeof(uint16_t), "unit stats is not 1 word");
 
-typedef struct {
-    UBYTE type;
-    UBYTE action;
+typedef struct _unit {
+    uint8_t type;
+    uint8_t action;
     union {
-        ULONG ulActionData;
+        uint32_t ulActionData;
         struct {
-            UWORD uwActionDataA;
-            UWORD uwActionDataB;
+            uint16_t uwActionDataA;
+            uint16_t uwActionDataB;
         };
         struct {
-            UBYTE ubActionDataA;
-            UBYTE ubActionDataB;
-            UBYTE ubActionDataC;
-            UBYTE ubActionDataD;
+            uint8_t ubActionDataA;
+            uint8_t ubActionDataB;
+            uint8_t ubActionDataC;
+            uint8_t ubActionDataD;
         };
     };
     UnitStats stats;
     tBobNew bob;
+    struct _unit *nextFreeUnit;
 } Unit;
-
-// _Static_assert(sizeof(Unit) == (1 << UNIT_SIZE_SHIFT) >> 3, "unit struct is not 4 words");
-// _Static_assert(sizeof(Unit) == 4 * sizeof(UWORD), "unit struct is not 4 words");
 
 /* The global list of unit types */
 extern UnitType UnitTypes[];
@@ -96,16 +96,54 @@ extern UnitType UnitTypes[];
 /* The maximum number of units the game will allocate memory for. */
 #define MAX_UNITS 200
 
-/* The list of all units. Inactive unit slots are NULL. */
-extern Unit **s_pUnitList;
+/**
+ * @brief Create the unit manager.
+ * 
+ * @return a pointer to the unit list.
+ */
+Unit *unitManagerCreate(void);
 
-void unitManagerCreate(void);
+/**
+ * @brief Deallocate resources used by the unit manager
+ * @param pUnitListHead unit list pointer created from unitManagerCreate()
+ */
+void unitManagerDestroy(Unit *pUnitListHead);
 
-void unitManagerDestroy(void);
+/**
+ * @brief Initialized a new unit of a specific type.
+ * 
+ * @param pUnitListHead unit list pointer created from unitManagerCreate()
+ * @param type of unit to initialize
+ * @return new unit pointer
+ */
+Unit * unitNew(Unit *pUnitListHead, enum UnitTypes type);
 
-Unit * unitNew(UBYTE type);
+/**
+ * @brief Free the selected unit.
+ * 
+ * @param pUnitListHead unit list pointer created from unitManagerCreate()
+ * @param unit to free
+ */
+void unitDelete(Unit *pUnitListHead, Unit *unit);
 
-void unitDelete(Unit *);
+/**
+ * @brief Process all units' drawing and actions. Must be called after bobNewBegin() and before bobNewEnd()!
+ * 
+ * @param pUnitListHead unit list pointer created from unitManagerCreate()
+ * @param pTileData 2d tile grid of map
+ * @param viewportTopLeft top left visible tile
+ * @param viewportBottomRight bottom right visible tile
+ */
+void unitManagerProcessUnits(Unit *pUnitListHead, uint8_t **pTileData, tUbCoordYX viewportTopLeft, tUbCoordYX viewportBottomRight);
+
+/**
+ * @brief Return unit on tile, if any
+ * 
+ * @param pUnitListHead unit list pointer created from unitManagerCreate()
+ * @param tile position where to look for unit
+ * @return Unit* or NULL, if no unit is at the position
+ */
+Unit *unitManagerUnitAt(Unit *pUnitListHead, tUbCoordYX tile);
 
 _Static_assert(MAP_SIZE * TILE_SIZE < 0xfff, "map is small enough to fit locations in bytes");
 static inline tUbCoordYX unitGetTilePosition(Unit *self) {

@@ -4,6 +4,8 @@
 #include "ace/macros.h"
 #include "ace/managers/memory.h"
 
+#include <stdint.h>
+
 UnitType UnitTypes[] = {
     [dead] = {.spritesheet = NULL, .maxHP = 0, .hasMana = 0, .speed = 1},
     [peasant] = {.spritesheet = NULL, .maxHP = 0, .hasMana = 0, .speed = 1},
@@ -18,31 +20,34 @@ UnitType UnitTypes[] = {
         .hasMana = 0,
         .speed = 4
     },
+    [catapult] = {.spritesheet = NULL, .maxHP = 0, .hasMana = 0, .speed = 1},
+    [knight] = {.spritesheet = NULL, .maxHP = 0, .hasMana = 0, .speed = 1},
+    [raider] = {.spritesheet = NULL, .maxHP = 0, .hasMana = 0, .speed = 1},
+    [cleric] = {.spritesheet = NULL, .maxHP = 0, .hasMana = 0, .speed = 1},
+    [necrolyte] = {.spritesheet = NULL, .maxHP = 0, .hasMana = 0, .speed = 1},
+    [conjurer] = {.spritesheet = NULL, .maxHP = 0, .hasMana = 0, .speed = 1},
+    [warlock] = {.spritesheet = NULL, .maxHP = 0, .hasMana = 0, .speed = 1},
+    [spider] = {.spritesheet = NULL, .maxHP = 0, .hasMana = 0, .speed = 1},
+    [daemon] = {.spritesheet = NULL, .maxHP = 0, .hasMana = 0, .speed = 1},
+    [elemental] = {.spritesheet = NULL, .maxHP = 0, .hasMana = 0, .speed = 1},
+    [ogre] = {.spritesheet = NULL, .maxHP = 0, .hasMana = 0, .speed = 1},
+    [slime] = {.spritesheet = NULL, .maxHP = 0, .hasMana = 0, .speed = 1},
+    [thief] = {.spritesheet = NULL, .maxHP = 0, .hasMana = 0, .speed = 1}
 };
+_Static_assert(sizeof(UnitTypes) == unitTypeCount * sizeof(UnitType));
 
-union freeBlock {
-    Unit unit;
-    union freeBlock *next;
-};
-_Static_assert(sizeof(union freeBlock) == sizeof(Unit), "freeBlock is not Unit size");
+#define UNIT_FREE_TILE_POSITION ((tUbCoordYX){.ubY = -1, .ubX = -1})
+#define UNIT_INIT_TILE_POSITION ((tUbCoordYX){.ubY = -1, .ubX = 0})
 
-// with 10 units per frame, we need 20 frames to get through all units
-// so on NTSC, we'd handle each unit 3 times per second. This should give
-// generally nice animation and speed
-#define UNITS_PER_FRAME 10
-
-static union freeBlock *s_arena;
-Unit **s_pUnitList;
-
-void unitManagerCreate(void) {
-    s_arena = memAllocFastClear(sizeof(union freeBlock) * MAX_UNITS);
-    s_pUnitList = memAllocFastClear(sizeof(Unit *) * MAX_UNITS);
-
-    for (UWORD i = 0; i < MAX_UNITS; i++) {
-        s_arena[i].next = &s_arena[(i + 1) % MAX_UNITS];
+Unit * unitManagerCreate(void) {
+    Unit *pUnitListHead = memAllocFastClear(sizeof(Unit) * MAX_UNITS);
+    // link all units together in a circular linked list
+    for (uint16_t i = 0; i < MAX_UNITS - 1; i++) {
+        pUnitListHead[i].nextFreeUnit = &pUnitListHead[i + 1];
     }
+    pUnitListHead[MAX_UNITS - 1].nextFreeUnit = pUnitListHead;
     // TODO: lazy loading of spritesheets
-    for (UWORD i = 0; i < sizeof(UnitTypes) / sizeof(UnitType); i++) {
+    for (uint16_t i = 0; i < sizeof(UnitTypes) / sizeof(UnitType); i++) {
         if (UnitTypes[i].spritesheetPath) {
             tBitMap *bmp = bitmapCreateFromFile(UnitTypes[i].spritesheetPath, 0);
             tBitMap *mask = bitmapCreateFromFile(UnitTypes[i].maskPath, 0);
@@ -50,51 +55,74 @@ void unitManagerCreate(void) {
             UnitTypes[i].mask = mask;
         }
     }
+
+    return pUnitListHead;
 }
 
-void unitManagerDestroy(void) {
-    for (UWORD i = 0; i < sizeof(UnitTypes) / sizeof(UnitType); i++) {
+void unitManagerDestroy(Unit *pUnitListHead) {
+    for (uint16_t i = 0; i < sizeof(UnitTypes) / sizeof(UnitType); i++) {
         if (UnitTypes[i].spritesheet) {
             bitmapDestroy(UnitTypes[i].spritesheet);
             bitmapDestroy(UnitTypes[i].mask);
         }
     }
-    memFree(s_arena, sizeof(union freeBlock) * MAX_UNITS);
-    memFree(s_pUnitList, sizeof(Unit) * MAX_UNITS);
+    for (uint16_t i = 0; i < MAX_UNITS; i++) {
+        unitDelete(pUnitListHead, &pUnitListHead[i]);
+    }
+    memFree(pUnitListHead, sizeof(Unit) * MAX_UNITS);
 }
 
-// void processUnits(void *unitManager) {
-//     struct unitManager *m = (struct unitManager *)unitManager;
-//     UBYTE start = m->index;
-//     UBYTE end = start + UNITS_PER_FRAME;
-//     for (UBYTE i = start; i < end; ++i) {
-//         struct unit *unit = &m->units[i];
-//         Actions[unit->header.currentAction](unit);
-//     }
-// }
+static inline uint8_t unitManagerUnitIsActive(Unit *unit) {
+    return unitGetTilePosition(unit).uwYX != UNIT_FREE_TILE_POSITION.uwYX;
+}
 
-Unit * unitNew(UBYTE typeIdx) {
+void unitManagerProcessUnits(Unit *pUnitListHead, uint8_t **pTileData, tUbCoordYX viewportTopLeft, tUbCoordYX viewportBottomRight) {
+    for (uint8_t i = 0; i < MAX_UNITS; i++) {
+        Unit *unit = &pUnitListHead[i];
+        if (unitManagerUnitIsActive(unit)) {
+            actionDo(unit, pTileData);
+            tUbCoordYX loc = unitGetTilePosition(unit);
+            if (loc.ubX >= viewportTopLeft.ubX
+                    && loc.ubY >= viewportTopLeft.ubY
+                    && loc.ubX <= viewportBottomRight.ubX
+                    && loc.ubY <= viewportBottomRight.ubY) {
+                unitDraw(unit);
+            }
+        }
+    }
+}
+
+Unit *unitManagerUnitAt(Unit *pUnitListHead, tUbCoordYX tile) {
+    for (UBYTE i = 0; i < MAX_UNITS; i++) {
+        Unit *unit = &pUnitListHead[i];
+        if (unitManagerUnitIsActive(unit)) {
+            tUbCoordYX loc = unitGetTilePosition(unit);
+            if (loc.uwYX == tile.uwYX) {
+                return unit;
+            }
+        }
+    }
+}
+
+Unit * unitNew(Unit *pUnitListHead, enum UnitTypes typeIdx) {
     UnitType *type = &UnitTypes[typeIdx];
-    Unit *unit = &s_arena->next->unit;
-    ULONG idx = ((ULONG)unit - (ULONG)s_arena) / sizeof(union freeBlock);
-    if (idx == 0) {
-        // TODO: no more free space!!
+    Unit *unit = pUnitListHead->nextFreeUnit;
+    if (unit == pUnitListHead) {
+        // no more free units
         return NULL;
     }
-    s_arena->next = s_arena->next->next;
+    pUnitListHead->nextFreeUnit = unit->nextFreeUnit;
     bobNewInit(&unit->bob, 32, 32, 1, type->spritesheet, type->mask, 0, 0);
     unitSetFrame(unit, 0);
     unit->type = typeIdx;
-    s_pUnitList[idx] = unit;
+    unitSetTilePosition(unit, UNIT_INIT_TILE_POSITION);
     return unit;
 }
 
-void unitDelete(Unit *unit) {
-    union freeBlock *curFreeBlk = s_arena->next;
-    union freeBlock *newFreeBlk = (union freeBlock *)unit;
-    ULONG idx = ((ULONG)unit - (ULONG)s_arena) / sizeof(union freeBlock);
-    s_pUnitList[idx] = NULL;
-    // TODO: track use after delete
-    s_arena->next = newFreeBlk;
-    newFreeBlk->next = curFreeBlk;
+void unitDelete(Unit *pUnitListHead, Unit *unit) {
+    if (unitManagerUnitIsActive(unit)) {
+        unitSetTilePosition(unit, UNIT_FREE_TILE_POSITION);
+        unit->nextFreeUnit = pUnitListHead->nextFreeUnit;
+        pUnitListHead->nextFreeUnit = unit;
+    }
 }

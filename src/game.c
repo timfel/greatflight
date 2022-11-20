@@ -38,6 +38,7 @@ static tBitMap *s_pMapBitmap;
 
 static tBobNew s_TileCursor;
 
+static Unit *s_pUnitManagerList;
 static Unit *s_pSpearman;
 
 // palette switching
@@ -48,14 +49,13 @@ static uint16_t s_pMapPalette[COLORS];
 #define MAPDIR "resources/maps/"
 #define LONGEST_MAPNAME "human12.map"
 
-#define MAP_HEIGHT 200
+#define MAP_WIDTH 320
+#define MAP_HEIGHT 192
 #define PANEL_HEIGHT 48
+#define VISIBLE_TILES_X (320 >> TILE_SHIFT)
+#define VISIBLE_TILES_Y (MAP_HEIGHT >> TILE_SHIFT)
 
-static UWORD s_uwTilebufCoplistStart;
-static UWORD s_uwMapColorsCoplistStart;
-static UWORD s_uwTilebufCoplistBreak;
-
-void loadMap(const char* name) {
+void loadMap(const char* name, uint16_t tilebufCoplistStart, uint16_t tilebufCoplistBreak, uint16_t mapColorsCoplistStart) {
     char* mapname = MAPDIR LONGEST_MAPNAME;
     char* palname = IMGDIR "for.plt";
     char* imgname = IMGDIR "for.bm";
@@ -73,11 +73,11 @@ void loadMap(const char* name) {
     logWrite("Loading map: %s %s\n", palname, imgname);
     // create map area
     paletteLoad(palname, s_pMapPalette, COLORS);
-    tCopCmd *pCmds = &s_pView->pCopList->pBackBfr->pList[s_uwMapColorsCoplistStart];
+    tCopCmd *pCmds = &s_pView->pCopList->pBackBfr->pList[mapColorsCoplistStart];
     for (uint8_t i = 0; i < COLORS; i++) {
         copSetMove(&pCmds[i].sMove, &g_pCustom->color[i], s_pMapPalette[i]);
     }
-    pCmds = &s_pView->pCopList->pFrontBfr->pList[s_uwMapColorsCoplistStart];
+    pCmds = &s_pView->pCopList->pFrontBfr->pList[mapColorsCoplistStart];
     for (uint8_t i = 0; i < COLORS; i++) {
         copSetMove(&pCmds[i].sMove, &g_pCustom->color[i], s_pMapPalette[i]);
     }
@@ -97,8 +97,8 @@ void loadMap(const char* name) {
                                     TAG_TILEBUFFER_TILESET, s_pMapBitmap,
                                     TAG_TILEBUFFER_IS_DBLBUF, 1,
                                     TAG_TILEBUFFER_REDRAW_QUEUE_LENGTH, 6,
-                                    TAG_TILEBUFFER_COPLIST_OFFSET_START, s_uwTilebufCoplistStart,
-                                    TAG_TILEBUFFER_COPLIST_OFFSET_BREAK, s_uwTilebufCoplistBreak,
+                                    TAG_TILEBUFFER_COPLIST_OFFSET_START, tilebufCoplistStart,
+                                    TAG_TILEBUFFER_COPLIST_OFFSET_BREAK, tilebufCoplistBreak,
                                     TAG_END);
     s_pMainCamera = s_pMapBuffer->pCamera;
     cameraSetCoord(s_pMainCamera, 0, 0);
@@ -117,8 +117,8 @@ void initBobs(void) {
     bobNewInit(&s_TileCursor, TILE_SIZE, TILE_SIZE, 1, s_pMapBitmap, 0, 0, 0);
     bobNewSetBitMapOffset(&s_TileCursor, 0x10 << TILE_SHIFT);
 
-    unitManagerCreate();
-    s_pSpearman = unitNew(spearman);
+    s_pUnitManagerList = unitManagerCreate();
+    s_pSpearman = unitNew(s_pUnitManagerList, spearman);
 
     bobNewReallocateBgBuffers();
 }
@@ -126,22 +126,26 @@ void initBobs(void) {
 void gameGsCreate(void) {
     viewLoad(0);
 
+    // Calculate copperlist size
     uint16_t spritePos = 0;
-    s_uwTilebufCoplistStart = spritePos + mouseSpriteGetRawCopplistInstructionCountLength();
-    s_uwMapColorsCoplistStart = s_uwTilebufCoplistStart + tileBufferGetRawCopperlistInstructionCountStart(BPP);
-    s_uwTilebufCoplistBreak = s_uwMapColorsCoplistStart + COLORS;
-    uint16_t simplePos = s_uwTilebufCoplistBreak + tileBufferGetRawCopperlistInstructionCountBreak(BPP);
+    uint16_t tilebufCoplistStart = spritePos + mouseSpriteGetRawCopplistInstructionCountLength();
+    uint16_t mapColorsCoplistStart = tilebufCoplistStart + tileBufferGetRawCopperlistInstructionCountStart(BPP);
+    uint16_t tilebufCoplistBreak = mapColorsCoplistStart + COLORS;
+    uint16_t simplePos = tilebufCoplistBreak + tileBufferGetRawCopperlistInstructionCountBreak(BPP);
     uint16_t panelColorsPos = simplePos + simpleBufferGetRawCopperlistInstructionCount(BPP);
     uint16_t copListLength = panelColorsPos;
 
+    // Create the game view
     s_pView = viewCreate(0,
                          TAG_VIEW_COPLIST_MODE, VIEW_COPLIST_MODE_RAW,
                          TAG_VIEW_COPLIST_RAW_COUNT, copListLength,
                          TAG_DONE);
 
+    // setup mouse
     mouseSpriteSetup(s_pView, spritePos);
 
-    loadMap("game2");
+    // load map file
+    loadMap("game2", tilebufCoplistStart, tilebufCoplistBreak, mapColorsCoplistStart);
 
     initBobs();
 
@@ -156,13 +160,13 @@ void gameGsCreate(void) {
     //     copSetMove(&pCmds[i].sMove, &g_pCustom->color[i], s_pPanelPalette[i]);
     // }
 
+    logWrite("create panel viewport and simple buffer\n");
     s_pVpPanel = vPortCreate(0,
                              TAG_VPORT_VIEW, s_pView,
                              TAG_VPORT_BPP, BPP,
                              // TAG_VPORT_OFFSET_TOP, 1,
                              TAG_VPORT_HEIGHT, PANEL_HEIGHT,
                              TAG_END);
-    logWrite("create panel buffer\n");
     s_pPanelBuffer = simpleBufferCreate(0,
                                         TAG_SIMPLEBUFFER_VPORT, s_pVpPanel,
                                         TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR | BMF_INTERLEAVED,
@@ -178,11 +182,8 @@ void gameGsCreate(void) {
     systemUnuse();
 }
 
-static inline tUbCoordYX screenPosToTile(UWORD x, UWORD y) {
-    tUbCoordYX pos;
-    pos.ubX = x >> TILE_SHIFT;
-    pos.ubY = y >> TILE_SHIFT;
-    return pos;
+static inline tUbCoordYX screenPosToTile(tUwCoordYX pos) {
+    return (tUbCoordYX){.uwYX = pos.ulYX >> TILE_SHIFT};
 }
 
 enum mode {
@@ -197,7 +198,6 @@ static UBYTE SelectedTile = 0x10;
 
 // game statics
 static Unit *s_pSelectedUnit = NULL;
-static UBYTE s_ubCurrentlyHandledUnit = 0;
 
 void gameGsLoop(void) {
     UWORD mouseX = mouseGetX(MOUSE_PORT_1);
@@ -226,7 +226,7 @@ void gameGsLoop(void) {
             }
         }
         if (mouseCheck(MOUSE_PORT_1, MOUSE_LMB)) {
-            tUbCoordYX tile = screenPosToTile(mousePos.uwX, mousePos.uwY);
+            tUbCoordYX tile = screenPosToTile(mousePos);
             tileBufferSetTile(s_pMapBuffer, tile.ubX, tile.ubY, SelectedTile);
             tileBufferQueueProcess(s_pMapBuffer);
             bobNewDiscardUndraw();
@@ -234,19 +234,13 @@ void gameGsLoop(void) {
     } else {
         // mode == game
         if (mouseCheck(MOUSE_PORT_1, MOUSE_LMB)) {
-            tUbCoordYX tile = screenPosToTile(mousePos.uwX, mousePos.uwY);
-            for (UBYTE i = 0; i < MAX_UNITS; i++) {
-                Unit *unit = s_pUnitList[i];
-                if (unit != NULL) {
-                    tUbCoordYX loc = unitGetTilePosition(unit);
-                    if (loc.uwYX == tile.uwYX) {
-                        s_pSelectedUnit = unit;
-                        break;
-                    }
-                }
+            tUbCoordYX tile = screenPosToTile(mousePos);
+            Unit *unit = unitManagerUnitAt(s_pUnitManagerList, tile);
+            if (unit) {
+                s_pSelectedUnit = unit;
             }
         } else if (s_pSelectedUnit && mouseCheck(MOUSE_PORT_1, MOUSE_RMB)) {
-            actionMoveTo(s_pSelectedUnit, screenPosToTile(mousePos.uwX, mousePos.uwY));
+            actionMoveTo(s_pSelectedUnit, screenPosToTile(mousePos));
         }
     }
 
@@ -269,28 +263,16 @@ void gameGsLoop(void) {
         cameraMoveBy(s_pMainCamera, 4, 0);
     }
 
-    UBYTE ubNextStop = s_ubCurrentlyHandledUnit + 20;
-    for (; s_ubCurrentlyHandledUnit < ubNextStop; s_ubCurrentlyHandledUnit++) {
-        Unit *unit = s_pUnitList[s_ubCurrentlyHandledUnit];
-        if (unit) {
-            actionDo(unit, s_pMapBuffer->pTileData);
-        }
-    }
-    if (ubNextStop >= MAX_UNITS) {
-        s_ubCurrentlyHandledUnit = 0;
-    }
-
     bobNewBegin(s_pMapBuffer->pScroll->pBack);
-    
-    for (UBYTE i = 0; i < MAX_UNITS; i++) {
-        Unit *unit = s_pUnitList[i];
-        if (unit != NULL) {
-            tUbCoordYX loc = unitGetTilePosition(unit);
-            if (tileBufferIsTileOnBuffer(s_pMapBuffer, loc.ubX, loc.ubY)) {
-                unitDraw(unit);
-            }
-        }
-    }
+
+    // process all units
+    tUbCoordYX tileTopLeft = screenPosToTile(s_pMainCamera->uPos);
+    unitManagerProcessUnits(
+        s_pUnitManagerList,
+        s_pMapBuffer->pTileData,
+        tileTopLeft,
+        (tUbCoordYX){.ubX = tileTopLeft.ubX + VISIBLE_TILES_X, .ubY = tileTopLeft.ubY + VISIBLE_TILES_Y}
+    );
 
     if (s_Mode == edit) {
         s_TileCursor.sPos.ulYX = mousePos.ulYX;
@@ -314,8 +296,7 @@ void gameGsDestroy(void) {
     // This will also destroy all associated viewports and viewport managers
     viewDestroy(s_pView);
 
-    unitDelete(s_pSpearman);
-    unitManagerDestroy();
+    unitManagerDestroy(s_pUnitManagerList);
 
     bobNewManagerDestroy();
     bitmapDestroy(s_pMapBitmap);

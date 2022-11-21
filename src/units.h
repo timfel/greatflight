@@ -69,7 +69,9 @@ typedef struct {
 
 _Static_assert(sizeof(UnitStats) == sizeof(uint16_t), "unit stats is not 1 word");
 
-typedef struct _unit {
+typedef struct _unitmanager tUnitManager;
+
+typedef struct {
     uint8_t type;
     uint8_t action;
     union {
@@ -87,7 +89,6 @@ typedef struct _unit {
     };
     UnitStats stats;
     tBobNew bob;
-    struct _unit *nextFreeUnit;
 } Unit;
 
 /* The global list of unit types */
@@ -101,13 +102,13 @@ extern UnitType UnitTypes[];
  * 
  * @return a pointer to the unit list.
  */
-Unit *unitManagerCreate(void);
+tUnitManager *unitManagerCreate(void);
 
 /**
  * @brief Deallocate resources used by the unit manager
  * @param pUnitListHead unit list pointer created from unitManagerCreate()
  */
-void unitManagerDestroy(Unit *pUnitListHead);
+void unitManagerDestroy(tUnitManager *pUnitListHead);
 
 /**
  * @brief Initialized a new unit of a specific type.
@@ -116,7 +117,7 @@ void unitManagerDestroy(Unit *pUnitListHead);
  * @param type of unit to initialize
  * @return new unit pointer
  */
-Unit * unitNew(Unit *pUnitListHead, enum UnitTypes type);
+Unit * unitNew(tUnitManager *pUnitListHead, enum UnitTypes type);
 
 /**
  * @brief Free the selected unit.
@@ -124,7 +125,7 @@ Unit * unitNew(Unit *pUnitListHead, enum UnitTypes type);
  * @param pUnitListHead unit list pointer created from unitManagerCreate()
  * @param unit to free
  */
-void unitDelete(Unit *pUnitListHead, Unit *unit);
+void unitDelete(tUnitManager *pUnitListHead, Unit *unit);
 
 /**
  * @brief Process all units' drawing and actions. Must be called after bobNewBegin() and before bobNewEnd()!
@@ -134,7 +135,7 @@ void unitDelete(Unit *pUnitListHead, Unit *unit);
  * @param viewportTopLeft top left visible tile
  * @param viewportBottomRight bottom right visible tile
  */
-void unitManagerProcessUnits(Unit *pUnitListHead, uint8_t **pTileData, tUbCoordYX viewportTopLeft, tUbCoordYX viewportBottomRight);
+void unitManagerProcessUnits(tUnitManager *pUnitListHead, uint8_t **pTileData, tUbCoordYX viewportTopLeft, tUbCoordYX viewportBottomRight);
 
 /**
  * @brief Return unit on tile, if any
@@ -143,7 +144,7 @@ void unitManagerProcessUnits(Unit *pUnitListHead, uint8_t **pTileData, tUbCoordY
  * @param tile position where to look for unit
  * @return Unit* or NULL, if no unit is at the position
  */
-Unit *unitManagerUnitAt(Unit *pUnitListHead, tUbCoordYX tile);
+Unit *unitManagerUnitAt(tUnitManager *pUnitListHead, tUbCoordYX tile);
 
 _Static_assert(MAP_SIZE * TILE_SIZE < 0xfff, "map is small enough to fit locations in bytes");
 static inline tUbCoordYX unitGetTilePosition(Unit *self) {

@@ -4,7 +4,7 @@
 #include <ace/utils/custom.h>
 
 /* real boring sprite data */
-uint16_t CHIP s_spriteData[] = {
+static uint16_t CHIP s_spriteData[] = {
     0, 0,           /* position control           */
     0b1000000000000000, 0x0000,
     0b1100000000000000, 0x0000,

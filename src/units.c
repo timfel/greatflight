@@ -115,6 +115,9 @@ void unitManagerProcessUnits(tUnitManager *pUnitListHead, uint8_t **pTileData, t
                 && loc.ubY <= viewportBottomRight.ubY) {
             unitDraw((Unit *)link);
         }
+        if(blitIsIdle()) {
+            bobNewProcessNext();
+        }
         link = link->next;
     }
 }

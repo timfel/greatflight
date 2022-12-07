@@ -358,9 +358,11 @@ void bobNewPushingDone(void) {
 
 void bobNewEnd(void) {
 	bobNewPushingDone();
+	systemSetDmaBit(DMAB_BLITHOG, 1);
 	do {
 		blitWait();
 	} while(bobNewProcessNext());
+	systemSetDmaBit(DMAB_BLITHOG, 0);
 	s_pQueues[s_ubBufferCurr].ubUndrawCount = s_ubBobsPushed;
 	if (s_pQueues[1].pBg) {
 		// double buffered, switch the target queue

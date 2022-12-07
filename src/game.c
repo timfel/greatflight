@@ -44,13 +44,26 @@ static Unit *s_pSpearman;
 
 // palette switching
 static uint16_t s_pMapPalette[COLORS];
-// static uint16_t s_pPanelPalette[COLORS];
+static uint16_t s_pPanelPalette[COLORS];
+
+enum mode {
+    game,
+    edit
+};
+static uint16_t GameCycle = 0;
+static UBYTE s_Mode = game;
+
+// editor statics
+static UBYTE SelectedTile = 0x10;
+
+// game statics
+static Unit *s_pSelectedUnit = NULL;
 
 #define IMGDIR "resources/imgs/"
 #define MAPDIR "resources/maps/"
 #define LONGEST_MAPNAME "human12.map"
 
-#define MAP_WIDTH 304
+#define MAP_WIDTH 320
 #define MAP_HEIGHT 192
 #define PANEL_HEIGHT 48
 #define VISIBLE_TILES_X (MAP_WIDTH >> TILE_SHIFT)
@@ -86,7 +99,7 @@ void loadMap(const char* name, uint16_t tilebufCoplistStart, uint16_t tilebufCop
     s_pVpMain = vPortCreate(0,
                             TAG_VPORT_VIEW, s_pView,
                             TAG_VPORT_BPP, BPP,
-                            // TAG_VPORT_WIDTH, MAP_WIDTH,
+                            TAG_VPORT_WIDTH, MAP_WIDTH,
                             TAG_VPORT_HEIGHT, MAP_HEIGHT,
                             TAG_END);
     s_pMapBitmap = bitmapCreateFromFile(imgname, 0);
@@ -121,6 +134,7 @@ void initBobs(void) {
 
     s_pUnitManager = unitManagerCreate();
     s_pSpearman = unitNew(s_pUnitManager, spearman);
+    s_pSelectedUnit = s_pSpearman;
     unitSetTilePosition(s_pSpearman, (tUbCoordYX){.ubX = 7, .ubY = 7});
 
     bobNewReallocateBgBuffers();
@@ -137,7 +151,7 @@ void gameGsCreate(void) {
     uint16_t tilebufCoplistBreak = mapColorsCoplistStart + COLORS;
     uint16_t simplePos = tilebufCoplistBreak + tileBufferGetRawCopperlistInstructionCountBreak(BPP);
     uint16_t panelColorsPos = simplePos + simpleBufferGetRawCopperlistInstructionCount(BPP);
-    uint16_t copListLength = panelColorsPos;
+    uint16_t copListLength = panelColorsPos + COLORS;
 
     // Create the game view
     s_pView = viewCreate(0,
@@ -157,22 +171,23 @@ void gameGsCreate(void) {
     initBobs();
 
     // create panel area
-    // paletteLoad("resources/human_panel.plt", s_pPanelPalette, COLORS);
-    // pCmds = &pCopBfrBack->pList[panelColorsPos];
-    // for (uint8_t i = 0; i < COLORS; i++) {
-    //     copSetMove(&pCmds[i].sMove, &g_pCustom->color[i], s_pPanelPalette[i]);
-    // }
-    // pCmds = &pCopBfrFront->pList[panelColorsPos];
-    // for (uint8_t i = 0; i < COLORS; i++) {
-    //     copSetMove(&pCmds[i].sMove, &g_pCustom->color[i], s_pPanelPalette[i]);
-    // }
+    paletteLoad("resources/ui/panel.plt", s_pPanelPalette, COLORS);
+    tCopCmd *pCmds = &s_pView->pCopList->pBackBfr->pList[panelColorsPos];
+    for (uint8_t i = 0; i < COLORS; i++) {
+        copSetMove(&pCmds[i].sMove, &g_pCustom->color[i], s_pPanelPalette[i]);
+    }
+    pCmds = &s_pView->pCopList->pFrontBfr->pList[panelColorsPos];
+    for (uint8_t i = 0; i < COLORS; i++) {
+        copSetMove(&pCmds[i].sMove, &g_pCustom->color[i], s_pPanelPalette[i]);
+    }
 
     logWrite("create panel viewport and simple buffer\n");
     s_pVpPanel = vPortCreate(0,
                              TAG_VPORT_VIEW, s_pView,
                              TAG_VPORT_BPP, BPP,
                              // TAG_VPORT_OFFSET_TOP, 1,
-                             TAG_VPORT_HEIGHT, PANEL_HEIGHT,
+                             TAG_VPORT_WIDTH, MAP_WIDTH,
+                            //  TAG_VPORT_HEIGHT, PANEL_HEIGHT,
                              TAG_END);
     s_pPanelBuffer = simpleBufferCreate(0,
                                         TAG_SIMPLEBUFFER_VPORT, s_pVpPanel,
@@ -180,7 +195,7 @@ void gameGsCreate(void) {
                                         TAG_SIMPLEBUFFER_IS_DBLBUF, 0,
                                         TAG_SIMPLEBUFFER_COPLIST_OFFSET, simplePos,
                                         TAG_END);
-    // bitmapLoadFromFile(s_pPanelBuffer->pFront, "resources/human_panel/graphics/ui/human/panel_2.bm", 48, 0);
+    bitmapLoadFromFile(s_pPanelBuffer->pBack, "resources/ui/panelbg.bm", 0, 0);
 
     viewLoad(s_pView);
 
@@ -193,18 +208,41 @@ static inline tUbCoordYX screenPosToTile(tUwCoordYX pos) {
     return (tUbCoordYX){.ubX = pos.uwX >> TILE_SHIFT, .ubY = pos.uwY >> TILE_SHIFT};
 }
 
-enum mode {
-    game,
-    edit
-};
-static uint16_t GameCycle = 0;
-static UBYTE s_Mode = game;
-
-// editor statics
-static UBYTE SelectedTile = 0x10;
-
-// game statics
-static Unit *s_pSelectedUnit = NULL;
+void handleInput(tUwCoordYX mousePos) {
+    if (keyCheck(KEY_ESCAPE)) {
+        gameExit();
+    } else if (keyCheck(KEY_C)) {
+        copDumpBfr(s_pView->pCopList->pBackBfr);
+    } else if (keyCheck(KEY_E)) {
+        s_Mode = edit;
+    } else if (keyCheck(KEY_G)) {
+        s_Mode = game;
+    } else if (keyCheck(KEY_UP) || mousePos.uwY < (TILE_SIZE >> 1)) {
+        cameraMoveBy(s_pMainCamera, 0, -4);
+    } else if (keyCheck(KEY_DOWN) || ((MAP_HEIGHT - (TILE_SIZE >> 1)) - mousePos.uwY) < 0) {
+        cameraMoveBy(s_pMainCamera, 0, 4);
+    } else if (keyCheck(KEY_LEFT) || mousePos.uwX < (TILE_SIZE >> 1)) {
+        cameraMoveBy(s_pMainCamera, -4, 0);
+    } else if (keyCheck(KEY_RIGHT) || ((MAP_WIDTH - (TILE_SIZE >> 1)) - mousePos.uwX) < 0) {
+        cameraMoveBy(s_pMainCamera, 4, 0);
+    } else if (keyCheck(KEY_SPACE)) {
+        if (s_pMainCamera->uPos.ulYX == 0) {
+            cameraSetCoord(s_pMainCamera, 512, 512);
+        } else {
+            cameraSetCoord(s_pMainCamera, 0, 0);
+        }
+    }
+    if (mousePos.uwY < (TILE_SIZE >> 1)) {
+        cameraMoveBy(s_pMainCamera, 0, -4);
+    } else if (((MAP_HEIGHT - (TILE_SIZE >> 1)) - mousePos.uwY) < 0) {
+        cameraMoveBy(s_pMainCamera, 0, 4);
+    }
+    if (mousePos.uwX < (TILE_SIZE >> 1)) {
+        cameraMoveBy(s_pMainCamera, -4, 0);
+    } else if (((MAP_WIDTH - (TILE_SIZE >> 1)) - mousePos.uwX) < 0) {
+        cameraMoveBy(s_pMainCamera, 4, 0);
+    }
+}
 
 void gameGsLoop(void) {
     UWORD mouseX = mouseGetX(MOUSE_PORT_1);
@@ -252,31 +290,6 @@ void gameGsLoop(void) {
         }
     }
 
-    // This will loop every frame
-    if (keyCheck(KEY_ESCAPE)) {
-        gameExit();
-    } else if (keyCheck(KEY_C)) {
-        copDumpBfr(s_pView->pCopList->pBackBfr);
-    } else if (keyCheck(KEY_E)) {
-        s_Mode = edit;
-    } else if (keyCheck(KEY_G)) {
-        s_Mode = game;
-    } else if (keyCheck(KEY_W)) {
-        cameraMoveBy(s_pMainCamera, 0, -4);
-    } else if (keyCheck(KEY_S)) {
-        cameraMoveBy(s_pMainCamera, 0, 4);
-    } else if (keyCheck(KEY_A)) {
-        cameraMoveBy(s_pMainCamera, -4, 0);
-    } else if (keyCheck(KEY_D)) {
-        cameraMoveBy(s_pMainCamera, 4, 0);
-    } else if (keyCheck(KEY_SPACE)) {
-        if (s_pMainCamera->uPos.ulYX == 0) {
-            cameraSetCoord(s_pMainCamera, 512, 512);
-        } else {
-            cameraSetCoord(s_pMainCamera, 0, 0);
-        }
-    }
-
     bobNewBegin(s_pMapBuffer->pScroll->pBack);
 
     // process all units
@@ -295,9 +308,32 @@ void gameGsLoop(void) {
 
     bobNewEnd();
 
-    tileBufferRedrawAll(s_pMapBuffer);
-    viewProcessManagers(s_pView);
-    copProcessBlocks();
+    tileBufferQueueProcess(s_pMapBuffer);
+    // viewProcessManagers(s_pView);
+    vPortProcessManagers(s_pMapBuffer->sCommon.pVPort);
+    copSwapBuffers();
+    // never process the panel buffer, it doesn't do anything
+
+    handleInput(mousePos);
+
+    uint8_t renderCycle = GameCycle & 0b111;
+    switch (renderCycle) {
+        case 0:
+            break;
+        case 1:
+            break;
+        case 2:
+            break;
+        case 3:
+            break;
+        case 4:
+            break;
+        case 5:
+            break;
+        case 6:
+            break;
+    }
+
     vPortWaitForEnd(s_pVpPanel);
 
     mouseSpriteUpdate(mouseX, mouseY);

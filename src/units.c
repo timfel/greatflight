@@ -52,6 +52,12 @@ struct _unitmanager {
 #define UNIT_INIT_TILE_POSITION ((tUbCoordYX){.ubY = 1, .ubX = 1})
 #define UNIT_MANAGER_SIZE (sizeof(struct _unitmanager) + sizeof(struct _unitLink) * MAX_UNITS)
 
+#ifdef ACE_DEBUG
+static inline uint8_t unitManagerUnitIsActive(Unit *unit) {
+    return unitGetTilePosition(unit).uwYX != UNIT_FREE_TILE_POSITION.uwYX;
+}
+#endif
+
 tUnitManager * unitManagerCreate(void) {
     struct _unitmanager *mgr = (struct _unitmanager *)memAllocFastClear(UNIT_MANAGER_SIZE);
     
@@ -92,17 +98,14 @@ void unitManagerDestroy(tUnitManager *pUnitListHead) {
     }
     struct _unitLink *l = pUnitListHead->firstActiveUnit;
     while (l) {
+#ifdef ACE_DEBUG
+        if (unitManagerUnitIsActive((Unit *)l))
+#endif
         unitDelete(pUnitListHead, (Unit *)l);
         l = l->next;
     }
     memFree(pUnitListHead, UNIT_MANAGER_SIZE);
 }
-
-#ifdef ACE_DEBUG
-static inline uint8_t unitManagerUnitIsActive(Unit *unit) {
-    return unitGetTilePosition(unit).uwYX != UNIT_FREE_TILE_POSITION.uwYX;
-}
-#endif
 
 void unitManagerProcessUnits(tUnitManager *pUnitListHead, uint8_t **pTileData, tUbCoordYX viewportTopLeft, tUbCoordYX viewportBottomRight) {
     struct _unitLink *link = pUnitListHead->firstActiveUnit;

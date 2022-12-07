@@ -90,3 +90,13 @@ convertBitmaps(
 )
 
 convertPalette(${GAME_LINKED} ${PROJECT_SOURCE_DIR}/resources/for.gpl ${PROJECT_BINARY_DIR}/resources/imgs/for.plt)
+
+# panel UI
+convertPalette(${GAME_LINKED} ${PROJECT_SOURCE_DIR}/resources/panel.gpl ${PROJECT_BINARY_DIR}/resources/ui/panel.plt)
+convertBitmaps(
+       INTERLEAVED
+       TARGET ${GAME_LINKED}
+       PALETTE ${PROJECT_BINARY_DIR}/resources/ui/panel.plt
+       SOURCES ${PROJECT_SOURCE_DIR}/resources/infopanel.png
+       DESTINATIONS ${PROJECT_BINARY_DIR}/resources/ui/panelbg.bm
+)

@@ -137,10 +137,10 @@ void initBobs(void) {
     bobNewSetBitMapOffset(&s_TileCursor, 0x10 << TILE_SHIFT);
 
     s_pUnitManager = unitManagerCreate();
-    unitSetTilePosition(unitNew(s_pUnitManager, spearman), (tUbCoordYX){.ubX = 7, .ubY = 7});
-    unitSetTilePosition(unitNew(s_pUnitManager, spearman), (tUbCoordYX){.ubX = 8, .ubY = 7});
-    unitSetTilePosition(unitNew(s_pUnitManager, spearman), (tUbCoordYX){.ubX = 7, .ubY = 8});
-    unitSetTilePosition(unitNew(s_pUnitManager, spearman), (tUbCoordYX){.ubX = 8, .ubY = 8});
+    unitSetTilePosition(unitNew(s_pUnitManager, spearman), s_pMapBuffer->pTileData, (tUbCoordYX){.ubX = 7, .ubY = 7});
+    unitSetTilePosition(unitNew(s_pUnitManager, spearman), s_pMapBuffer->pTileData, (tUbCoordYX){.ubX = 8, .ubY = 7});
+    unitSetTilePosition(unitNew(s_pUnitManager, spearman), s_pMapBuffer->pTileData, (tUbCoordYX){.ubX = 7, .ubY = 8});
+    unitSetTilePosition(unitNew(s_pUnitManager, spearman), s_pMapBuffer->pTileData, (tUbCoordYX){.ubX = 8, .ubY = 8});
 
     bobNewReallocateBgBuffers();
 }

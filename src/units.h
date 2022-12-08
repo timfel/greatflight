@@ -24,6 +24,9 @@
 #define DIRECTION_SOUTH FRAME_COUNT * FRAME_SIZE * 2
 #define DIRECTION_WEST FRAME_COUNT * FRAME_SIZE * 3
 
+#define UNIT_FREE_TILE_POSITION ((tUbCoordYX){.ubY = -1, .ubX = -1})
+#define UNIT_INIT_TILE_POSITION ((tUbCoordYX){.ubY = 1, .ubX = 1})
+
 typedef struct {
     union {
         const char *spritesheetPath;
@@ -159,9 +162,12 @@ static inline tUbCoordYX unitGetTilePosition(Unit *self) {
     return loc;
 }
 
-static inline void unitSetTilePosition(Unit *self, tUbCoordYX pos) {
+static inline void unitSetTilePosition(Unit *self, UBYTE **map, tUbCoordYX pos) {
     self->bob.sPos.uwX = (pos.ubX << TILE_SHIFT) - 8;
     self->bob.sPos.uwY = (pos.ubY << TILE_SHIFT) - 8;
+    if (pos.ubX > 1) {
+        markMapTile(map, pos.ubX, pos.ubY);
+    }
 }
 
 static inline void unitDraw(Unit *self) {

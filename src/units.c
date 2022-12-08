@@ -51,8 +51,6 @@ struct _unitmanager {
     struct _unitLink unitList[0];
 };
 
-#define UNIT_FREE_TILE_POSITION ((tUbCoordYX){.ubY = -1, .ubX = -1})
-#define UNIT_INIT_TILE_POSITION ((tUbCoordYX){.ubY = 1, .ubX = 1})
 #define UNIT_MANAGER_SIZE (sizeof(struct _unitmanager) + sizeof(struct _unitLink) * MAX_UNITS)
 
 #ifdef ACE_DEBUG
@@ -68,7 +66,7 @@ tUnitManager * unitManagerCreate(void) {
     mgr->nextFreeUnit = &mgr->unitList[0];
     for (uint16_t i = 0; i < MAX_UNITS - 1; i++) {
 #ifdef ACE_DEBUG
-        unitSetTilePosition((Unit *)(&mgr->unitList[i]), UNIT_FREE_TILE_POSITION);
+        unitSetTilePosition((Unit *)(&mgr->unitList[i]), NULL, UNIT_FREE_TILE_POSITION);
 #endif
         mgr->unitList[i].next = &mgr->unitList[i + 1];
         mgr->unitList[i].prev = NULL;
@@ -161,7 +159,7 @@ Unit * unitNew(tUnitManager *pUnitListHead, enum UnitTypes typeIdx) {
     bobNewInit(&((Unit *)link)->bob, 32, 32, 1, type->spritesheet, type->mask, 0, 0);
     unitSetFrame((Unit *)link, 0);
     ((Unit *)link)->type = typeIdx;
-    unitSetTilePosition((Unit *)link, UNIT_INIT_TILE_POSITION);
+    unitSetTilePosition((Unit *)link, NULL, UNIT_INIT_TILE_POSITION);
     return (Unit *)link;
 }
 
@@ -170,7 +168,7 @@ void unitDelete(tUnitManager *pUnitListHead, Unit *unit) {
     if (!unitManagerUnitIsActive(unit)) {
         logWrite("Deleting inactive unit!!!");
     }
-    unitSetTilePosition(unit, UNIT_FREE_TILE_POSITION);
+    unitSetTilePosition(unit, NULL, UNIT_FREE_TILE_POSITION);
 #endif
     struct _unitLink *prev = ((struct _unitLink *)unit)->prev;
     if (prev) {

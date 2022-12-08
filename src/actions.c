@@ -28,6 +28,8 @@ void actionMove(Unit *unit, uint8_t **map) {
 
     tUbCoordYX tilePos = unitGetTilePosition(unit);
 
+    unmarkMapTile(map, tilePos.ubX, tilePos.ubY);
+
     WORD vectorX = unit->uwActionDataA - unit->bob.sPos.uwX;
     WORD vectorY = unit->uwActionDataB - unit->bob.sPos.uwY;
 
@@ -54,6 +56,9 @@ void actionMove(Unit *unit, uint8_t **map) {
     if (absVY) {
         unit->bob.sPos.uwY += vectorY / absVY * speed;
     }
+
+    tilePos = unitGetTilePosition(unit);
+    markMapTile(map, tilePos.ubX, tilePos.ubY);
 
     UBYTE nextFrame = unitGetFrame(unit) ? 0 : 1;
     if (absVX > absVY) {

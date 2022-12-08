@@ -7,32 +7,35 @@
 #include <stdint.h>
 
 UnitType UnitTypes[] = {
-    [dead] = {.spritesheet = NULL, .maxHP = 0, .hasMana = 0, .speed = 1},
-    [peasant] = {.spritesheet = NULL, .maxHP = 0, .hasMana = 0, .speed = 1},
-    [peon] = {.spritesheet = NULL, .maxHP = 0, .hasMana = 0, .speed = 1},
-    [footman] = {.spritesheet = NULL, .maxHP = 0, .hasMana = 0, .speed = 1},
-    [grunt] = {.spritesheet = NULL, .maxHP = 0, .hasMana = 0, .speed = 1},
-    [archer] = {.spritesheet = NULL, .maxHP = 0, .hasMana = 0, .speed = 1},
+    [dead] = {},
+    [peasant] = {},
+    [peon] = {},
+    [footman] = {},
+    [grunt] = {},
+    [archer] = {},
     [spearman] = {
         .spritesheetPath = "resources/units/spearthrower.bm",
         .maskPath = "resources/units/spearthrower.msk",
-        .maxHP = 60,
-        .hasMana = 0,
-        .speed = 4
+        .stats = {
+            .maxHP = 60,
+            .hasMana = 0,
+            .speed = 4,
+        },
+        .iconIdx = 50,
     },
-    [catapult] = {.spritesheet = NULL, .maxHP = 0, .hasMana = 0, .speed = 1},
-    [knight] = {.spritesheet = NULL, .maxHP = 0, .hasMana = 0, .speed = 1},
-    [raider] = {.spritesheet = NULL, .maxHP = 0, .hasMana = 0, .speed = 1},
-    [cleric] = {.spritesheet = NULL, .maxHP = 0, .hasMana = 0, .speed = 1},
-    [necrolyte] = {.spritesheet = NULL, .maxHP = 0, .hasMana = 0, .speed = 1},
-    [conjurer] = {.spritesheet = NULL, .maxHP = 0, .hasMana = 0, .speed = 1},
-    [warlock] = {.spritesheet = NULL, .maxHP = 0, .hasMana = 0, .speed = 1},
-    [spider] = {.spritesheet = NULL, .maxHP = 0, .hasMana = 0, .speed = 1},
-    [daemon] = {.spritesheet = NULL, .maxHP = 0, .hasMana = 0, .speed = 1},
-    [elemental] = {.spritesheet = NULL, .maxHP = 0, .hasMana = 0, .speed = 1},
-    [ogre] = {.spritesheet = NULL, .maxHP = 0, .hasMana = 0, .speed = 1},
-    [slime] = {.spritesheet = NULL, .maxHP = 0, .hasMana = 0, .speed = 1},
-    [thief] = {.spritesheet = NULL, .maxHP = 0, .hasMana = 0, .speed = 1}
+    [catapult] = {},
+    [knight] = {},
+    [raider] = {},
+    [cleric] = {},
+    [necrolyte] = {},
+    [conjurer] = {},
+    [warlock] = {},
+    [spider] = {},
+    [daemon] = {},
+    [elemental] = {},
+    [ogre] = {},
+    [slime] = {},
+    [thief] = {}
 };
 _Static_assert(sizeof(UnitTypes) == unitTypeCount * sizeof(UnitType));
 

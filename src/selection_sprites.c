@@ -51,7 +51,10 @@ void selectionSpritesSetup(tView *pView, uint16_t copListStart) {
     }
 }
 
-void selectionSpritesUpdate(uint8_t selectionIdx, uint16_t selectionX, uint16_t selectionY) {
+void selectionSpritesUpdate(uint8_t selectionIdx, int16_t selectionX, int16_t selectionY) {
+    if (selectionX < 0) {
+        return;
+    }
     uint16_t hstart = selectionX + 128;
     uint16_t vstart = selectionY + 44;
     uint16_t vstop = vstart + 15;

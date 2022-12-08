@@ -22,9 +22,9 @@ void selectionSpritesSetup(tView *pView, uint16_t copListStart);
  * @brief Update the selection's sprite data with the current position.
  * 
  * @param selectionIdx which rectangle to update our of NUM_SELECTION
- * @param selectionX
- * @param selectionY
+ * @param selectionX xPos. if <0, sprite is disabled
+ * @param selectionY yPos
  */
-void selectionSpritesUpdate(uint8_t selectionIdx, uint16_t selectionX, uint16_t selectionY);
+void selectionSpritesUpdate(uint8_t selectionIdx, int16_t selectionX, int16_t selectionY);
 
 #endif

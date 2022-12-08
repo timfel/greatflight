@@ -3,6 +3,7 @@
 
 #include "bob_new.h"
 #include "map.h"
+#include "icons.h"
 
 #include <stdint.h>
 #include <ace/utils/bitmap.h>
@@ -32,9 +33,12 @@ typedef struct {
         const char *maskPath;
         tBitMap *mask;
     };
-    uint8_t maxHP;
-    uint8_t speed;
-    uint8_t hasMana;
+    uint8_t iconIdx;
+    struct {
+        uint8_t maxHP;
+        uint8_t speed;
+        uint8_t hasMana;
+    } stats;
 } UnitType;
 
 enum UnitTypes {

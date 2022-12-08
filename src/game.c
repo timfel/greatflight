@@ -3,6 +3,7 @@
 #include "map.h"
 #include "units.h"
 #include "actions.h"
+#include "icons.h"
 #include "mouse_sprite.h"
 #include "selection_sprites.h"
 #include <ace/managers/copper.h>
@@ -30,23 +31,25 @@
 #define COLORS (1 << BPP)
 
 static tView *s_pView; // View containing all the viewports
+
 static tVPort *s_pVpPanel; // Viewport for panel
 static tSimpleBufferManager *s_pPanelBuffer;
+static tBitMap *s_pPanelBackground;
+static uint16_t s_pPanelPalette[COLORS];
+static tIcon s_panelUnitIcons[4];
+static tIcon s_panelActionIcons[6];
+static tBitMap *s_pIcons;
+
 static tVPort *s_pVpMain; // Viewport for playfield
 static tTileBufferManager *s_pMapBuffer;
 static tCameraManager *s_pMainCamera;
 static tBitMap *s_pMapBitmap;
-
-static tBitMap *s_pIcons;
+static uint16_t s_pMapPalette[COLORS];
 
 static tBobNew s_TileCursor;
 
 static tUnitManager *s_pUnitManager;
 static Unit *s_pSpearman;
-
-// palette switching
-static uint16_t s_pMapPalette[COLORS];
-static uint16_t s_pPanelPalette[COLORS];
 
 enum mode {
     game,
@@ -141,6 +144,43 @@ void initBobs(void) {
     bobNewReallocateBgBuffers();
 }
 
+void loadUi(uint16_t panelColorsPos, uint16_t simplePos) {
+    // create panel area
+    paletteLoad("resources/ui/panel.plt", s_pPanelPalette, COLORS);
+    tCopCmd *pCmds = &s_pView->pCopList->pBackBfr->pList[panelColorsPos];
+    for (uint8_t i = 0; i < COLORS; i++) {
+        copSetMove(&pCmds[i].sMove, &g_pCustom->color[i], s_pPanelPalette[i]);
+    }
+    pCmds = &s_pView->pCopList->pFrontBfr->pList[panelColorsPos];
+    for (uint8_t i = 0; i < COLORS; i++) {
+        copSetMove(&pCmds[i].sMove, &g_pCustom->color[i], s_pPanelPalette[i]);
+    }
+
+    logWrite("create panel viewport and simple buffer\n");
+    s_pVpPanel = vPortCreate(0,
+                             TAG_VPORT_VIEW, s_pView,
+                             TAG_VPORT_BPP, BPP,
+                             // TAG_VPORT_OFFSET_TOP, 1,
+                             TAG_VPORT_WIDTH, MAP_WIDTH,
+                            //  TAG_VPORT_HEIGHT, PANEL_HEIGHT,
+                             TAG_END);
+    s_pPanelBuffer = simpleBufferCreate(0,
+                                        TAG_SIMPLEBUFFER_VPORT, s_pVpPanel,
+                                        TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR | BMF_INTERLEAVED,
+                                        TAG_SIMPLEBUFFER_IS_DBLBUF, 0,
+                                        TAG_SIMPLEBUFFER_COPLIST_OFFSET, simplePos,
+                                        TAG_END);
+    s_pPanelBackground = bitmapCreateFromFile("resources/ui/panelbg.bm", 0);
+    bitmapLoadFromFile(s_pPanelBuffer->pFront, "resources/ui/panelbg.bm", 0, 0);
+
+    s_pIcons = bitmapCreateFromFile("resources/ui/icons.bm", 0);
+
+    iconInit(&s_panelUnitIcons[0], 32, 26, s_pIcons, 0, s_pPanelBuffer->pFront, (tUwCoordYX){.uwX = 56, .uwY = 12});
+    iconInit(&s_panelUnitIcons[1], 32, 26, s_pIcons, 0, s_pPanelBuffer->pFront, (tUwCoordYX){.uwX = 96, .uwY = 12});
+    iconInit(&s_panelUnitIcons[2], 32, 26, s_pIcons, 0, s_pPanelBuffer->pFront, (tUwCoordYX){.uwX = 136, .uwY = 12});
+    iconInit(&s_panelUnitIcons[3], 32, 26, s_pIcons, 0, s_pPanelBuffer->pFront, (tUwCoordYX){.uwX = 176, .uwY = 12});
+}
+
 void gameGsCreate(void) {
     viewLoad(0);
 
@@ -171,33 +211,7 @@ void gameGsCreate(void) {
 
     initBobs();
 
-    // create panel area
-    paletteLoad("resources/ui/panel.plt", s_pPanelPalette, COLORS);
-    tCopCmd *pCmds = &s_pView->pCopList->pBackBfr->pList[panelColorsPos];
-    for (uint8_t i = 0; i < COLORS; i++) {
-        copSetMove(&pCmds[i].sMove, &g_pCustom->color[i], s_pPanelPalette[i]);
-    }
-    pCmds = &s_pView->pCopList->pFrontBfr->pList[panelColorsPos];
-    for (uint8_t i = 0; i < COLORS; i++) {
-        copSetMove(&pCmds[i].sMove, &g_pCustom->color[i], s_pPanelPalette[i]);
-    }
-
-    logWrite("create panel viewport and simple buffer\n");
-    s_pVpPanel = vPortCreate(0,
-                             TAG_VPORT_VIEW, s_pView,
-                             TAG_VPORT_BPP, BPP,
-                             // TAG_VPORT_OFFSET_TOP, 1,
-                             TAG_VPORT_WIDTH, MAP_WIDTH,
-                            //  TAG_VPORT_HEIGHT, PANEL_HEIGHT,
-                             TAG_END);
-    s_pPanelBuffer = simpleBufferCreate(0,
-                                        TAG_SIMPLEBUFFER_VPORT, s_pVpPanel,
-                                        TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR | BMF_INTERLEAVED,
-                                        TAG_SIMPLEBUFFER_IS_DBLBUF, 1,
-                                        TAG_SIMPLEBUFFER_COPLIST_OFFSET, simplePos,
-                                        TAG_END);
-    bitmapLoadFromFile(s_pPanelBuffer->pFront, "resources/ui/panelbg.bm", 0, 0);
-    bitmapLoadFromFile(s_pPanelBuffer->pBack, "resources/ui/panelbg.bm", 0, 0);
+    loadUi(panelColorsPos, simplePos);
 
     viewLoad(s_pView);
 
@@ -255,9 +269,29 @@ void drawPanel(void) {
     g_pCustom->bltalwm = 0xffff;
     g_pCustom->bltamod = 0;
     g_pCustom->bltdmod = 0;
-    g_pCustom->bltapt = s_pPanelBuffer->pBack->Planes[0];
+    g_pCustom->bltapt = s_pPanelBackground->Planes[0];
     g_pCustom->bltdpt = s_pPanelBuffer->pFront->Planes[0];
-    g_pCustom->bltsize = ((PANEL_HEIGHT * 5) << 6) | (MAP_WIDTH >> 4);
+    g_pCustom->bltsize = ((PANEL_HEIGHT * BPP) << 6) | (MAP_WIDTH >> 4);
+
+    if (s_pSelectedUnit) {
+        tIcon *icon = &s_panelUnitIcons[0];
+        iconSetSource(icon, s_pIcons, UnitTypes[s_pSelectedUnit->type].iconIdx);
+        iconDraw(icon);
+    }
+}
+
+void drawSelectionRectangles(void) {
+    if (s_pSelectedUnit) {
+        int16_t bobPosOnScreenX = s_pSelectedUnit->bob.sPos.uwX - s_pMainCamera->uPos.uwX;
+        if (bobPosOnScreenX >= -8) {
+            int16_t bobPosOnScreenY = s_pSelectedUnit->bob.sPos.uwY - s_pMainCamera->uPos.uwY;
+            if (bobPosOnScreenX >= -8) {
+                selectionSpritesUpdate(0, bobPosOnScreenX + 8, bobPosOnScreenY + 8);
+                return;
+            }
+        }
+    }
+    selectionSpritesUpdate(0, -1, -1);
 }
 
 void gameGsLoop(void) {
@@ -299,6 +333,8 @@ void gameGsLoop(void) {
             Unit *unit = unitManagerUnitAt(s_pUnitManager, tile);
             if (unit) {
                 s_pSelectedUnit = unit;
+            } else {
+                s_pSelectedUnit = NULL;
             }
         } else if (s_pSelectedUnit && mouseCheck(MOUSE_PORT_1, MOUSE_RMB)) {
             tUbCoordYX tile = screenPosToTile((tUwCoordYX){.ulYX = mousePos.ulYX + s_pMainCamera->uPos.ulYX});
@@ -325,8 +361,7 @@ void gameGsLoop(void) {
     bobNewEnd();
 
     tileBufferQueueProcess(s_pMapBuffer);
-    // viewProcessManagers(s_pView);
-    vPortProcessManagers(s_pMapBuffer->sCommon.pVPort);
+    viewProcessManagers(s_pView);
     copSwapBuffers();
     // never process the panel buffer, it doesn't do anything
 
@@ -344,15 +379,7 @@ void gameGsLoop(void) {
     vPortWaitForEnd(s_pVpPanel);
 
     mouseSpriteUpdate(mouseX, mouseY);
-    if (s_pSelectedUnit) {
-        int16_t bobPosOnScreenX = s_pSelectedUnit->bob.sPos.uwX - s_pMainCamera->uPos.uwX;
-        if (bobPosOnScreenX >= -8) {
-            int16_t bobPosOnScreenY = s_pSelectedUnit->bob.sPos.uwY - s_pMainCamera->uPos.uwY;
-            if (bobPosOnScreenX >= -8) {
-                selectionSpritesUpdate(0, bobPosOnScreenX + 8, bobPosOnScreenY + 8);
-            }
-        }
-    }
+    drawSelectionRectangles();
 
     GameCycle++;
 }

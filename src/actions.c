@@ -24,7 +24,7 @@ void actionMoveTo(Unit *unit, tUbCoordYX goal) {
 #define moveCounterShift 0
 void actionMove(Unit *unit, uint8_t **map) {
     UnitType type = UnitTypes[unit->type];
-    UBYTE speed = type.speed;
+    UBYTE speed = type.stats.speed;
 
     tUbCoordYX tilePos = unitGetTilePosition(unit);
 

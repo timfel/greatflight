@@ -92,11 +92,29 @@ convertBitmaps(
 convertPalette(${GAME_LINKED} ${PROJECT_SOURCE_DIR}/resources/for.gpl ${PROJECT_BINARY_DIR}/resources/imgs/for.plt)
 
 # panel UI
-convertPalette(${GAME_LINKED} ${PROJECT_SOURCE_DIR}/resources/panel.gpl ${PROJECT_BINARY_DIR}/resources/ui/panel.plt)
+# rm icons/*.scaled.png
+# for i in icons/*.png; do convert $i -resize 32x32 $i.scaled.png; done
+# rm reduced/icons/*.png reduced/*.png
+# Rgb2Amiga -f png-gpl -s '!' -c 32 `for i in icons/*.scaled.png infopanel.png; do echo -n " -i $PWD/$i -o $PWD/reduced/$i.reduced"; done`
+# x=0; for i in reduced/icons/*.reduced.png; do mv $i ${i%/*}/${x}.png; x=$[x+1]; done
+convertPalette(${GAME_LINKED} ${PROJECT_SOURCE_DIR}/resources/inputs/panel/reduced/infopanel.png.reduced.gpl ${PROJECT_BINARY_DIR}/resources/ui/panel.plt)
 convertBitmaps(
        INTERLEAVED
        TARGET ${GAME_LINKED}
        PALETTE ${PROJECT_BINARY_DIR}/resources/ui/panel.plt
-       SOURCES ${PROJECT_SOURCE_DIR}/resources/infopanel.png
+       SOURCES ${PROJECT_SOURCE_DIR}/resources/inputs/panel/reduced/infopanel.png.reduced.png
        DESTINATIONS ${PROJECT_BINARY_DIR}/resources/ui/panelbg.bm
+)
+
+# icons
+FILE(GLOB icon_paths ${PROJECT_SOURCE_DIR}/resources/inputs/panel/reduced/icons/*.png)
+convertTileset(
+  INTERLEAVED
+  TARGET ${GAME_LINKED}
+  SOURCE ${PROJECT_SOURCE_DIR}/resources/inputs/panel/reduced/icons
+  TILE_PATHS icon_paths
+  DESTINATION ${PROJECT_BINARY_DIR}/resources/ui/icons.bm
+  SIZE 32
+  HEIGHT 26
+  PALETTE ${PROJECT_BINARY_DIR}/resources/ui/panel.plt
 )

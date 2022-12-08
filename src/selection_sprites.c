@@ -31,6 +31,9 @@ static uint16_t CHIP s_spriteData[NUM_SELECTION][SIZE_OF_SPRITE_DATA] = {
     SPRITE_DATA,
     SPRITE_DATA,
     SPRITE_DATA,
+    SPRITE_DATA,
+    SPRITE_DATA,
+    SPRITE_DATA,
     SPRITE_DATA
 };
 

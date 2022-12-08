@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <ace/utils/extview.h>
 
-#define NUM_SELECTION 4
+#define NUM_SELECTION 7
 
 static inline uint8_t selectionSpritesGetRawCopplistInstructionCountLength() {
     return 2 * NUM_SELECTION;

@@ -37,6 +37,8 @@ static tTileBufferManager *s_pMapBuffer;
 static tCameraManager *s_pMainCamera;
 static tBitMap *s_pMapBitmap;
 
+static tBitMap *s_pIcons;
+
 static tBobNew s_TileCursor;
 
 static tUnitManager *s_pUnitManager;
@@ -134,7 +136,6 @@ void initBobs(void) {
 
     s_pUnitManager = unitManagerCreate();
     s_pSpearman = unitNew(s_pUnitManager, spearman);
-    s_pSelectedUnit = s_pSpearman;
     unitSetTilePosition(s_pSpearman, (tUbCoordYX){.ubX = 7, .ubY = 7});
 
     bobNewReallocateBgBuffers();
@@ -192,9 +193,10 @@ void gameGsCreate(void) {
     s_pPanelBuffer = simpleBufferCreate(0,
                                         TAG_SIMPLEBUFFER_VPORT, s_pVpPanel,
                                         TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR | BMF_INTERLEAVED,
-                                        TAG_SIMPLEBUFFER_IS_DBLBUF, 0,
+                                        TAG_SIMPLEBUFFER_IS_DBLBUF, 1,
                                         TAG_SIMPLEBUFFER_COPLIST_OFFSET, simplePos,
                                         TAG_END);
+    bitmapLoadFromFile(s_pPanelBuffer->pFront, "resources/ui/panelbg.bm", 0, 0);
     bitmapLoadFromFile(s_pPanelBuffer->pBack, "resources/ui/panelbg.bm", 0, 0);
 
     viewLoad(s_pView);
@@ -217,13 +219,13 @@ void handleInput(tUwCoordYX mousePos) {
         s_Mode = edit;
     } else if (keyCheck(KEY_G)) {
         s_Mode = game;
-    } else if (keyCheck(KEY_UP) || mousePos.uwY < (TILE_SIZE >> 1)) {
+    } else if (keyCheck(KEY_UP)) {
         cameraMoveBy(s_pMainCamera, 0, -4);
-    } else if (keyCheck(KEY_DOWN) || ((MAP_HEIGHT - (TILE_SIZE >> 1)) - mousePos.uwY) < 0) {
+    } else if (keyCheck(KEY_DOWN)) {
         cameraMoveBy(s_pMainCamera, 0, 4);
-    } else if (keyCheck(KEY_LEFT) || mousePos.uwX < (TILE_SIZE >> 1)) {
+    } else if (keyCheck(KEY_LEFT)) {
         cameraMoveBy(s_pMainCamera, -4, 0);
-    } else if (keyCheck(KEY_RIGHT) || ((MAP_WIDTH - (TILE_SIZE >> 1)) - mousePos.uwX) < 0) {
+    } else if (keyCheck(KEY_RIGHT)) {
         cameraMoveBy(s_pMainCamera, 4, 0);
     } else if (keyCheck(KEY_SPACE)) {
         if (s_pMainCamera->uPos.ulYX == 0) {
@@ -232,16 +234,30 @@ void handleInput(tUwCoordYX mousePos) {
             cameraSetCoord(s_pMainCamera, 0, 0);
         }
     }
-    if (mousePos.uwY < (TILE_SIZE >> 1)) {
+    if (!mousePos.uwY) {
         cameraMoveBy(s_pMainCamera, 0, -4);
-    } else if (((MAP_HEIGHT - (TILE_SIZE >> 1)) - mousePos.uwY) < 0) {
+    } else if (mousePos.uwY >= MAP_HEIGHT + PANEL_HEIGHT) {
         cameraMoveBy(s_pMainCamera, 0, 4);
     }
-    if (mousePos.uwX < (TILE_SIZE >> 1)) {
+    if (!mousePos.uwX) {
         cameraMoveBy(s_pMainCamera, -4, 0);
-    } else if (((MAP_WIDTH - (TILE_SIZE >> 1)) - mousePos.uwX) < 0) {
+    } else if (mousePos.uwX > MAP_WIDTH - 1) {
         cameraMoveBy(s_pMainCamera, 4, 0);
     }
+}
+
+void drawPanel(void) {
+    // the panel is never actually swapped, the backbuffer is just the plain panel for redraw
+    blitWait(); // Don't modify registers when other blit is in progress
+    g_pCustom->bltcon0 = USEA|USED|MINTERM_A;
+    g_pCustom->bltcon1 = 0;
+    g_pCustom->bltafwm = 0xffff;
+    g_pCustom->bltalwm = 0xffff;
+    g_pCustom->bltamod = 0;
+    g_pCustom->bltdmod = 0;
+    g_pCustom->bltapt = s_pPanelBuffer->pBack->Planes[0];
+    g_pCustom->bltdpt = s_pPanelBuffer->pFront->Planes[0];
+    g_pCustom->bltsize = ((PANEL_HEIGHT * 5) << 6) | (MAP_WIDTH >> 4);
 }
 
 void gameGsLoop(void) {
@@ -316,21 +332,12 @@ void gameGsLoop(void) {
 
     handleInput(mousePos);
 
-    uint8_t renderCycle = GameCycle & 0b111;
+    uint8_t renderCycle = GameCycle & 0b1111;
     switch (renderCycle) {
         case 0:
+            drawPanel();
             break;
-        case 1:
-            break;
-        case 2:
-            break;
-        case 3:
-            break;
-        case 4:
-            break;
-        case 5:
-            break;
-        case 6:
+        default:
             break;
     }
 

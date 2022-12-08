@@ -53,6 +53,8 @@ void selectionSpritesSetup(tView *pView, uint16_t copListStart) {
 
 void selectionSpritesUpdate(uint8_t selectionIdx, int16_t selectionX, int16_t selectionY) {
     if (selectionX < 0) {
+        s_spriteData[selectionIdx][0] = 0;
+        s_spriteData[selectionIdx][1] = 0;
         return;
     }
     uint16_t hstart = selectionX + 128;

@@ -49,7 +49,6 @@ static uint16_t s_pMapPalette[COLORS];
 static tBobNew s_TileCursor;
 
 static tUnitManager *s_pUnitManager;
-static Unit *s_pSpearman;
 
 enum mode {
     game,
@@ -62,7 +61,7 @@ static UBYTE s_Mode = game;
 static UBYTE SelectedTile = 0x10;
 
 // game statics
-static Unit *s_pSelectedUnit = NULL;
+static Unit *s_pSelectedUnit[NUM_SELECTION];
 
 #define IMGDIR "resources/imgs/"
 #define MAPDIR "resources/maps/"
@@ -138,8 +137,10 @@ void initBobs(void) {
     bobNewSetBitMapOffset(&s_TileCursor, 0x10 << TILE_SHIFT);
 
     s_pUnitManager = unitManagerCreate();
-    s_pSpearman = unitNew(s_pUnitManager, spearman);
-    unitSetTilePosition(s_pSpearman, (tUbCoordYX){.ubX = 7, .ubY = 7});
+    unitSetTilePosition(unitNew(s_pUnitManager, spearman), (tUbCoordYX){.ubX = 7, .ubY = 7});
+    unitSetTilePosition(unitNew(s_pUnitManager, spearman), (tUbCoordYX){.ubX = 8, .ubY = 7});
+    unitSetTilePosition(unitNew(s_pUnitManager, spearman), (tUbCoordYX){.ubX = 7, .ubY = 8});
+    unitSetTilePosition(unitNew(s_pUnitManager, spearman), (tUbCoordYX){.ubX = 8, .ubY = 8});
 
     bobNewReallocateBgBuffers();
 }
@@ -176,9 +177,9 @@ void loadUi(uint16_t panelColorsPos, uint16_t simplePos) {
     s_pIcons = bitmapCreateFromFile("resources/ui/icons.bm", 0);
 
     iconInit(&s_panelUnitIcons[0], 32, 26, s_pIcons, 0, s_pPanelBuffer->pFront, (tUwCoordYX){.uwX = 56, .uwY = 12});
-    iconInit(&s_panelUnitIcons[1], 32, 26, s_pIcons, 0, s_pPanelBuffer->pFront, (tUwCoordYX){.uwX = 96, .uwY = 12});
-    iconInit(&s_panelUnitIcons[2], 32, 26, s_pIcons, 0, s_pPanelBuffer->pFront, (tUwCoordYX){.uwX = 136, .uwY = 12});
-    iconInit(&s_panelUnitIcons[3], 32, 26, s_pIcons, 0, s_pPanelBuffer->pFront, (tUwCoordYX){.uwX = 176, .uwY = 12});
+    iconInit(&s_panelUnitIcons[1], 32, 26, s_pIcons, 0, s_pPanelBuffer->pFront, (tUwCoordYX){.uwX = 88, .uwY = 12});
+    iconInit(&s_panelUnitIcons[2], 32, 26, s_pIcons, 0, s_pPanelBuffer->pFront, (tUwCoordYX){.uwX = 120, .uwY = 12});
+    iconInit(&s_panelUnitIcons[3], 32, 26, s_pIcons, 0, s_pPanelBuffer->pFront, (tUwCoordYX){.uwX = 152, .uwY = 12});
 }
 
 void gameGsCreate(void) {
@@ -273,25 +274,29 @@ void drawPanel(void) {
     g_pCustom->bltdpt = s_pPanelBuffer->pFront->Planes[0];
     g_pCustom->bltsize = ((PANEL_HEIGHT * BPP) << 6) | (MAP_WIDTH >> 4);
 
-    if (s_pSelectedUnit) {
-        tIcon *icon = &s_panelUnitIcons[0];
-        iconSetSource(icon, s_pIcons, UnitTypes[s_pSelectedUnit->type].iconIdx);
+    Unit *unit;
+    for(uint8_t idx = 0; idx < NUM_SELECTION && (unit = s_pSelectedUnit[idx]); ++idx) {
+        tIcon *icon = &s_panelUnitIcons[idx];
+        iconSetSource(icon, s_pIcons, UnitTypes[unit->type].iconIdx);
         iconDraw(icon);
     }
 }
 
 void drawSelectionRectangles(void) {
-    if (s_pSelectedUnit) {
-        int16_t bobPosOnScreenX = s_pSelectedUnit->bob.sPos.uwX - s_pMainCamera->uPos.uwX;
-        if (bobPosOnScreenX >= -8) {
-            int16_t bobPosOnScreenY = s_pSelectedUnit->bob.sPos.uwY - s_pMainCamera->uPos.uwY;
+    for(uint8_t idx = 0; idx < NUM_SELECTION; ++idx) {
+        Unit *unit = s_pSelectedUnit[idx];
+        if (unit) {
+            int16_t bobPosOnScreenX = s_pSelectedUnit[idx]->bob.sPos.uwX - s_pMainCamera->uPos.uwX;
             if (bobPosOnScreenX >= -8) {
-                selectionSpritesUpdate(0, bobPosOnScreenX + 8, bobPosOnScreenY + 8);
-                return;
+                int16_t bobPosOnScreenY = s_pSelectedUnit[idx]->bob.sPos.uwY - s_pMainCamera->uPos.uwY;
+                if (bobPosOnScreenX >= -8) {
+                    selectionSpritesUpdate(idx, bobPosOnScreenX + 8, bobPosOnScreenY + 8);
+                    continue;
+                }
             }
         }
+        selectionSpritesUpdate(idx, -1, -1);
     }
-    selectionSpritesUpdate(0, -1, -1);
 }
 
 void gameGsLoop(void) {
@@ -332,13 +337,38 @@ void gameGsLoop(void) {
             tUbCoordYX tile = screenPosToTile((tUwCoordYX){.ulYX = mousePos.ulYX + s_pMainCamera->uPos.ulYX});
             Unit *unit = unitManagerUnitAt(s_pUnitManager, tile);
             if (unit) {
-                s_pSelectedUnit = unit;
+                if (keyCheck(KEY_LSHIFT) || keyCheck(KEY_RSHIFT)) {
+                    for(uint8_t idx = 0; idx < NUM_SELECTION; ++idx) {
+                        Unit *sel = s_pSelectedUnit[idx];
+                        if (!sel) {
+                            s_pSelectedUnit[idx] = unit;
+                            break;
+                        }
+                        if (sel == unit) {
+                            break;
+                        }
+                    }
+                } else {
+                    s_pSelectedUnit[0] = unit;
+                    for(uint8_t idx = 1; idx < NUM_SELECTION; ++idx) {
+                        s_pSelectedUnit[idx] = NULL;
+                    }
+                }
             } else {
-                s_pSelectedUnit = NULL;
+                for(uint8_t idx = 0; idx < NUM_SELECTION; ++idx) {
+                    s_pSelectedUnit[idx] = NULL;
+                }
             }
-        } else if (s_pSelectedUnit && mouseCheck(MOUSE_PORT_1, MOUSE_RMB)) {
+        } else if (s_pSelectedUnit[0] && mouseCheck(MOUSE_PORT_1, MOUSE_RMB)) {
             tUbCoordYX tile = screenPosToTile((tUwCoordYX){.ulYX = mousePos.ulYX + s_pMainCamera->uPos.ulYX});
-            actionMoveTo(s_pSelectedUnit, tile);
+            for(uint8_t idx = 0; idx < NUM_SELECTION; ++idx) {
+                Unit *unit = s_pSelectedUnit[idx];
+                if (unit) {
+                    actionMoveTo(unit, tile);
+                } else {
+                    break;
+                }
+            }
         }
     }
 

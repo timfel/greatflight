@@ -226,6 +226,8 @@ static inline tUbCoordYX screenPosToTile(tUwCoordYX pos) {
 }
 
 void handleInput(tUwCoordYX mousePos) {
+    static tUwCoordYX lmbDown = {.ulYX = 0};
+
     if (keyCheck(KEY_ESCAPE)) {
         gameExit();
     } else if (keyCheck(KEY_C)) {
@@ -258,6 +260,55 @@ void handleInput(tUwCoordYX mousePos) {
         cameraMoveBy(s_pMainCamera, -4, 0);
     } else if (mousePos.uwX > MAP_WIDTH - 1) {
         cameraMoveBy(s_pMainCamera, 4, 0);
+    }
+
+    if (mouseCheck(MOUSE_PORT_1, MOUSE_LMB)) {
+        if (lmbDown.uwY) {
+            if (lmbDown.uwY - mousePos.uwY) {
+                selectionRectangleUpdate(lmbDown.uwX, mousePos.uwX, lmbDown.uwY, mousePos.uwY);
+            }
+        } else {
+            lmbDown = mousePos;
+            selectionRectangleUpdate(-1, -1, -1, -1);
+        }
+    } else if (lmbDown.ulYX) {
+        tUbCoordYX tile = screenPosToTile((tUwCoordYX){.ulYX = mousePos.ulYX + s_pMainCamera->uPos.ulYX});
+        Unit *unit = unitManagerUnitAt(s_pUnitManager, tile);
+        if (unit) {
+            if (keyCheck(KEY_LSHIFT) || keyCheck(KEY_RSHIFT)) {
+                for(uint8_t idx = 0; idx < NUM_SELECTION; ++idx) {
+                    Unit *sel = s_pSelectedUnit[idx];
+                    if (!sel) {
+                        s_pSelectedUnit[idx] = unit;
+                        break;
+                    }
+                    if (sel == unit) {
+                        break;
+                    }
+                }
+            } else {
+                s_pSelectedUnit[0] = unit;
+                for(uint8_t idx = 1; idx < NUM_SELECTION; ++idx) {
+                    s_pSelectedUnit[idx] = NULL;
+                }
+            }
+        } else {
+            for(uint8_t idx = 0; idx < NUM_SELECTION; ++idx) {
+                s_pSelectedUnit[idx] = NULL;
+            }
+        }
+        lmbDown.ulYX = 0;
+        selectionRectangleUpdate(-1, -1, -1, -1);
+    } else if (s_pSelectedUnit[0] && mouseCheck(MOUSE_PORT_1, MOUSE_RMB)) {
+        tUbCoordYX tile = screenPosToTile((tUwCoordYX){.ulYX = mousePos.ulYX + s_pMainCamera->uPos.ulYX});
+        for(uint8_t idx = 0; idx < NUM_SELECTION; ++idx) {
+            Unit *unit = s_pSelectedUnit[idx];
+            if (unit) {
+                actionMoveTo(unit, tile);
+            } else {
+                break;
+            }
+        }
     }
 }
 
@@ -330,45 +381,6 @@ void gameGsLoop(void) {
             tileBufferSetTile(s_pMapBuffer, tile.ubX, tile.ubY, SelectedTile);
             tileBufferQueueProcess(s_pMapBuffer);
             bobNewDiscardUndraw();
-        }
-    } else {
-        // mode == game
-        if (mouseCheck(MOUSE_PORT_1, MOUSE_LMB)) {
-            tUbCoordYX tile = screenPosToTile((tUwCoordYX){.ulYX = mousePos.ulYX + s_pMainCamera->uPos.ulYX});
-            Unit *unit = unitManagerUnitAt(s_pUnitManager, tile);
-            if (unit) {
-                if (keyCheck(KEY_LSHIFT) || keyCheck(KEY_RSHIFT)) {
-                    for(uint8_t idx = 0; idx < NUM_SELECTION; ++idx) {
-                        Unit *sel = s_pSelectedUnit[idx];
-                        if (!sel) {
-                            s_pSelectedUnit[idx] = unit;
-                            break;
-                        }
-                        if (sel == unit) {
-                            break;
-                        }
-                    }
-                } else {
-                    s_pSelectedUnit[0] = unit;
-                    for(uint8_t idx = 1; idx < NUM_SELECTION; ++idx) {
-                        s_pSelectedUnit[idx] = NULL;
-                    }
-                }
-            } else {
-                for(uint8_t idx = 0; idx < NUM_SELECTION; ++idx) {
-                    s_pSelectedUnit[idx] = NULL;
-                }
-            }
-        } else if (s_pSelectedUnit[0] && mouseCheck(MOUSE_PORT_1, MOUSE_RMB)) {
-            tUbCoordYX tile = screenPosToTile((tUwCoordYX){.ulYX = mousePos.ulYX + s_pMainCamera->uPos.ulYX});
-            for(uint8_t idx = 0; idx < NUM_SELECTION; ++idx) {
-                Unit *unit = s_pSelectedUnit[idx];
-                if (unit) {
-                    actionMoveTo(unit, tile);
-                } else {
-                    break;
-                }
-            }
         }
     }
 

@@ -4,10 +4,10 @@
 #include <stdint.h>
 #include <ace/utils/extview.h>
 
-#define NUM_SELECTION 7
+#define NUM_SELECTION 4
 
 static inline uint8_t selectionSpritesGetRawCopplistInstructionCountLength() {
-    return 2 * NUM_SELECTION;
+    return 2 * NUM_SELECTION + 4 /* selection rectangle sprite */;
 }
 
 /**
@@ -26,5 +26,15 @@ void selectionSpritesSetup(tView *pView, uint16_t copListStart);
  * @param selectionY yPos
  */
 void selectionSpritesUpdate(uint8_t selectionIdx, int16_t selectionX, int16_t selectionY);
+
+/**
+ * @brief Update the 3 sprites used for corners of selection rectangles.
+ * 
+ * @param x1 start x of selection
+ * @param x2 current x of mouse
+ * @param y1 start y of selection
+ * @param y2 current y of mouse
+ */
+void selectionRectangleUpdate(int16_t x1, int16_t x2, int16_t y1, int16_t y2);
 
 #endif

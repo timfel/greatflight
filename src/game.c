@@ -1,3 +1,6 @@
+#include <stdint.h>
+#include <limits.h>
+
 #include "game.h"
 #include "bob_new.h"
 #include "map.h"
@@ -23,7 +26,6 @@
 #include <ace/managers/viewport/scrollbuffer.h>
 #include <ace/managers/viewport/tilebuffer.h>
 #include <ace/managers/blit.h>
-#include <stdint.h>
 
 #include <graphics/sprite.h>
 
@@ -272,27 +274,47 @@ void handleInput(tUwCoordYX mousePos) {
             selectionRectangleUpdate(-1, -1, -1, -1);
         }
     } else if (lmbDown.ulYX) {
-        tUbCoordYX tile = screenPosToTile((tUwCoordYX){.ulYX = mousePos.ulYX + s_pMainCamera->uPos.ulYX});
-        Unit *unit = unitManagerUnitAt(s_pUnitManager, tile);
-        if (unit) {
-            if (keyCheck(KEY_LSHIFT) || keyCheck(KEY_RSHIFT)) {
-                for(uint8_t idx = 0; idx < NUM_SELECTION; ++idx) {
-                    Unit *sel = s_pSelectedUnit[idx];
-                    if (!sel) {
-                        s_pSelectedUnit[idx] = unit;
-                        break;
+        tUbCoordYX tile1 = screenPosToTile((tUwCoordYX){.ulYX = mousePos.ulYX + s_pMainCamera->uPos.ulYX});
+        tUbCoordYX tile2 = screenPosToTile((tUwCoordYX){.ulYX = lmbDown.ulYX + s_pMainCamera->uPos.ulYX});
+        uint8_t tmp = tile1.ubX - tile2.ubX;
+        uint8_t operand = tmp & (tmp >> (sizeof(int) * CHAR_BIT - 1));
+        uint8_t x1 = tile2.ubX + operand; // min(x, y)
+        uint8_t x2 = tile1.ubX - operand; // max(x, y)
+        tmp = tile1.ubY - tile2.ubY;
+        operand = tmp & (tmp >> (sizeof(int) * CHAR_BIT - 1));
+        uint8_t y1 = tile2.ubY + operand; // min(x, y)
+        uint8_t y2 = tile1.ubY - operand; // max(x, y)
+        tmp = 0;
+        while (y1 <= y2) {
+            uint8_t xcur = x1;
+            while (xcur <= x2) {
+                tUbCoordYX tile = (tUbCoordYX){.ubX = xcur, .ubY = y1};
+                Unit *unit = unitManagerUnitAt(s_pUnitManager, tile);
+                if (unit) {
+                    if (keyCheck(KEY_LSHIFT) || keyCheck(KEY_RSHIFT) || tmp) {
+                        for(uint8_t idx = 0; idx < NUM_SELECTION; ++idx) {
+                            Unit *sel = s_pSelectedUnit[idx];
+                            if (!sel) {
+                                s_pSelectedUnit[idx] = unit;
+                                break;
+                            }
+                            if (sel == unit) {
+                                break;
+                            }
+                        }
+                    } else {
+                        s_pSelectedUnit[0] = unit;
+                        for(uint8_t idx = 1; idx < NUM_SELECTION; ++idx) {
+                            s_pSelectedUnit[idx] = NULL;
+                        }
                     }
-                    if (sel == unit) {
-                        break;
-                    }
+                    ++tmp;
                 }
-            } else {
-                s_pSelectedUnit[0] = unit;
-                for(uint8_t idx = 1; idx < NUM_SELECTION; ++idx) {
-                    s_pSelectedUnit[idx] = NULL;
-                }
+                ++xcur;
             }
-        } else {
+            ++y1;
+        }
+        if (!tmp) {
             for(uint8_t idx = 0; idx < NUM_SELECTION; ++idx) {
                 s_pSelectedUnit[idx] = NULL;
             }

@@ -21,7 +21,7 @@ UnitType UnitTypes[] = {
             .hasMana = 0,
             .speed = 4,
         },
-        .iconIdx = 50,
+        .iconIdx = 54,
     },
     [catapult] = {},
     [knight] = {},

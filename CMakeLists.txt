@@ -98,7 +98,7 @@ convertPalette(${GAME_LINKED} ${PROJECT_SOURCE_DIR}/resources/for.gpl ${PROJECT_
 # rm reduced/icons/*.png reduced/*.png
 # Rgb2Amiga -f png-gpl -s '!' -c 32 `for i in icons/*.scaled.png toppanel.png bottompanel.png; do echo -n " -i $PWD/$i -o $PWD/reduced/$i.reduced"; done`
 # x=0; for i in reduced/icons/*.reduced.png; do mv $i ${i%/*}/${x}.png; x=$[x+1]; done
-convertPalette(${GAME_LINKED} ${PROJECT_SOURCE_DIR}/resources/inputs/panel/reduced/infopanel.png.reduced.gpl ${PROJECT_BINARY_DIR}/resources/ui/panel.plt)
+convertPalette(${GAME_LINKED} ${PROJECT_SOURCE_DIR}/resources/inputs/panel/reduced/bottompanel.png.reduced.gpl ${PROJECT_BINARY_DIR}/resources/ui/panel.plt)
 convertBitmaps(
        INTERLEAVED
        TARGET ${GAME_LINKED}

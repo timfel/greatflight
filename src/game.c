@@ -95,7 +95,6 @@ void createViewports() {
     s_pVpPanel = vPortCreate(0,
                              TAG_VPORT_VIEW, s_pView,
                              TAG_VPORT_BPP, BPP,
-                             // TAG_VPORT_OFFSET_TOP, 1,
                              TAG_VPORT_WIDTH, MAP_WIDTH,
                              TAG_VPORT_HEIGHT, BOTTOM_PANEL_HEIGHT,
                              TAG_END);
@@ -196,7 +195,7 @@ void loadUi(uint16_t topPanelColorsPos, uint16_t panelColorsPos, uint16_t simple
                                         TAG_SIMPLEBUFFER_IS_DBLBUF, 0,
                                         TAG_SIMPLEBUFFER_COPLIST_OFFSET, simplePosTop,
                                         TAG_END);
-    s_pPanelBackground = bitmapCreateFromFile("resources/ui/toppanel.bm", 0);
+    s_pTopPanelBackground = bitmapCreateFromFile("resources/ui/toppanel.bm", 0);
     bitmapLoadFromFile(s_pTopPanelBuffer->pFront, "resources/ui/toppanel.bm", 0, 0);
 
     s_pPanelBuffer = simpleBufferCreate(0,
@@ -210,10 +209,10 @@ void loadUi(uint16_t topPanelColorsPos, uint16_t panelColorsPos, uint16_t simple
 
     s_pIcons = bitmapCreateFromFile("resources/ui/icons.bm", 0);
 
-    iconInit(&s_panelUnitIcons[0], 32, 26, s_pIcons, 0, s_pPanelBuffer->pFront, (tUwCoordYX){.uwX = 56, .uwY = 12});
-    iconInit(&s_panelUnitIcons[1], 32, 26, s_pIcons, 0, s_pPanelBuffer->pFront, (tUwCoordYX){.uwX = 88, .uwY = 12});
-    iconInit(&s_panelUnitIcons[2], 32, 26, s_pIcons, 0, s_pPanelBuffer->pFront, (tUwCoordYX){.uwX = 120, .uwY = 12});
-    iconInit(&s_panelUnitIcons[3], 32, 26, s_pIcons, 0, s_pPanelBuffer->pFront, (tUwCoordYX){.uwX = 152, .uwY = 12});
+    iconInit(&s_panelUnitIcons[0], 32, 26, s_pIcons, 0, s_pPanelBuffer->pFront, (tUwCoordYX){.uwX = 88, .uwY = 18});
+    iconInit(&s_panelUnitIcons[1], 32, 26, s_pIcons, 0, s_pPanelBuffer->pFront, (tUwCoordYX){.uwX = 150, .uwY = 18});
+    iconInit(&s_panelUnitIcons[2], 32, 26, s_pIcons, 0, s_pPanelBuffer->pFront, (tUwCoordYX){.uwX = 88, .uwY = 44});
+    iconInit(&s_panelUnitIcons[3], 32, 26, s_pIcons, 0, s_pPanelBuffer->pFront, (tUwCoordYX){.uwX = 150, .uwY = 44});
 }
 
 void gameGsCreate(void) {
@@ -303,7 +302,7 @@ void handleInput(tUwCoordYX mousePos) {
     if (mouseCheck(MOUSE_PORT_1, MOUSE_LMB)) {
         if (lmbDown.uwY) {
             if (lmbDown.uwY - mousePos.uwY) {
-                selectionRectangleUpdate(lmbDown.uwX, mousePos.uwX, lmbDown.uwY, mousePos.uwY);
+                selectionRectangleUpdate(lmbDown.uwX, mousePos.uwX, lmbDown.uwY + TOP_PANEL_HEIGHT, mousePos.uwY + TOP_PANEL_HEIGHT);
             }
         } else {
             lmbDown = mousePos;
@@ -409,7 +408,7 @@ void drawSelectionRectangles(void) {
         if (unit) {
             int16_t bobPosOnScreenX = s_pSelectedUnit[idx]->bob.sPos.uwX - s_pMainCamera->uPos.uwX;
             if (bobPosOnScreenX >= -8) {
-                int16_t bobPosOnScreenY = s_pSelectedUnit[idx]->bob.sPos.uwY - s_pMainCamera->uPos.uwY;
+                int16_t bobPosOnScreenY = s_pSelectedUnit[idx]->bob.sPos.uwY - s_pMainCamera->uPos.uwY + TOP_PANEL_HEIGHT;
                 if (bobPosOnScreenX >= -8) {
                     selectionSpritesUpdate(idx, bobPosOnScreenX + 8, bobPosOnScreenY + 8);
                     continue;

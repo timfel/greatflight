@@ -34,6 +34,9 @@
 
 static tView *s_pView; // View containing all the viewports
 
+static tVPort *s_pVpTopPanel; // Viewport for resources
+static tSimpleBufferManager *s_pTopPanelBuffer;
+static tBitMap *s_pTopPanelBackground;
 static tVPort *s_pVpPanel; // Viewport for panel
 static tSimpleBufferManager *s_pPanelBuffer;
 static tBitMap *s_pPanelBackground;
@@ -70,10 +73,33 @@ static Unit *s_pSelectedUnit[NUM_SELECTION];
 #define LONGEST_MAPNAME "human12.map"
 
 #define MAP_WIDTH 320
-#define MAP_HEIGHT 192
-#define PANEL_HEIGHT 48
+#define MAP_HEIGHT 160
+#define TOP_PANEL_HEIGHT 10
+#define BOTTOM_PANEL_HEIGHT 70
 #define VISIBLE_TILES_X (MAP_WIDTH >> TILE_SHIFT)
 #define VISIBLE_TILES_Y (MAP_HEIGHT >> TILE_SHIFT)
+
+void createViewports() {
+    s_pVpTopPanel = vPortCreate(0,
+                             TAG_VPORT_VIEW, s_pView,
+                             TAG_VPORT_BPP, BPP,
+                             TAG_VPORT_WIDTH, MAP_WIDTH,
+                             TAG_VPORT_HEIGHT, TOP_PANEL_HEIGHT,
+                             TAG_END);
+    s_pVpMain = vPortCreate(0,
+                            TAG_VPORT_VIEW, s_pView,
+                            TAG_VPORT_BPP, BPP,
+                            TAG_VPORT_WIDTH, MAP_WIDTH,
+                            TAG_VPORT_HEIGHT, MAP_HEIGHT,
+                            TAG_END);
+    s_pVpPanel = vPortCreate(0,
+                             TAG_VPORT_VIEW, s_pView,
+                             TAG_VPORT_BPP, BPP,
+                             // TAG_VPORT_OFFSET_TOP, 1,
+                             TAG_VPORT_WIDTH, MAP_WIDTH,
+                             TAG_VPORT_HEIGHT, BOTTOM_PANEL_HEIGHT,
+                             TAG_END);
+}
 
 void loadMap(const char* name, uint16_t tilebufCoplistStart, uint16_t tilebufCoplistBreak, uint16_t mapColorsCoplistStart) {
     char* mapname = MAPDIR LONGEST_MAPNAME;
@@ -102,12 +128,6 @@ void loadMap(const char* name, uint16_t tilebufCoplistStart, uint16_t tilebufCop
         copSetMove(&pCmds[i].sMove, &g_pCustom->color[i], s_pMapPalette[i]);
     }
 
-    s_pVpMain = vPortCreate(0,
-                            TAG_VPORT_VIEW, s_pView,
-                            TAG_VPORT_BPP, BPP,
-                            TAG_VPORT_WIDTH, MAP_WIDTH,
-                            TAG_VPORT_HEIGHT, MAP_HEIGHT,
-                            TAG_END);
     s_pMapBitmap = bitmapCreateFromFile(imgname, 0);
     s_pMapBuffer = tileBufferCreate(0,
                                     TAG_TILEBUFFER_VPORT, s_pVpMain,
@@ -147,10 +167,20 @@ void initBobs(void) {
     bobNewReallocateBgBuffers();
 }
 
-void loadUi(uint16_t panelColorsPos, uint16_t simplePos) {
+void loadUi(uint16_t topPanelColorsPos, uint16_t panelColorsPos, uint16_t simplePosTop, uint16_t simplePosBottom) {
     // create panel area
     paletteLoad("resources/ui/panel.plt", s_pPanelPalette, COLORS);
-    tCopCmd *pCmds = &s_pView->pCopList->pBackBfr->pList[panelColorsPos];
+
+    tCopCmd *pCmds = &s_pView->pCopList->pBackBfr->pList[topPanelColorsPos];
+    for (uint8_t i = 0; i < COLORS; i++) {
+        copSetMove(&pCmds[i].sMove, &g_pCustom->color[i], s_pPanelPalette[i]);
+    }
+    pCmds = &s_pView->pCopList->pFrontBfr->pList[topPanelColorsPos];
+    for (uint8_t i = 0; i < COLORS; i++) {
+        copSetMove(&pCmds[i].sMove, &g_pCustom->color[i], s_pPanelPalette[i]);
+    }
+
+    pCmds = &s_pView->pCopList->pBackBfr->pList[panelColorsPos];
     for (uint8_t i = 0; i < COLORS; i++) {
         copSetMove(&pCmds[i].sMove, &g_pCustom->color[i], s_pPanelPalette[i]);
     }
@@ -160,21 +190,23 @@ void loadUi(uint16_t panelColorsPos, uint16_t simplePos) {
     }
 
     logWrite("create panel viewport and simple buffer\n");
-    s_pVpPanel = vPortCreate(0,
-                             TAG_VPORT_VIEW, s_pView,
-                             TAG_VPORT_BPP, BPP,
-                             // TAG_VPORT_OFFSET_TOP, 1,
-                             TAG_VPORT_WIDTH, MAP_WIDTH,
-                            //  TAG_VPORT_HEIGHT, PANEL_HEIGHT,
-                             TAG_END);
+    s_pTopPanelBuffer = simpleBufferCreate(0,
+                                        TAG_SIMPLEBUFFER_VPORT, s_pVpTopPanel,
+                                        TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR | BMF_INTERLEAVED,
+                                        TAG_SIMPLEBUFFER_IS_DBLBUF, 0,
+                                        TAG_SIMPLEBUFFER_COPLIST_OFFSET, simplePosTop,
+                                        TAG_END);
+    s_pPanelBackground = bitmapCreateFromFile("resources/ui/toppanel.bm", 0);
+    bitmapLoadFromFile(s_pTopPanelBuffer->pFront, "resources/ui/toppanel.bm", 0, 0);
+
     s_pPanelBuffer = simpleBufferCreate(0,
                                         TAG_SIMPLEBUFFER_VPORT, s_pVpPanel,
                                         TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR | BMF_INTERLEAVED,
                                         TAG_SIMPLEBUFFER_IS_DBLBUF, 0,
-                                        TAG_SIMPLEBUFFER_COPLIST_OFFSET, simplePos,
+                                        TAG_SIMPLEBUFFER_COPLIST_OFFSET, simplePosBottom,
                                         TAG_END);
-    s_pPanelBackground = bitmapCreateFromFile("resources/ui/panelbg.bm", 0);
-    bitmapLoadFromFile(s_pPanelBuffer->pFront, "resources/ui/panelbg.bm", 0, 0);
+    s_pPanelBackground = bitmapCreateFromFile("resources/ui/bottompanel.bm", 0);
+    bitmapLoadFromFile(s_pPanelBuffer->pFront, "resources/ui/bottompanel.bm", 0, 0);
 
     s_pIcons = bitmapCreateFromFile("resources/ui/icons.bm", 0);
 
@@ -190,11 +222,13 @@ void gameGsCreate(void) {
     // Calculate copperlist size
     uint16_t spritePos = 0;
     uint16_t selectionPos = spritePos + mouseSpriteGetRawCopplistInstructionCountLength();
-    uint16_t tilebufCoplistStart = selectionPos + selectionSpritesGetRawCopplistInstructionCountLength();
+    uint16_t simplePosTop = selectionPos + selectionSpritesGetRawCopplistInstructionCountLength();
+    uint16_t topPanelColorsPos = simplePosTop + simpleBufferGetRawCopperlistInstructionCount(BPP);
+    uint16_t tilebufCoplistStart = topPanelColorsPos + COLORS;
     uint16_t mapColorsCoplistStart = tilebufCoplistStart + tileBufferGetRawCopperlistInstructionCountStart(BPP);
     uint16_t tilebufCoplistBreak = mapColorsCoplistStart + COLORS;
-    uint16_t simplePos = tilebufCoplistBreak + tileBufferGetRawCopperlistInstructionCountBreak(BPP);
-    uint16_t panelColorsPos = simplePos + simpleBufferGetRawCopperlistInstructionCount(BPP);
+    uint16_t simplePosBottom = tilebufCoplistBreak + tileBufferGetRawCopperlistInstructionCountBreak(BPP);
+    uint16_t panelColorsPos = simplePosBottom + simpleBufferGetRawCopperlistInstructionCount(BPP);
     uint16_t copListLength = panelColorsPos + COLORS;
 
     // Create the game view
@@ -209,12 +243,14 @@ void gameGsCreate(void) {
     // setup selection rectangles
     selectionSpritesSetup(s_pView, selectionPos);
 
+    createViewports();
+
     // load map file
     loadMap("game2", tilebufCoplistStart, tilebufCoplistBreak, mapColorsCoplistStart);
 
     initBobs();
 
-    loadUi(panelColorsPos, simplePos);
+    loadUi(topPanelColorsPos, panelColorsPos, simplePosTop, simplePosBottom);
 
     viewLoad(s_pView);
 
@@ -255,7 +291,7 @@ void handleInput(tUwCoordYX mousePos) {
     }
     if (!mousePos.uwY) {
         cameraMoveBy(s_pMainCamera, 0, -4);
-    } else if (mousePos.uwY >= MAP_HEIGHT + PANEL_HEIGHT) {
+    } else if (mousePos.uwY >= MAP_HEIGHT + BOTTOM_PANEL_HEIGHT - 1) {
         cameraMoveBy(s_pMainCamera, 0, 4);
     }
     if (!mousePos.uwX) {
@@ -343,9 +379,21 @@ void drawPanel(void) {
     g_pCustom->bltalwm = 0xffff;
     g_pCustom->bltamod = 0;
     g_pCustom->bltdmod = 0;
+    g_pCustom->bltapt = s_pTopPanelBackground->Planes[0];
+    g_pCustom->bltdpt = s_pTopPanelBuffer->pFront->Planes[0];
+    g_pCustom->bltsize = ((TOP_PANEL_HEIGHT * BPP) << 6) | (MAP_WIDTH >> 4);
+
+    // the panel is never actually swapped, the backbuffer is just the plain panel for redraw
+    blitWait(); // Don't modify registers when other blit is in progress
+    g_pCustom->bltcon0 = USEA|USED|MINTERM_A;
+    g_pCustom->bltcon1 = 0;
+    g_pCustom->bltafwm = 0xffff;
+    g_pCustom->bltalwm = 0xffff;
+    g_pCustom->bltamod = 0;
+    g_pCustom->bltdmod = 0;
     g_pCustom->bltapt = s_pPanelBackground->Planes[0];
     g_pCustom->bltdpt = s_pPanelBuffer->pFront->Planes[0];
-    g_pCustom->bltsize = ((PANEL_HEIGHT * BPP) << 6) | (MAP_WIDTH >> 4);
+    g_pCustom->bltsize = ((BOTTOM_PANEL_HEIGHT * BPP) << 6) | (MAP_WIDTH >> 4);
 
     Unit *unit;
     for(uint8_t idx = 0; idx < NUM_SELECTION && (unit = s_pSelectedUnit[idx]); ++idx) {

@@ -34,6 +34,9 @@
 
 static tView *s_pView; // View containing all the viewports
 
+static uint8_t s_ubTopPanelDirty;
+static uint8_t s_ubBottomPanelDirty;
+
 static tVPort *s_pVpTopPanel; // Viewport for resources
 static tSimpleBufferManager *s_pTopPanelBuffer;
 static tBitMap *s_pTopPanelBackground;
@@ -259,7 +262,7 @@ void gameGsCreate(void) {
 }
 
 static inline tUbCoordYX screenPosToTile(tUwCoordYX pos) {
-    return (tUbCoordYX){.ubX = pos.uwX >> TILE_SHIFT, .ubY = pos.uwY >> TILE_SHIFT};
+    return (tUbCoordYX){.ubX = pos.uwX >> TILE_SHIFT, .ubY = (pos.uwY - TOP_PANEL_HEIGHT) >> TILE_SHIFT};
 }
 
 void handleInput(tUwCoordYX mousePos) {
@@ -331,6 +334,7 @@ void handleInput(tUwCoordYX mousePos) {
                             Unit *sel = s_pSelectedUnit[idx];
                             if (!sel) {
                                 s_pSelectedUnit[idx] = unit;
+                                s_ubBottomPanelDirty = 1;
                                 break;
                             }
                             if (sel == unit) {
@@ -341,6 +345,7 @@ void handleInput(tUwCoordYX mousePos) {
                         s_pSelectedUnit[0] = unit;
                         for(uint8_t idx = 1; idx < NUM_SELECTION; ++idx) {
                             s_pSelectedUnit[idx] = NULL;
+                            s_ubBottomPanelDirty = 1;
                         }
                     }
                     ++tmp;
@@ -352,6 +357,7 @@ void handleInput(tUwCoordYX mousePos) {
         if (!tmp) {
             for(uint8_t idx = 0; idx < NUM_SELECTION; ++idx) {
                 s_pSelectedUnit[idx] = NULL;
+                s_ubBottomPanelDirty = 1;
             }
         }
         lmbDown.ulYX = 0;
@@ -370,35 +376,43 @@ void handleInput(tUwCoordYX mousePos) {
 }
 
 void drawPanel(void) {
-    // the panel is never actually swapped, the backbuffer is just the plain panel for redraw
-    blitWait(); // Don't modify registers when other blit is in progress
-    g_pCustom->bltcon0 = USEA|USED|MINTERM_A;
-    g_pCustom->bltcon1 = 0;
-    g_pCustom->bltafwm = 0xffff;
-    g_pCustom->bltalwm = 0xffff;
-    g_pCustom->bltamod = 0;
-    g_pCustom->bltdmod = 0;
-    g_pCustom->bltapt = s_pTopPanelBackground->Planes[0];
-    g_pCustom->bltdpt = s_pTopPanelBuffer->pFront->Planes[0];
-    g_pCustom->bltsize = ((TOP_PANEL_HEIGHT * BPP) << 6) | (MAP_WIDTH >> 4);
+    if (s_ubTopPanelDirty) {
+        // TODO: only store and redraw the dirty part
+        s_ubTopPanelDirty = 0;
+        // the panel is never actually swapped, the backbuffer is just the plain panel for redraw
+        blitWait(); // Don't modify registers when other blit is in progress
+        g_pCustom->bltcon0 = USEA|USED|MINTERM_A;
+        g_pCustom->bltcon1 = 0;
+        g_pCustom->bltafwm = 0xffff;
+        g_pCustom->bltalwm = 0xffff;
+        g_pCustom->bltamod = 0;
+        g_pCustom->bltdmod = 0;
+        g_pCustom->bltapt = s_pTopPanelBackground->Planes[0];
+        g_pCustom->bltdpt = s_pTopPanelBuffer->pFront->Planes[0];
+        g_pCustom->bltsize = ((TOP_PANEL_HEIGHT * BPP) << 6) | (MAP_WIDTH >> 4);
+    }
 
-    // the panel is never actually swapped, the backbuffer is just the plain panel for redraw
-    blitWait(); // Don't modify registers when other blit is in progress
-    g_pCustom->bltcon0 = USEA|USED|MINTERM_A;
-    g_pCustom->bltcon1 = 0;
-    g_pCustom->bltafwm = 0xffff;
-    g_pCustom->bltalwm = 0xffff;
-    g_pCustom->bltamod = 0;
-    g_pCustom->bltdmod = 0;
-    g_pCustom->bltapt = s_pPanelBackground->Planes[0];
-    g_pCustom->bltdpt = s_pPanelBuffer->pFront->Planes[0];
-    g_pCustom->bltsize = ((BOTTOM_PANEL_HEIGHT * BPP) << 6) | (MAP_WIDTH >> 4);
+    if (s_ubBottomPanelDirty) {
+        // TODO: only store and redraw the dirty part?
+        s_ubBottomPanelDirty = 0;
+        // the panel is never actually swapped, the backbuffer is just the plain panel for redraw
+        blitWait(); // Don't modify registers when other blit is in progress
+        g_pCustom->bltcon0 = USEA|USED|MINTERM_A;
+        g_pCustom->bltcon1 = 0;
+        g_pCustom->bltafwm = 0xffff;
+        g_pCustom->bltalwm = 0xffff;
+        g_pCustom->bltamod = 0;
+        g_pCustom->bltdmod = 0;
+        g_pCustom->bltapt = s_pPanelBackground->Planes[0];
+        g_pCustom->bltdpt = s_pPanelBuffer->pFront->Planes[0];
+        g_pCustom->bltsize = ((BOTTOM_PANEL_HEIGHT * BPP) << 6) | (MAP_WIDTH >> 4);
 
-    Unit *unit;
-    for(uint8_t idx = 0; idx < NUM_SELECTION && (unit = s_pSelectedUnit[idx]); ++idx) {
-        tIcon *icon = &s_panelUnitIcons[idx];
-        iconSetSource(icon, s_pIcons, UnitTypes[unit->type].iconIdx);
-        iconDraw(icon);
+        Unit *unit;
+        for(uint8_t idx = 0; idx < NUM_SELECTION && (unit = s_pSelectedUnit[idx]); ++idx) {
+            tIcon *icon = &s_panelUnitIcons[idx];
+            iconSetSource(icon, s_pIcons, UnitTypes[unit->type].iconIdx);
+            iconDraw(icon);
+        }
     }
 }
 

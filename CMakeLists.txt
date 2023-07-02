@@ -61,6 +61,9 @@ add_custom_command(
 	COMMAND ${CMAKE_COMMAND} ARGS -E copy ${PROJECT_SOURCE_DIR}/resources/maps/game2.map ${PROJECT_BINARY_DIR}/resources/maps/game2.map
 )
 
+# cd units
+# rm reduced/*
+# Rgb2Amiga -f png-gpl -s '!' -c 32 `for i in newtilemap.png spearthrower.png; do echo -n " -i $PWD/$i -o $PWD/reduced/$i.reduced"; done`
 convertTileset(
        INTERLEAVED
        TARGET ${GAME_LINKED}

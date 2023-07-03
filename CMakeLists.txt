@@ -67,17 +67,17 @@ add_custom_command(
 convertTileset(
        INTERLEAVED
        TARGET ${GAME_LINKED}
-       SOURCE ${PROJECT_SOURCE_DIR}/resources/for.png
-       TILE_PATHS ${PROJECT_SOURCE_DIR}/resources/for.png
+       SOURCE ${PROJECT_SOURCE_DIR}/resources/inputs/units/reduced/newtilemap.png.reduced.png
+       TILE_PATHS ${PROJECT_SOURCE_DIR}/resources/inputs/units/reduced/newtilemap.png.reduced.png
        DESTINATION ${PROJECT_BINARY_DIR}/resources/imgs/for.bm
-       SIZE 16
+       SIZE 32
        PALETTE ${PROJECT_BINARY_DIR}/resources/imgs/for.plt)
 
 convertTileset(
        INTERLEAVED
        TARGET ${GAME_LINKED}
-       SOURCE ${PROJECT_SOURCE_DIR}/resources/spearthrower.png
-       TILE_PATHS ${PROJECT_SOURCE_DIR}/resources/spearthrower.png
+       SOURCE ${PROJECT_SOURCE_DIR}/resources/inputs/units/reduced/spearthrower.png.reduced.png
+       TILE_PATHS ${PROJECT_SOURCE_DIR}/resources/inputs/units/reduced/spearthrower.png.reduced.png
        DESTINATION ${PROJECT_BINARY_DIR}/spearthrower.png
        SIZE 32
        PALETTE ${PROJECT_BINARY_DIR}/resources/imgs/for.plt
@@ -93,7 +93,7 @@ convertBitmaps(
        MASKS ${PROJECT_BINARY_DIR}/resources/units/spearthrower.msk
 )
 
-convertPalette(${GAME_LINKED} ${PROJECT_SOURCE_DIR}/resources/for.gpl ${PROJECT_BINARY_DIR}/resources/imgs/for.plt)
+convertPalette(${GAME_LINKED} ${PROJECT_SOURCE_DIR}/resources/inputs/units/reduced/newtilemap.png.reduced.gpl ${PROJECT_BINARY_DIR}/resources/imgs/for.plt)
 
 # panel UI
 # rm icons/*.scaled.png

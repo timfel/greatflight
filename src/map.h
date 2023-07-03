@@ -4,9 +4,9 @@
 #include <stdint.h>
 #include "ace/types.h"
 
-#define TILE_SIZE 16
-#define TILE_SHIFT 4
-#define MAP_SIZE 64
+#define TILE_SIZE 32
+#define TILE_SHIFT 5
+#define MAP_SIZE 32
 
 static inline uint8_t mapIsWalkable(uint8_t **map, uint8_t x, uint8_t y) {
     return map[x][y] < 15;

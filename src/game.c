@@ -145,8 +145,7 @@ void loadMap(const char* name, uint16_t mapbufCoplistStart, uint16_t mapColorsCo
                                     TAG_SIMPLEBUFFER_COPLIST_OFFSET, mapbufCoplistStart,
                                     TAG_SIMPLEBUFFER_USE_X_SCROLLING, 1,
                                     TAG_END);
-    s_pMainCamera = s_pMapBuffer->pCamera;
-    cameraSetCoord(s_pMainCamera, 0, 0);
+    s_pMainCamera = cameraCreate(s_pVpMain, 0, 0, MAP_SIZE * TILE_SIZE - MAP_WIDTH, MAP_SIZE * TILE_SIZE - MAP_HEIGHT, 0);
 
     for (int x = 0; x < MAP_SIZE; x++) {
         fileRead(map, s_ubTilemap, MAP_SIZE);
@@ -238,7 +237,7 @@ void gameGsCreate(void) {
     s_pView = viewCreate(0,
                          TAG_VIEW_COPLIST_MODE, VIEW_COPLIST_MODE_RAW,
                          TAG_VIEW_COPLIST_RAW_COUNT, copListLength,
-                         TAG_VIEW_WINDOW_HEIGHT, 242,
+                         TAG_VIEW_WINDOW_HEIGHT, TOP_PANEL_HEIGHT + 1 + MAP_HEIGHT + 1 + BOTTOM_PANEL_HEIGHT,
                          TAG_DONE);
 
     // setup mouse
@@ -280,28 +279,30 @@ void handleInput(tUwCoordYX mousePos) {
         s_Mode = game;
     } else if (keyCheck(KEY_UP)) {
         cameraMoveBy(s_pMainCamera, 0, -4);
+        s_pMapBuffer->pCamera->uPos.uwY = s_pMainCamera->uPos.uwY % TILE_SIZE;
     } else if (keyCheck(KEY_DOWN)) {
         cameraMoveBy(s_pMainCamera, 0, 4);
+        s_pMapBuffer->pCamera->uPos.uwY = s_pMainCamera->uPos.uwY % TILE_SIZE;
     } else if (keyCheck(KEY_LEFT)) {
         cameraMoveBy(s_pMainCamera, -4, 0);
+        s_pMapBuffer->pCamera->uPos.uwX = s_pMainCamera->uPos.uwX % TILE_SIZE;
     } else if (keyCheck(KEY_RIGHT)) {
         cameraMoveBy(s_pMainCamera, 4, 0);
-    } else if (keyCheck(KEY_SPACE)) {
-        if (s_pMainCamera->uPos.ulYX == 0) {
-            cameraSetCoord(s_pMainCamera, 512, 512);
-        } else {
-            cameraSetCoord(s_pMainCamera, 0, 0);
-        }
+        s_pMapBuffer->pCamera->uPos.uwX = s_pMainCamera->uPos.uwX % TILE_SIZE;
     }
     if (!mousePos.uwY) {
         cameraMoveBy(s_pMainCamera, 0, -4);
+        s_pMapBuffer->pCamera->uPos.uwY = s_pMainCamera->uPos.uwY % TILE_SIZE;
     } else if (mousePos.uwY >= MAP_HEIGHT + BOTTOM_PANEL_HEIGHT - 1) {
         cameraMoveBy(s_pMainCamera, 0, 4);
+        s_pMapBuffer->pCamera->uPos.uwY = s_pMainCamera->uPos.uwY % TILE_SIZE;
     }
     if (!mousePos.uwX) {
         cameraMoveBy(s_pMainCamera, -4, 0);
+        s_pMapBuffer->pCamera->uPos.uwX = s_pMainCamera->uPos.uwX % TILE_SIZE;
     } else if (mousePos.uwX > MAP_WIDTH - 1) {
         cameraMoveBy(s_pMainCamera, 4, 0);
+        s_pMapBuffer->pCamera->uPos.uwX = s_pMainCamera->uPos.uwX % TILE_SIZE;
     }
 
     if (mouseCheck(MOUSE_PORT_1, MOUSE_LMB)) {
@@ -456,9 +457,9 @@ void drawAllTiles(void) {
 
     // Figure out which tiles to actually draw, depending on the
     // current camera position
-    UWORD uwStartX = MAX(0, (s_pMapBuffer->pCamera->uPos.uwX >> TILE_SHIFT) - 1);
-	UWORD uwStartY = MAX(0, (s_pMapBuffer->pCamera->uPos.uwY >> TILE_SHIFT) - 1);
-	UWORD uwEndX = MIN(MAP_SIZE, uwStartX + (MAP_WIDTH >> TILE_SHIFT) + 1);
+    UWORD uwStartX = MAX(0, (s_pMainCamera->uPos.uwX >> TILE_SHIFT) - 1);
+	UWORD uwStartY = MAX(0, (s_pMainCamera->uPos.uwY >> TILE_SHIFT) - 1);
+	UWORD uwEndX = MIN(MAP_SIZE, uwStartX + (MAP_WIDTH >> TILE_SHIFT) + 1) - 1;
 	UWORD uwEndY = MIN(MAP_SIZE, uwStartY + (MAP_HEIGHT >> TILE_SHIFT) + 1);
 
     // Get pointer to start of drawing area
@@ -481,7 +482,7 @@ void drawAllTiles(void) {
         for (uint8_t y = uwStartY; y < uwEndY; y++) {
             // Quickly draw a tile after the blitter was set up
             UBYTE *pUbBltapt = s_ulTileOffsets[*pTileColumn];
-            // blitWait(); // Don't modify registers when other blit is in progress
+            blitWait(); // Don't modify registers when other blit is in progress
             // bltdpt was left in the right place, right below the previous one,
             // so we only modify the source ptr and kick off the next blit
             g_pCustom->bltapt = pUbBltapt;
@@ -494,9 +495,11 @@ void drawAllTiles(void) {
 }
 
 void gameGsLoop(void) {
+    // 1. handle input
     UWORD mouseX = mouseGetX(MOUSE_PORT_1);
     UWORD mouseY = mouseGetY(MOUSE_PORT_1);
     tUwCoordYX mousePos = {.uwX = mouseX & 0xfff0, .uwY = mouseY & 0xfff0};
+    handleInput(mousePos);
 
     if (s_Mode == edit) {
         if (!(GameCycle % 10)) {
@@ -529,10 +532,10 @@ void gameGsLoop(void) {
         }
     }
 
+    // redraw map
     drawAllTiles();
 
-    viewProcessManagers(s_pView);
-
+    // redraw units and missiles
     bobNewBegin(s_pMapBuffer->pBack);
 
     // process all units
@@ -551,14 +554,10 @@ void gameGsLoop(void) {
 
     bobNewEnd();
 
-    
-    copSwapBuffers();
-    // never process the panel buffer, it doesn't do anything
-
-    handleInput(mousePos);
-
+    // redraw panel
     drawPanel();
 
+    // do other actions (AI, sounds)
     uint8_t renderCycle = GameCycle & 0b1111;
     switch (renderCycle) {
         case 0:
@@ -567,8 +566,12 @@ void gameGsLoop(void) {
             break;
     }
 
-    vPortWaitForEnd(s_pVpPanel);
+    // finish frame
+    viewProcessManagers(s_pView);
+    copSwapBuffers();
+    vPortWaitUntilEnd(s_pVpPanel);
 
+    // update sprites during vblank
     mouseSpriteUpdate(mouseX, mouseY);
     drawSelectionRectangles();
 

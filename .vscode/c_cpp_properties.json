@@ -1,9 +1,28 @@
 {
-    "configurations": [
-        {
-            "name": "Amiga",
-            "configurationProvider": "BartmanAbyss.amiga-debug"
-        }
-    ],
-    "version": 4
+	"configurations": [
+		{
+			"name": "Amiga",
+			"includePath": [
+				"${workspaceFolder}/**",
+                "${env:USERPROFILE}/.vscode/extensions/bartmanabyss.amiga-debug-1.6.7/bin/win32/opt/m68k-amiga-elf/sys-include"
+			],
+            "defines": [
+                "__GNUC__=8",
+                "BARTMAN_GCC",
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE",
+                "AMIGA",
+                "ACE_DEBUG",
+                "ACE_DEBUG_UAE",
+                "__CODE_CHECKER__",
+                "_NO_INLINE"
+            ],
+			"compilerPath": "${default}",
+			"cStandard": "c11",
+			"cppStandard": "c++17",
+			"intelliSenseMode": "gcc-x86"
+		}
+	],
+	"version": 4
 }

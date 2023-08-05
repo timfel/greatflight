@@ -165,7 +165,7 @@ void loadMap(const char* name, uint16_t mapbufCoplistStart, uint16_t mapColorsCo
 
 void initBobs(void) {
     // the bobs are not double buffered, since we never undraw
-    bobManagerCreate(s_pMapBuffer->pBack, s_pMapBuffer->pBack, MAP_HEIGHT + TILE_SIZE);
+    bobManagerCreate(s_pMapBuffer->pFront, s_pMapBuffer->pBack, MAP_HEIGHT + TILE_SIZE);
 
     bobInit(&s_TileCursor, TILE_SIZE, TILE_SIZE, 0, s_pMapBitmap, 0, 0, 0);
     bobSetFrame(&s_TileCursor, s_pMapBitmap->Planes[0] + (0x10 * TILE_FRAME_BYTES), 0);
@@ -277,6 +277,36 @@ static inline tUbCoordYX screenPosToTile(tUwCoordYX pos) {
 
 void handleInput(tUwCoordYX mousePos) {
     static tUwCoordYX lmbDown = {.ulYX = 0};
+
+    if (s_Mode == edit) {
+        if (keyCheck(KEY_RBRACKET)) {
+            SelectedTile++;
+            bobSetFrame(&s_TileCursor, s_pMapBitmap->Planes[0] + (SelectedTile * TILE_FRAME_BYTES), 0);
+        } else if (keyCheck(KEY_LBRACKET)) {
+            SelectedTile--;
+            bobSetFrame(&s_TileCursor, s_pMapBitmap->Planes[0] + (SelectedTile * TILE_FRAME_BYTES), 0);
+        } else if (keyCheck(KEY_RETURN)) {
+            const char* mapname = MAPDIR "game.map";
+            tFile *map = fileOpen(mapname, "w");
+            if (!map) {
+                logWrite("ERROR: Cannot open file %s!\n", mapname);
+            } else {
+                fileWrite(map, "for", 3);
+                for (int x = 0; x < MAP_SIZE; x++) {
+                    // TODO: fix file writing
+                    // fileWrite(map, s_ulTilemap[x], MAP_SIZE);
+                }
+            }
+        } else if (mouseCheck(MOUSE_PORT_1, MOUSE_LMB)) {
+            tUbCoordYX tile = screenPosToTile((tUwCoordYX){.ulYX = mousePos.ulYX + s_pMainCamera->uPos.ulYX});
+            // TODO
+            s_ulTilemap[tile.ubY][tile.ubX] = tileIndexToTileBitmapOffset(SelectedTile);
+            // tileBufferSetTile(s_pMapBuffer, tile.ubX, tile.ubY, SelectedTile);
+            // tileBufferQueueProcess(s_pMapBuffer);
+            // bobDiscardUndraw();
+        }
+        return;
+    }
 
     if (keyCheck(KEY_ESCAPE)) {
         gameExit();
@@ -523,40 +553,8 @@ void gameGsLoop(void) {
     // 1. handle input
     UWORD mouseX = mouseGetX(MOUSE_PORT_1);
     UWORD mouseY = mouseGetY(MOUSE_PORT_1);
-    tUwCoordYX mousePos = {.uwX = mouseX & 0xfff0, .uwY = mouseY & 0xfff0};
+    tUwCoordYX mousePos = {.uwX = mouseX / TILE_SIZE * TILE_SIZE, .uwY = mouseY / TILE_SIZE * TILE_SIZE};
     handleInput(mousePos);
-
-    if (s_Mode == edit) {
-        if (!(GameCycle % 10)) {
-            if (keyCheck(KEY_UP)) {
-                SelectedTile++;
-                bobSetFrame(&s_TileCursor, s_pMapBitmap->Planes[0] + (SelectedTile * TILE_FRAME_BYTES), 0);
-            } else if (keyCheck(KEY_DOWN)) {
-                SelectedTile--;
-                bobSetFrame(&s_TileCursor, s_pMapBitmap->Planes[0] + (SelectedTile * TILE_FRAME_BYTES), 0);
-            } else if (keyCheck(KEY_RETURN)) {
-                const char* mapname = MAPDIR "game.map";
-                tFile *map = fileOpen(mapname, "w");
-                if (!map) {
-                    logWrite("ERROR: Cannot open file %s!\n", mapname);
-                } else {
-                    fileWrite(map, "for", 3);
-                    for (int x = 0; x < MAP_SIZE; x++) {
-                        // TODO: fix file writing
-                        // fileWrite(map, s_ulTilemap[x], MAP_SIZE);
-                    }
-                }
-            }
-        }
-        if (mouseCheck(MOUSE_PORT_1, MOUSE_LMB)) {
-            tUbCoordYX tile = screenPosToTile((tUwCoordYX){.ulYX = mousePos.ulYX + s_pMainCamera->uPos.ulYX});
-            // TODO
-            s_ulTilemap[tile.ubY][tile.ubX] = tileIndexToTileBitmapOffset(SelectedTile);
-            // tileBufferSetTile(s_pMapBuffer, tile.ubX, tile.ubY, SelectedTile);
-            // tileBufferQueueProcess(s_pMapBuffer);
-            // bobDiscardUndraw();
-        }
-    }
 
     // redraw map
     drawAllTiles();

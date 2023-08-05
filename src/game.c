@@ -31,9 +31,9 @@
 #define COLORS (1 << BPP)
 #define MAP_WIDTH 320
 #define MAP_HEIGHT 160
-#define MAP_BUFFER_WIDTH (MAP_WIDTH + TILE_SIZE)
+#define MAP_BUFFER_WIDTH MAP_WIDTH
 #define MAP_BUFFER_WIDTH_BYTES (MAP_BUFFER_WIDTH / 8)
-#define MAP_BUFFER_HEIGHT (MAP_HEIGHT + TILE_SIZE)
+#define MAP_BUFFER_HEIGHT MAP_HEIGHT
 #define TOP_PANEL_HEIGHT 10
 #define BOTTOM_PANEL_HEIGHT 70
 #define VISIBLE_TILES_X (MAP_WIDTH >> TILE_SHIFT)
@@ -510,13 +510,10 @@ void drawAllTiles(void) {
 
     // draw as fast as we can
     for (uint8_t x = ubStartX; x < ubEndX; x++) {
+        // manually unrolled loop to draw (MAP_BUFFER_HEIGHT / TILE_SIZE) tiles
         uintptr_t *pTileBitmapOffset = &(s_ulTilemap[x][ubStartY]);
         blitWait();
         g_pCustom->bltdpt = pDstPlane;
-        g_pCustom->bltapt = (APTR)*pTileBitmapOffset;
-        g_pCustom->bltsize = uwBltsize;
-        ++pTileBitmapOffset;
-        blitWait();
         g_pCustom->bltapt = (APTR)*pTileBitmapOffset;
         g_pCustom->bltsize = uwBltsize;
         ++pTileBitmapOffset;

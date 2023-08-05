@@ -289,8 +289,9 @@ static void bobNewCheckGood(const tBitMap *pBack) {
 }
 
 void bobNewBegin(tBitMap *pBuffer) {
-	bobNewCheckGood(pBuffer);
+	// bobNewCheckGood(pBuffer);
 	tBobQueue *pQueue = &s_pQueues[s_ubBufferCurr];
+	pQueue->pDst = pBuffer;
 
 	// Prepare for undraw
 	blitWait();

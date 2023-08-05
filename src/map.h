@@ -6,6 +6,7 @@
 
 #define TILE_SIZE 32
 #define TILE_SHIFT 5
+#define TILE_FRAME_BYTES ((TILE_SIZE / 8) * (TILE_SIZE * BPP))
 #define MAP_SIZE 32
 
 static inline uint8_t mapIsWalkable(uint8_t **map, uint8_t x, uint8_t y) {

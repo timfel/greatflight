@@ -120,7 +120,7 @@ void unitManagerProcessUnits(tUnitManager *pUnitListHead, uint8_t **pTileData, t
             unitDraw((Unit *)link);
         }
         if(blitIsIdle()) {
-            bobNewProcessNext();
+            bobProcessNext();
         }
         link = link->next;
     }
@@ -156,7 +156,7 @@ Unit * unitNew(tUnitManager *pUnitListHead, enum UnitTypes typeIdx) {
     if (link->next) {
         link->next->prev = link;
     }
-    bobNewInit(&((Unit *)link)->bob, 32, 32, 1, type->spritesheet, type->mask, 0, 0);
+    bobInit(&((Unit *)link)->bob, 32, 32, 0, type->spritesheet->Planes[0], type->mask->Planes[0], 0, 0);
     unitSetFrame((Unit *)link, 0);
     ((Unit *)link)->type = typeIdx;
     unitSetTilePosition((Unit *)link, NULL, UNIT_INIT_TILE_POSITION);

@@ -2,13 +2,13 @@
 #include <limits.h>
 
 #include "game.h"
-#include "bob_new.h"
 #include "map.h"
 #include "units.h"
 #include "actions.h"
 #include "icons.h"
 #include "mouse_sprite.h"
 #include "selection_sprites.h"
+#include <ace/managers/bob.h>
 #include <ace/managers/copper.h>
 #include <ace/managers/log.h>
 #include <ace/managers/mouse.h>
@@ -61,7 +61,7 @@ static uint16_t s_pMapPalette[COLORS];
 static uintptr_t s_ulTilemap[MAP_WIDTH][MAP_HEIGHT];
 // static uint8_t s_ubUnitmap[MAP_WIDTH * 2][MAP_HEIGHT * 2];
 
-static tBobNew s_TileCursor;
+static tBob s_TileCursor;
 
 static tUnitManager *s_pUnitManager;
 
@@ -104,7 +104,7 @@ void createViewports() {
 }
 
 uint32_t tileIndexToTileBitmapOffset(uint8_t index) {
-    return s_pMapBitmap->Planes[0] + (s_pMapBitmap->BytesPerRow * (index << TILE_SHIFT));
+    return (uint32_t)(s_pMapBitmap->Planes[0] + (s_pMapBitmap->BytesPerRow * (index << TILE_SHIFT)));
 }
 
 void loadMap(const char* name, uint16_t mapbufCoplistStart, uint16_t mapColorsCoplistStart) {
@@ -164,10 +164,11 @@ void loadMap(const char* name, uint16_t mapbufCoplistStart, uint16_t mapColorsCo
 }
 
 void initBobs(void) {
-    bobNewManagerCreate(s_pMapBuffer->pFront, s_pMapBuffer->pBack, MAP_HEIGHT + TILE_SIZE);
+    // the bobs are not double buffered, since we never undraw
+    bobManagerCreate(s_pMapBuffer->pBack, s_pMapBuffer->pBack, MAP_HEIGHT + TILE_SIZE);
 
-    bobNewInit(&s_TileCursor, TILE_SIZE, TILE_SIZE, 0, s_pMapBitmap, 0, 0, 0);
-    bobNewSetBitMapOffset(&s_TileCursor, 0x10 << TILE_SHIFT);
+    bobInit(&s_TileCursor, TILE_SIZE, TILE_SIZE, 0, s_pMapBitmap, 0, 0, 0);
+    bobSetFrame(&s_TileCursor, s_pMapBitmap->Planes[0] + (0x10 * TILE_FRAME_BYTES), 0);
 
     // s_pUnitManager = unitManagerCreate();
     // unitSetTilePosition(unitNew(s_pUnitManager, spearman), s_pMapBuffer->pTileData, (tUbCoordYX){.ubX = 7, .ubY = 7});
@@ -175,7 +176,7 @@ void initBobs(void) {
     // unitSetTilePosition(unitNew(s_pUnitManager, spearman), s_pMapBuffer->pTileData, (tUbCoordYX){.ubX = 7, .ubY = 8});
     // unitSetTilePosition(unitNew(s_pUnitManager, spearman), s_pMapBuffer->pTileData, (tUbCoordYX){.ubX = 8, .ubY = 8});
 
-    // bobNewReallocateBgBuffers();
+    // bobReallocateBgBuffers();
 }
 
 void loadUi(uint16_t topPanelColorsPos, uint16_t panelColorsPos, uint16_t simplePosTop, uint16_t simplePosBottom) {
@@ -219,7 +220,7 @@ void loadUi(uint16_t topPanelColorsPos, uint16_t panelColorsPos, uint16_t simple
     s_pPanelBackground = bitmapCreateFromFile("resources/ui/bottompanel.bm", 0);
     bitmapLoadFromFile(s_pPanelBuffer->pFront, "resources/ui/bottompanel.bm", 0, 0);
 
-    // s_pIcons = bitmapCreateFromFile("resources/ui/icons.bm", 0);
+    s_pIcons = bitmapCreateFromFile("resources/ui/icons.bm", 0);
 
     iconInit(&s_panelUnitIcons[0], 32, 26, s_pIcons, 0, s_pPanelBuffer->pFront, (tUwCoordYX){.uwX = 88, .uwY = 18});
     iconInit(&s_panelUnitIcons[1], 32, 26, s_pIcons, 0, s_pPanelBuffer->pFront, (tUwCoordYX){.uwX = 150, .uwY = 18});
@@ -447,10 +448,6 @@ void drawSelectionRectangles(void) {
 FN_HOTSPOT
 void drawAllTiles(void) {
     // calculate unchanging values once
-    static WORD wSrcModulo = 0;
-    if (!wSrcModulo) {
-        wSrcModulo = bitmapGetByteWidth(s_pMapBitmap) - ((TILE_SIZE >> 4) << 1);
-    }
 	static WORD wDstModulo = 0;
     if (!wDstModulo) {
         wDstModulo = bitmapGetByteWidth(s_pMapBuffer->pBack) - ((TILE_SIZE >> 4) << 1);
@@ -458,6 +455,7 @@ void drawAllTiles(void) {
 
     // setup tile drawing, all of these should be compiled to immediate operations, they
     // only use constants
+    WORD wSrcModulo = 0;
 	UWORD uwBlitWords = TILE_SIZE >> 4;
 	UWORD uwHeight = TILE_SIZE * BPP;
 	UWORD uwBltCon0 = USEA|USED|MINTERM_A;
@@ -485,23 +483,29 @@ void drawAllTiles(void) {
     // draw as fast as we can
     for (uint8_t x = ubStartX; x < ubEndX; x++) {
         uintptr_t *pTileBitmapOffset = &(s_ulTilemap[x][ubStartY]);
+        blitWait();
         g_pCustom->bltdpt = pDstPlane;
         // TODO: make this a loop that gets unrolled by gcc
         g_pCustom->bltapt = *pTileBitmapOffset;
         g_pCustom->bltsize = uwBltsize;
         ++pTileBitmapOffset;
+        blitWait();
         g_pCustom->bltapt = *pTileBitmapOffset;
         g_pCustom->bltsize = uwBltsize;
         ++pTileBitmapOffset;
+        blitWait();
         g_pCustom->bltapt = *pTileBitmapOffset;
         g_pCustom->bltsize = uwBltsize;
         ++pTileBitmapOffset;
+        blitWait();
         g_pCustom->bltapt = *pTileBitmapOffset;
         g_pCustom->bltsize = uwBltsize;
         ++pTileBitmapOffset;
+        blitWait();
         g_pCustom->bltapt = *pTileBitmapOffset;
         g_pCustom->bltsize = uwBltsize;
         ++pTileBitmapOffset;
+        blitWait();
         g_pCustom->bltapt = *pTileBitmapOffset;
         g_pCustom->bltsize = uwBltsize;
         // for (int i = 0; i < (MAP_HEIGHT >> TILE_SHIFT) + 1; ++i) {
@@ -526,10 +530,10 @@ void gameGsLoop(void) {
         if (!(GameCycle % 10)) {
             if (keyCheck(KEY_UP)) {
                 SelectedTile++;
-                bobNewSetBitMapOffset(&s_TileCursor, SelectedTile << TILE_SHIFT);
+                bobSetFrame(&s_TileCursor, s_pMapBitmap->Planes[0] + (SelectedTile * TILE_FRAME_BYTES), 0);
             } else if (keyCheck(KEY_DOWN)) {
                 SelectedTile--;
-                bobNewSetBitMapOffset(&s_TileCursor, SelectedTile << TILE_SHIFT);
+                bobSetFrame(&s_TileCursor, s_pMapBitmap->Planes[0] + (SelectedTile * TILE_FRAME_BYTES), 0);
             } else if (keyCheck(KEY_RETURN)) {
                 const char* mapname = MAPDIR "game.map";
                 tFile *map = fileOpen(mapname, "w");
@@ -550,7 +554,7 @@ void gameGsLoop(void) {
             s_ulTilemap[tile.ubY][tile.ubX] = tileIndexToTileBitmapOffset(SelectedTile);
             // tileBufferSetTile(s_pMapBuffer, tile.ubX, tile.ubY, SelectedTile);
             // tileBufferQueueProcess(s_pMapBuffer);
-            // bobNewDiscardUndraw();
+            // bobDiscardUndraw();
         }
     }
 
@@ -558,7 +562,8 @@ void gameGsLoop(void) {
     drawAllTiles();
 
     // redraw units and missiles
-    bobNewBegin(s_pMapBuffer->pBack);
+    bobDiscardUndraw();
+    bobBegin(s_pMapBuffer->pBack);
 
     // process all units
     tUbCoordYX tileTopLeft = screenPosToTile(s_pMainCamera->uPos);
@@ -571,10 +576,10 @@ void gameGsLoop(void) {
 
     if (s_Mode == edit) {
         s_TileCursor.sPos.ulYX = mousePos.ulYX;
-        bobNewPush(&s_TileCursor);
+        bobPush(&s_TileCursor);
     }
 
-    bobNewEnd();
+    bobEnd();
 
     // redraw panel
     drawPanel();
@@ -608,6 +613,6 @@ void gameGsDestroy(void) {
 
     unitManagerDestroy(s_pUnitManager);
 
-    bobNewManagerDestroy();
+    bobManagerDestroy();
     bitmapDestroy(s_pMapBitmap);
 }

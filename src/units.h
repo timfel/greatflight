@@ -1,11 +1,11 @@
 #ifndef UNITS_H
 #define UNITS_H
 
-#include "bob_new.h"
 #include "map.h"
 #include "icons.h"
 
 #include <stdint.h>
+#include <ace/managers/bob.h>
 #include <ace/utils/bitmap.h>
 #include <ace/utils/file.h>
 
@@ -95,7 +95,7 @@ typedef struct {
         };
     };
     UnitStats stats;
-    tBobNew bob;
+    tBob bob;
 } Unit;
 
 /* The global list of unit types */
@@ -135,7 +135,7 @@ Unit * unitNew(tUnitManager *pUnitListHead, enum UnitTypes type);
 void unitDelete(tUnitManager *pUnitListHead, Unit *unit);
 
 /**
- * @brief Process all units' drawing and actions. Must be called after bobNewBegin() and before bobNewEnd()!
+ * @brief Process all units' drawing and actions. Must be called after bobBegin() and before bobEnd()!
  * 
  * @param pUnitListHead unit list pointer created from unitManagerCreate()
  * @param pTileData 2d tile grid of map
@@ -171,19 +171,20 @@ static inline void unitSetTilePosition(Unit *self, UBYTE **map, tUbCoordYX pos) 
 }
 
 static inline void unitDraw(Unit *self) {
-    bobNewPush(&self->bob);
+    bobPush(&self->bob);
 }
 
 static inline void unitSetDirectionAndFrame(Unit *self, UWORD ubDir, UBYTE ubFrame) {
-    bobNewSetBitMapOffset(&self->bob, (ubFrame << UNIT_SIZE_SHIFT) + ubDir);
+    // bobSetFrame(&self->bob, self->bob.pFrameData + (ubFrame << UNIT_SIZE_SHIFT) + ubDir);
 }
 
 static inline void unitSetFrame(Unit *self, UBYTE ubFrame) {
-    bobNewSetBitMapOffset(&self->bob, ubFrame << UNIT_SIZE_SHIFT);
+    // bobSetBitMapOffset(&self->bob, ubFrame << UNIT_SIZE_SHIFT);
 }
 
 static inline UBYTE unitGetFrame(Unit *self) {
-    return ((self->bob.uwOffsetY / self->bob.pBitmap->BytesPerRow) >> UNIT_SIZE_SHIFT) % FRAME_COUNT;
+    self->bob;
+    return 0; // ((self->bob.pFrameData / self->) >> UNIT_SIZE_SHIFT) % FRAME_COUNT;
 }
 
 #endif

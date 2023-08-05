@@ -63,15 +63,15 @@ void actionMove(Unit *unit, uint8_t **map) {
     UBYTE nextFrame = unitGetFrame(unit) ? 0 : 1;
     if (absVX > absVY) {
         if (vectorX > 0) {
-            unitSetDirectionAndFrame(unit, DIRECTION_EAST, nextFrame);
+            unitSetFrame(unit, DIRECTION_EAST + nextFrame);
         } else {
-            unitSetDirectionAndFrame(unit, DIRECTION_WEST, nextFrame);
+            unitSetFrame(unit, DIRECTION_WEST + nextFrame);
         }
     } else {
         if (vectorY > 0) {
-            unitSetDirectionAndFrame(unit, DIRECTION_SOUTH, nextFrame);
+            unitSetFrame(unit, DIRECTION_SOUTH + nextFrame);
         } else {
-            unitSetDirectionAndFrame(unit, DIRECTION_NORTH, nextFrame);
+            unitSetFrame(unit, DIRECTION_NORTH + nextFrame);
         }
     }
 };

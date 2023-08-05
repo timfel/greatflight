@@ -10,8 +10,10 @@
 #include <ace/utils/file.h>
 
 // TODO: this can be configurable for different systems
+#define BPP 5
 #define UNIT_SIZE 32
 #define UNIT_SIZE_SHIFT 5
+#define UNIT_FRAME_BYTES (UNIT_SIZE / 8 + UNIT_SIZE * BPP)
 /* Units are centered on a 2x2 tilegrid. So to position a unit on a tile, we subtract 8px */
 #define UNIT_POSITION_OFFSET 8
 
@@ -96,6 +98,7 @@ typedef struct {
     };
     UnitStats stats;
     tBob bob;
+    uint8_t frame;
 } Unit;
 
 /* The global list of unit types */
@@ -174,17 +177,13 @@ static inline void unitDraw(Unit *self) {
     bobPush(&self->bob);
 }
 
-static inline void unitSetDirectionAndFrame(Unit *self, UWORD ubDir, UBYTE ubFrame) {
-    // bobSetFrame(&self->bob, self->bob.pFrameData + (ubFrame << UNIT_SIZE_SHIFT) + ubDir);
-}
-
 static inline void unitSetFrame(Unit *self, UBYTE ubFrame) {
-    // bobSetBitMapOffset(&self->bob, ubFrame << UNIT_SIZE_SHIFT);
+    uint16_t offset = ubFrame * UNIT_FRAME_BYTES;
+    bobSetFrame(&self->bob, UnitTypes[self->type].spritesheet->Planes[0] + offset, UnitTypes[self->type].mask->Planes[0] + offset);
 }
 
 static inline UBYTE unitGetFrame(Unit *self) {
-    self->bob;
-    return 0; // ((self->bob.pFrameData / self->) >> UNIT_SIZE_SHIFT) % FRAME_COUNT;
+    return self->frame;
 }
 
 #endif

@@ -4,9 +4,12 @@
 #include <stdint.h>
 #include "ace/types.h"
 
-#define TILE_SIZE 32
 #define TILE_SHIFT 5
-#define TILE_FRAME_BYTES ((TILE_SIZE / 8) * (TILE_SIZE * BPP))
+#define TILE_SIZE (1 << TILE_SHIFT)
+#define TILE_SIZE_WORDS (TILE_SIZE >> 4)
+#define TILE_SIZE_BYTES (TILE_SIZE >> 3)
+#define TILE_HEIGHT_LINES (TILE_SIZE * BPP)
+#define TILE_FRAME_BYTES (TILE_SIZE_BYTES * TILE_HEIGHT_LINES)
 #define MAP_SIZE 32
 
 static inline uint8_t mapIsWalkable(uint8_t **map, uint8_t x, uint8_t y) {

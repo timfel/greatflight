@@ -31,6 +31,9 @@
 #define COLORS (1 << BPP)
 #define MAP_WIDTH 320
 #define MAP_HEIGHT 160
+#define MAP_BUFFER_WIDTH (MAP_WIDTH + TILE_SIZE)
+#define MAP_BUFFER_WIDTH_BYTES (MAP_BUFFER_WIDTH / 8)
+#define MAP_BUFFER_HEIGHT (MAP_HEIGHT + TILE_SIZE)
 #define TOP_PANEL_HEIGHT 10
 #define BOTTOM_PANEL_HEIGHT 70
 #define VISIBLE_TILES_X (MAP_WIDTH >> TILE_SHIFT)
@@ -58,7 +61,7 @@ static tSimpleBufferManager *s_pMapBuffer;
 static tCameraManager *s_pMainCamera;
 static tBitMap *s_pMapBitmap;
 static uint16_t s_pMapPalette[COLORS];
-static uintptr_t s_ulTilemap[MAP_WIDTH][MAP_HEIGHT];
+static uintptr_t s_ulTilemap[MAP_SIZE][MAP_SIZE];
 // static uint8_t s_ubUnitmap[MAP_WIDTH * 2][MAP_HEIGHT * 2];
 
 static tBob s_TileCursor;
@@ -138,11 +141,11 @@ void loadMap(const char* name, uint16_t mapbufCoplistStart, uint16_t mapColorsCo
     s_pMapBuffer = simpleBufferCreate(0,
                                     TAG_SIMPLEBUFFER_VPORT, s_pVpMain,
                                     TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR | BMF_INTERLEAVED,
-                                    TAG_SIMPLEBUFFER_BOUND_WIDTH, MAP_WIDTH + TILE_SIZE,
-                                    TAG_SIMPLEBUFFER_BOUND_HEIGHT, MAP_HEIGHT + TILE_SIZE,
+                                    TAG_SIMPLEBUFFER_BOUND_WIDTH, MAP_BUFFER_WIDTH,
+                                    TAG_SIMPLEBUFFER_BOUND_HEIGHT, MAP_BUFFER_HEIGHT,
                                     TAG_SIMPLEBUFFER_IS_DBLBUF, 1,
                                     TAG_SIMPLEBUFFER_COPLIST_OFFSET, mapbufCoplistStart,
-                                    TAG_SIMPLEBUFFER_USE_X_SCROLLING, 1,
+                                    TAG_SIMPLEBUFFER_USE_X_SCROLLING, 0,
                                     TAG_END);
     s_pMainCamera = cameraCreate(s_pVpMain, 0, 0, MAP_SIZE * TILE_SIZE - MAP_WIDTH, MAP_SIZE * TILE_SIZE - MAP_HEIGHT, 0);
 
@@ -165,9 +168,9 @@ void loadMap(const char* name, uint16_t mapbufCoplistStart, uint16_t mapColorsCo
 
 void initBobs(void) {
     // the bobs are not double buffered, since we never undraw
-    bobManagerCreate(s_pMapBuffer->pFront, s_pMapBuffer->pBack, MAP_HEIGHT + TILE_SIZE);
+    bobManagerCreate(s_pMapBuffer->pFront, s_pMapBuffer->pBack, MAP_BUFFER_HEIGHT);
 
-    bobInit(&s_TileCursor, TILE_SIZE, TILE_SIZE, 0, s_pMapBitmap, 0, 0, 0);
+    bobInit(&s_TileCursor, TILE_SIZE, TILE_SIZE, 0, s_pMapBitmap->Planes[0], 0, 0, 0);
     bobSetFrame(&s_TileCursor, s_pMapBitmap->Planes[0] + (0x10 * TILE_FRAME_BYTES), 0);
 
     // s_pUnitManager = unitManagerCreate();
@@ -272,7 +275,7 @@ void gameGsCreate(void) {
 }
 
 static inline tUbCoordYX screenPosToTile(tUwCoordYX pos) {
-    return (tUbCoordYX){.ubX = pos.uwX >> TILE_SHIFT, .ubY = (pos.uwY - TOP_PANEL_HEIGHT) >> TILE_SHIFT};
+    return (tUbCoordYX){.ubX = pos.uwX >> TILE_SHIFT, .ubY = pos.uwY >> TILE_SHIFT};
 }
 
 void handleInput(tUwCoordYX mousePos) {
@@ -297,10 +300,12 @@ void handleInput(tUwCoordYX mousePos) {
                     // fileWrite(map, s_ulTilemap[x], MAP_SIZE);
                 }
             }
+        } else if (keyCheck(KEY_G)) {
+            s_Mode = game;
         } else if (mouseCheck(MOUSE_PORT_1, MOUSE_LMB)) {
             tUbCoordYX tile = screenPosToTile((tUwCoordYX){.ulYX = mousePos.ulYX + s_pMainCamera->uPos.ulYX});
             // TODO
-            s_ulTilemap[tile.ubY][tile.ubX] = tileIndexToTileBitmapOffset(SelectedTile);
+            s_ulTilemap[tile.ubX][tile.ubY] = tileIndexToTileBitmapOffset(SelectedTile);
             // tileBufferSetTile(s_pMapBuffer, tile.ubX, tile.ubY, SelectedTile);
             // tileBufferQueueProcess(s_pMapBuffer);
             // bobDiscardUndraw();
@@ -314,8 +319,6 @@ void handleInput(tUwCoordYX mousePos) {
         copDumpBfr(s_pView->pCopList->pBackBfr);
     } else if (keyCheck(KEY_E)) {
         s_Mode = edit;
-    } else if (keyCheck(KEY_G)) {
-        s_Mode = game;
     } else if (keyCheck(KEY_UP)) {
         cameraMoveBy(s_pMainCamera, 0, -CAMERA_MOVE_DELTA);
         s_pMapBuffer->pCamera->uPos.uwY = s_pMainCamera->uPos.uwY % TILE_SIZE;
@@ -477,25 +480,20 @@ void drawSelectionRectangles(void) {
 
 FN_HOTSPOT
 void drawAllTiles(void) {
-    // calculate unchanging values once
-	static WORD wDstModulo = 0;
-    if (!wDstModulo) {
-        wDstModulo = bitmapGetByteWidth(s_pMapBuffer->pBack) - ((TILE_SIZE >> 4) << 1);
-    }
-
     // setup tile drawing, all of these should be compiled to immediate operations, they
     // only use constants
+	WORD wDstModulo = MAP_BUFFER_WIDTH_BYTES - TILE_SIZE_BYTES; // same as bitmapGetByteWidth(s_pMapBuffer->pBack) - TILE_SIZE_BYTES;
     WORD wSrcModulo = 0;
-	UWORD uwBlitWords = TILE_SIZE >> 4;
+	UWORD uwBlitWords = TILE_SIZE_WORDS;
 	UWORD uwHeight = TILE_SIZE * BPP;
 	UWORD uwBltCon0 = USEA|USED|MINTERM_A;
 	UWORD uwBltsize = (uwHeight << 6) | uwBlitWords;
 
     // Figure out which tiles to actually draw, depending on the
     // current camera position
-    uint8_t ubStartX = MAX(0, (s_pMainCamera->uPos.uwX >> TILE_SHIFT));
-	uint8_t ubStartY = MAX(0, (s_pMainCamera->uPos.uwY >> TILE_SHIFT));
-	uint8_t ubEndX = MIN(MAP_SIZE, ubStartX + (MAP_WIDTH >> TILE_SHIFT));
+    uint8_t ubStartX = /*MAX(0, (*/s_pMainCamera->uPos.uwX >> TILE_SHIFT/*))*/;
+	uint8_t ubStartY = /*MAX(0, (*/s_pMainCamera->uPos.uwY >> TILE_SHIFT/*))*/;
+	uint8_t ubEndX = ubStartX + (MAP_WIDTH >> TILE_SHIFT);
 
     // Get pointer to start of drawing area
     PLANEPTR pDstPlane = s_pMapBuffer->pBack->Planes[0];
@@ -515,35 +513,28 @@ void drawAllTiles(void) {
         uintptr_t *pTileBitmapOffset = &(s_ulTilemap[x][ubStartY]);
         blitWait();
         g_pCustom->bltdpt = pDstPlane;
-        // TODO: make this a loop that gets unrolled by gcc
-        g_pCustom->bltapt = *pTileBitmapOffset;
+        g_pCustom->bltapt = (APTR)*pTileBitmapOffset;
         g_pCustom->bltsize = uwBltsize;
         ++pTileBitmapOffset;
         blitWait();
-        g_pCustom->bltapt = *pTileBitmapOffset;
+        g_pCustom->bltapt = (APTR)*pTileBitmapOffset;
         g_pCustom->bltsize = uwBltsize;
         ++pTileBitmapOffset;
         blitWait();
-        g_pCustom->bltapt = *pTileBitmapOffset;
+        g_pCustom->bltapt = (APTR)*pTileBitmapOffset;
         g_pCustom->bltsize = uwBltsize;
         ++pTileBitmapOffset;
         blitWait();
-        g_pCustom->bltapt = *pTileBitmapOffset;
+        g_pCustom->bltapt = (APTR)*pTileBitmapOffset;
         g_pCustom->bltsize = uwBltsize;
         ++pTileBitmapOffset;
         blitWait();
-        g_pCustom->bltapt = *pTileBitmapOffset;
+        g_pCustom->bltapt = (APTR)*pTileBitmapOffset;
         g_pCustom->bltsize = uwBltsize;
         ++pTileBitmapOffset;
         blitWait();
-        g_pCustom->bltapt = *pTileBitmapOffset;
+        g_pCustom->bltapt = (APTR)*pTileBitmapOffset;
         g_pCustom->bltsize = uwBltsize;
-        // for (int i = 0; i < (MAP_HEIGHT >> TILE_SHIFT) + 1; ++i) {
-        //     // blitWait(); // Don't modify registers when other blit is in progress
-        //     g_pCustom->bltapt = *pTileBitmapOffset;
-        //     g_pCustom->bltsize = uwBltsize;
-        //     ++pTileBitmapOffset;
-        // }
         pDstPlane += (TILE_SIZE >> 3);
     }
     systemSetDmaBit(DMAB_BLITHOG, 0);
@@ -554,7 +545,9 @@ void gameGsLoop(void) {
     UWORD mouseX = mouseGetX(MOUSE_PORT_1);
     UWORD mouseY = mouseGetY(MOUSE_PORT_1);
     tUwCoordYX mousePos = {.uwX = mouseX / TILE_SIZE * TILE_SIZE, .uwY = mouseY / TILE_SIZE * TILE_SIZE};
-    handleInput(mousePos);
+    if (GameCycle & 4) {
+        handleInput(mousePos);
+    }
 
     // redraw map
     drawAllTiles();
@@ -564,7 +557,7 @@ void gameGsLoop(void) {
     bobBegin(s_pMapBuffer->pBack);
 
     // process all units
-    tUbCoordYX tileTopLeft = screenPosToTile(s_pMainCamera->uPos);
+    // tUbCoordYX tileTopLeft = screenPosToTile(s_pMainCamera->uPos);
     // unitManagerProcessUnits(
     //     s_pUnitManager,
     //     (uint8_t **)s_ubUnitmap,

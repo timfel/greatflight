@@ -2,3 +2,4 @@ build/*
 amiga-os*.rom
 rom.key
 .vscode/settings.json
+resources/amiga-debug-*.vsix

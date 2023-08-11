@@ -51,9 +51,7 @@ endif()
 target_link_libraries(${GAME_LINKED} ace)
 
 # resources
-execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/resources/imgs)
 execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/resources/maps)
-execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/resources/units)
 
 add_custom_command(
   TARGET ${GAME_LINKED} POST_BUILD
@@ -61,64 +59,99 @@ add_custom_command(
 	COMMAND ${CMAKE_COMMAND} ARGS -E copy ${PROJECT_SOURCE_DIR}/resources/maps/game2.map ${PROJECT_BINARY_DIR}/resources/maps/game2.map
 )
 
-# cd units
-# rm reduced/*
-# Rgb2Amiga -f png-gpl -s '!' -c 32 `for i in newtilemap.png spearthrower.png; do echo -n " -i $PWD/$i -o $PWD/reduced/$i.reduced"; done`
-convertTileset(
-       INTERLEAVED
-       TARGET ${GAME_LINKED}
-       SOURCE ${PROJECT_SOURCE_DIR}/resources/inputs/units/reduced/newtilemap.png.reduced.png
-       TILE_PATHS ${PROJECT_SOURCE_DIR}/resources/inputs/units/reduced/newtilemap.png.reduced.png
-       DESTINATION ${PROJECT_BINARY_DIR}/resources/imgs/for.bm
-       SIZE 32
-       PALETTE ${PROJECT_BINARY_DIR}/resources/imgs/for.plt)
+## Helper functions
+function(png2gpl SOURCE DESTINATION)
+	add_custom_command(
+		OUTPUT ${DESTINATION}
+		COMMAND python3 ${PROJECT_SOURCE_DIR}/tools/png2gpl.py ${SOURCE} ${DESTINATION}
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+		DEPENDS ${SOURCE}
+	)
+endfunction()
 
-convertTileset(
-       INTERLEAVED
-       TARGET ${GAME_LINKED}
-       SOURCE ${PROJECT_SOURCE_DIR}/resources/inputs/units/reduced/spearthrower.png.reduced.png
-       TILE_PATHS ${PROJECT_SOURCE_DIR}/resources/inputs/units/reduced/spearthrower.png.reduced.png
-       DESTINATION ${PROJECT_BINARY_DIR}/spearthrower.png
-       SIZE 32
-       PALETTE ${PROJECT_BINARY_DIR}/resources/imgs/for.plt
+function(tileize DESTINATION TILESIZEX TILESIZEY PALETTE)
+	add_custom_command(
+		OUTPUT ${DESTINATION}
+		COMMAND python3 ${PROJECT_SOURCE_DIR}/tools/tileize.py ${TILESIZEX} ${TILESIZEY} ${PALETTE} ${DESTINATION} ${ARGN}
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+		DEPENDS ${ARGN}
+	)
+endfunction()
+
+# Viewport
+
+png2gpl(${PROJECT_SOURCE_DIR}/resources/Palettes/Viewport.png ${PROJECT_BINARY_DIR}/tmp/Palettes/Viewport.gpl)
+convertPalette(${GAME_LINKED} ${PROJECT_BINARY_DIR}/tmp/Palettes/Viewport.gpl ${PROJECT_BINARY_DIR}/resources/palettes/wood.plt)
+
+tileize(
+  ${PROJECT_BINARY_DIR}/tmp/Tiles/Woodland/Woodland.png
+  32 32 ${PROJECT_SOURCE_DIR}/resources/Palettes/Viewport.png
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Grass.png
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Bridge0.png
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Bridge1.png
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Bridge2.png
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Bridge3.png
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Tree3.png
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Tree2.png
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Tree1.png
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Tree0.png
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Water.png
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast0.png
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast1.png
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast2.png
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast3.png
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast4.png
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast5.png
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast6.png
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast7.png
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast8.png
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast9.png
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast10.png
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast11.png
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Barracs.png
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Blacksmith.png
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Church.png
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Construction_big.png
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Construction_small.png
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Farm.png
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Hall.png
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/lumbermill.png
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Stable.png
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Tower.png
 )
 
-convertBitmaps(
-       INTERLEAVED
-       TARGET ${GAME_LINKED}
-       PALETTE ${PROJECT_BINARY_DIR}/resources/imgs/for.plt
-       MASK_COLOR "#ff55ff"
-       SOURCES ${PROJECT_BINARY_DIR}/spearthrower.png
-       DESTINATIONS ${PROJECT_BINARY_DIR}/resources/units/spearthrower.bm
-       MASKS ${PROJECT_BINARY_DIR}/resources/units/spearthrower.msk
-)
-
-convertPalette(${GAME_LINKED} ${PROJECT_SOURCE_DIR}/resources/inputs/units/reduced/newtilemap.png.reduced.gpl ${PROJECT_BINARY_DIR}/resources/imgs/for.plt)
-
-# panel UI
-# rm icons/*.scaled.png
-# for i in icons/*.png; do convert $i -resize 32x32 $i.scaled.png; done
-# rm reduced/icons/*.png reduced/*.png
-# Rgb2Amiga -f png-gpl -s '!' -c 32 `for i in icons/*.scaled.png toppanel.png bottompanel.png; do echo -n " -i $PWD/$i -o $PWD/reduced/$i.reduced"; done`
-# x=0; for i in reduced/icons/*.reduced.png; do mv $i ${i%/*}/${x}.png; x=$[x+1]; done
-convertPalette(${GAME_LINKED} ${PROJECT_SOURCE_DIR}/resources/inputs/panel/reduced/bottompanel.png.reduced.gpl ${PROJECT_BINARY_DIR}/resources/ui/panel.plt)
-convertBitmaps(
-       INTERLEAVED
-       TARGET ${GAME_LINKED}
-       PALETTE ${PROJECT_BINARY_DIR}/resources/ui/panel.plt
-       SOURCES ${PROJECT_SOURCE_DIR}/resources/inputs/panel/reduced/toppanel.png.reduced.png ${PROJECT_SOURCE_DIR}/resources/inputs/panel/reduced/bottompanel.png.reduced.png
-       DESTINATIONS ${PROJECT_BINARY_DIR}/resources/ui/toppanel.bm ${PROJECT_BINARY_DIR}/resources/ui/bottompanel.bm
-)
-
-# icons
-FILE(GLOB icon_paths ${PROJECT_SOURCE_DIR}/resources/inputs/panel/reduced/icons/*.png)
 convertTileset(
   INTERLEAVED
   TARGET ${GAME_LINKED}
-  SOURCE ${PROJECT_SOURCE_DIR}/resources/inputs/panel/reduced/icons
-  TILE_PATHS icon_paths
-  DESTINATION ${PROJECT_BINARY_DIR}/resources/ui/icons.bm
+  SOURCE ${PROJECT_BINARY_DIR}/tmp/Tiles/Woodland/Woodland.png
+  TILE_PATHS ${PROJECT_BINARY_DIR}/tmp/Tiles/Woodland/Woodland.png
+  DESTINATION ${PROJECT_BINARY_DIR}/resources/tilesets/wood.bm
   SIZE 32
-  HEIGHT 26
-  PALETTE ${PROJECT_BINARY_DIR}/resources/ui/panel.plt
+  PALETTE ${PROJECT_BINARY_DIR}/resources/palettes/wood.plt
+)
+
+# Human UI
+png2gpl(${PROJECT_SOURCE_DIR}/resources/Palettes/HumanGUI.png ${PROJECT_BINARY_DIR}/tmp/Palettes/HumanGUI.gpl)
+convertPalette(${GAME_LINKED} ${PROJECT_BINARY_DIR}/tmp/Palettes/HumanGUI.gpl ${PROJECT_BINARY_DIR}/resources/palettes/hgui.plt)
+
+tileize(
+  ${PROJECT_BINARY_DIR}/tmp/GUI/Bottom_GUI.png
+  320 70 ${PROJECT_SOURCE_DIR}/resources/Palettes/HumanGUI.png
+  ${PROJECT_SOURCE_DIR}/resources/GUI/Bottom_GUI.png
+)
+
+tileize(
+  ${PROJECT_BINARY_DIR}/tmp/GUI/Top_GUI.png
+  320 10 ${PROJECT_SOURCE_DIR}/resources/Palettes/HumanGUI.png
+  ${PROJECT_SOURCE_DIR}/resources/GUI/Top_GUI.png
+)
+
+convertBitmaps(
+  INTERLEAVED
+  TARGET ${GAME_LINKED}
+  PALETTE ${PROJECT_BINARY_DIR}/resources/palettes/hgui.plt
+  SOURCES ${PROJECT_BINARY_DIR}/tmp/GUI/Bottom_GUI.png
+          ${PROJECT_BINARY_DIR}/tmp/GUI/Top_GUI.png
+  DESTINATIONS ${PROJECT_BINARY_DIR}/resources/ui/bottompanel.bm
+               ${PROJECT_BINARY_DIR}/resources/ui/toppanel.bm
 )

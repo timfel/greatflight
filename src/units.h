@@ -10,7 +10,7 @@
 #include <ace/utils/file.h>
 
 // TODO: this can be configurable for different systems
-#define BPP 5
+#define BPP 4
 #define UNIT_SIZE 32
 #define UNIT_SIZE_SHIFT 5
 #define UNIT_FRAME_BYTES (UNIT_SIZE / 8 + UNIT_SIZE * BPP)

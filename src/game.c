@@ -27,7 +27,7 @@
 
 #include <graphics/sprite.h>
 
-#define BPP 5
+#define BPP 4
 #define COLORS (1 << BPP)
 #define MAP_WIDTH 320
 #define MAP_HEIGHT 160
@@ -81,7 +81,7 @@ static UBYTE SelectedTile = 0x10;
 // game statics
 static Unit *s_pSelectedUnit[NUM_SELECTION];
 
-#define IMGDIR "resources/imgs/"
+#define IMGDIR "resources/"
 #define MAPDIR "resources/maps/"
 #define LONGEST_MAPNAME "human12.map"
 
@@ -112,8 +112,8 @@ uint32_t tileIndexToTileBitmapOffset(uint8_t index) {
 
 void loadMap(const char* name, uint16_t mapbufCoplistStart, uint16_t mapColorsCoplistStart) {
     char* mapname = MAPDIR LONGEST_MAPNAME;
-    char* palname = IMGDIR "for.plt";
-    char* imgname = IMGDIR "for.bm";
+    char* palname = IMGDIR "palettes/wood.plt";
+    char* imgname = IMGDIR "tilesets/wood.bm";
 
     snprintf(mapname + strlen(MAPDIR), strlen(LONGEST_MAPNAME) + 1, "%s.map", name);
     tFile *map = fileOpen(mapname, "r");
@@ -122,8 +122,8 @@ void loadMap(const char* name, uint16_t mapbufCoplistStart, uint16_t mapColorsCo
     }
 
     // first three bytes are simply name of the palette/terrain
-    fileRead(map, palname + strlen(IMGDIR), 3);
-    strncpy(imgname + strlen(IMGDIR), palname + strlen(IMGDIR), 3);
+    // fileRead(map, palname + strlen(IMGDIR), 3);
+    // strncpy(imgname + strlen(IMGDIR), palname + strlen(IMGDIR), 3);
 
     logWrite("Loading map: %s %s\n", palname, imgname);
     // create map area
@@ -184,7 +184,7 @@ void initBobs(void) {
 
 void loadUi(uint16_t topPanelColorsPos, uint16_t panelColorsPos, uint16_t simplePosTop, uint16_t simplePosBottom) {
     // create panel area
-    paletteLoad("resources/ui/panel.plt", s_pPanelPalette, COLORS);
+    paletteLoad("resources/palettes/hgui.plt", s_pPanelPalette, COLORS);
 
     tCopCmd *pCmds = &s_pView->pCopList->pBackBfr->pList[topPanelColorsPos];
     for (uint8_t i = 0; i < COLORS; i++) {

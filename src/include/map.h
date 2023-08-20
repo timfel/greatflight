@@ -5,20 +5,6 @@
 
 #define MAPDIR "resources/maps/"
 
-struct Map {
-    const char *path;
-    const char *tileset;
-    UBYTE width;
-    UBYTE height;
-    UBYTE **tiles;
-    UBYTE **pathmap;
-};
-
-/**
- * @brief The global structure that holds the map data.
- */
-extern struct Map g_Map;
-
 #define TILE_SHIFT 5
 #define TILE_SIZE (1 << TILE_SHIFT)
 #define TILE_SIZE_WORDS (TILE_SIZE >> 4)
@@ -26,6 +12,18 @@ extern struct Map g_Map;
 #define TILE_HEIGHT_LINES (TILE_SIZE * BPP)
 #define TILE_FRAME_BYTES (TILE_SIZE_BYTES * TILE_HEIGHT_LINES)
 #define MAP_SIZE 32
+
+struct Map {
+    const char *m_pName;
+    const char *m_pTileset;
+    ULONG m_ulTilemapXY[MAP_SIZE][MAP_SIZE];
+    UBYTE m_ubPathmapXY[MAP_SIZE * 2][MAP_SIZE * 2];
+};
+
+/**
+ * @brief The global structure that holds the map data.
+ */
+extern struct Map g_Map;
 
 static inline UBYTE mapIsWalkable(UBYTE **map, UBYTE x, UBYTE y) {
     return map[x][y] < 15;

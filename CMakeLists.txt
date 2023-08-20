@@ -81,7 +81,7 @@ endfunction()
 # Viewport
 
 png2gpl(${PROJECT_SOURCE_DIR}/resources/Palettes/Viewport.png ${PROJECT_BINARY_DIR}/tmp/Palettes/Viewport.gpl)
-convertPalette(${GAME_LINKED} ${PROJECT_BINARY_DIR}/tmp/Palettes/Viewport.gpl ${PROJECT_BINARY_DIR}/resources/palettes/wood.plt)
+convertPalette(${GAME_LINKED} ${PROJECT_BINARY_DIR}/tmp/Palettes/Viewport.gpl ${PROJECT_BINARY_DIR}/resources/palettes/for.plt)
 
 tileize(
   ${PROJECT_BINARY_DIR}/tmp/Tiles/Woodland/Woodland.png
@@ -125,9 +125,9 @@ convertTileset(
   TARGET ${GAME_LINKED}
   SOURCE ${PROJECT_BINARY_DIR}/tmp/Tiles/Woodland/Woodland.png
   TILE_PATHS ${PROJECT_BINARY_DIR}/tmp/Tiles/Woodland/Woodland.png
-  DESTINATION ${PROJECT_BINARY_DIR}/resources/tilesets/wood.bm
+  DESTINATION ${PROJECT_BINARY_DIR}/resources/tilesets/for.bm
   SIZE 32
-  PALETTE ${PROJECT_BINARY_DIR}/resources/palettes/wood.plt
+  PALETTE ${PROJECT_BINARY_DIR}/resources/palettes/for.plt
 )
 
 # Human UI

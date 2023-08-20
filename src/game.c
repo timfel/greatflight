@@ -278,10 +278,13 @@ static inline tUbCoordYX screenPosToTile(tUwCoordYX pos) {
     return (tUbCoordYX){.ubX = pos.uwX >> TILE_SHIFT, .ubY = pos.uwY >> TILE_SHIFT};
 }
 
-void handleInput(tUwCoordYX mousePos) {
+void handleInput(UWORD mouseX, UWORD mouseY) {
     static tUwCoordYX lmbDown = {.ulYX = 0};
+    
+    tUwCoordYX mousePos = {.uwX = mouseX / TILE_SIZE * TILE_SIZE, .uwY = mouseY / TILE_SIZE * TILE_SIZE};
 
     if (s_Mode == edit) {
+        s_TileCursor.sPos.ulYX = mousePos.ulYX;
         if (keyCheck(KEY_RBRACKET)) {
             SelectedTile++;
             bobSetFrame(&s_TileCursor, s_pMapBitmap->Planes[0] + (SelectedTile * TILE_FRAME_BYTES), 0);
@@ -538,19 +541,10 @@ void drawAllTiles(void) {
 }
 
 void gameGsLoop(void) {
-    // 1. handle input
-    UWORD mouseX = mouseGetX(MOUSE_PORT_1);
-    UWORD mouseY = mouseGetY(MOUSE_PORT_1);
-    tUwCoordYX mousePos = {.uwX = mouseX / TILE_SIZE * TILE_SIZE, .uwY = mouseY / TILE_SIZE * TILE_SIZE};
-    if (GameCycle & 4) {
-        handleInput(mousePos);
-    }
-
     // redraw map
     drawAllTiles();
 
     // redraw units and missiles
-    bobDiscardUndraw();
     bobBegin(s_pMapBuffer->pBack);
 
     // process all units
@@ -562,8 +556,26 @@ void gameGsLoop(void) {
     //     (tUbCoordYX){.ubX = tileTopLeft.ubX + VISIBLE_TILES_X, .ubY = tileTopLeft.ubY + VISIBLE_TILES_Y}
     // );
 
+    UWORD mouseX = mouseGetX(MOUSE_PORT_1);
+    UWORD mouseY = mouseGetY(MOUSE_PORT_1);
+
+    // do other actions (AI, sounds)
+    uint8_t renderCycle = GameCycle & 0b1111;
+    switch (renderCycle) {
+        // handle input once per 8 frames
+        case 0b0000:
+        case 0b1000:
+            handleInput(mouseX, mouseY);
+            break;
+        // handle income once per 16 frames
+        case 0b0001:
+            // redrawIncome();
+            break;
+        default:
+            break;
+    }
+
     if (s_Mode == edit) {
-        s_TileCursor.sPos.ulYX = mousePos.ulYX;
         bobPush(&s_TileCursor);
     }
 
@@ -571,15 +583,6 @@ void gameGsLoop(void) {
 
     // redraw panel
     drawPanel();
-
-    // do other actions (AI, sounds)
-    uint8_t renderCycle = GameCycle & 0b1111;
-    switch (renderCycle) {
-        case 0:
-            break;
-        default:
-            break;
-    }
 
     // finish frame
     viewProcessManagers(s_pView);

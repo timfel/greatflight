@@ -1,8 +1,23 @@
 #ifndef MAP_H
 #define MAP_H
 
-#include <stdint.h>
 #include "ace/types.h"
+
+#define MAPDIR "resources/maps/"
+
+struct Map {
+    const char *path;
+    const char *tileset;
+    UBYTE width;
+    UBYTE height;
+    UBYTE **tiles;
+    UBYTE **pathmap;
+};
+
+/**
+ * @brief The global structure that holds the map data.
+ */
+extern struct Map g_Map;
 
 #define TILE_SHIFT 5
 #define TILE_SIZE (1 << TILE_SHIFT)
@@ -12,11 +27,11 @@
 #define TILE_FRAME_BYTES (TILE_SIZE_BYTES * TILE_HEIGHT_LINES)
 #define MAP_SIZE 32
 
-static inline uint8_t mapIsWalkable(uint8_t **map, uint8_t x, uint8_t y) {
+static inline UBYTE mapIsWalkable(UBYTE **map, UBYTE x, UBYTE y) {
     return map[x][y] < 15;
 }
 
-static inline uint8_t mapIsHarvestable(uint8_t **map, uint8_t x, uint8_t y) {
+static inline UBYTE mapIsHarvestable(UBYTE **map, UBYTE x, UBYTE y) {
     return map[x][y] == 17;
 }
 

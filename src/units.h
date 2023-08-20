@@ -1,10 +1,9 @@
 #ifndef UNITS_H
 #define UNITS_H
 
-#include "map.h"
+#include "include/map.h"
 #include "icons.h"
 
-#include <stdint.h>
 #include <ace/managers/bob.h>
 #include <ace/utils/bitmap.h>
 #include <ace/utils/file.h>
@@ -38,11 +37,11 @@ typedef struct {
         const char *maskPath;
         tBitMap *mask;
     };
-    uint8_t iconIdx;
+    UBYTE iconIdx;
     struct {
-        uint8_t maxHP;
-        uint8_t speed;
-        uint8_t hasMana;
+        UBYTE maxHP;
+        UBYTE speed;
+        UBYTE hasMana;
     } stats;
 } UnitType;
 
@@ -72,33 +71,33 @@ enum UnitTypes {
 };
 
 typedef struct {
-    uint8_t hp;
-    uint8_t mana;
+    UBYTE hp;
+    UBYTE mana;
 } UnitStats;
 
-_Static_assert(sizeof(UnitStats) == sizeof(uint16_t), "unit stats is not 1 word");
+_Static_assert(sizeof(UnitStats) == sizeof(UWORD), "unit stats is not 1 word");
 
 typedef struct _unitmanager tUnitManager;
 
 typedef struct {
-    uint8_t type;
-    uint8_t action;
+    UBYTE type;
+    UBYTE action;
     union {
-        uint32_t ulActionData;
+        ULONG ulActionData;
         struct {
-            uint16_t uwActionDataA;
-            uint16_t uwActionDataB;
+            UWORD uwActionDataA;
+            UWORD uwActionDataB;
         };
         struct {
-            uint8_t ubActionDataA;
-            uint8_t ubActionDataB;
-            uint8_t ubActionDataC;
-            uint8_t ubActionDataD;
+            UBYTE ubActionDataA;
+            UBYTE ubActionDataB;
+            UBYTE ubActionDataC;
+            UBYTE ubActionDataD;
         };
     };
     UnitStats stats;
     tBob bob;
-    uint8_t frame;
+    UBYTE frame;
 } Unit;
 
 /* The global list of unit types */
@@ -145,7 +144,7 @@ void unitDelete(tUnitManager *pUnitListHead, Unit *unit);
  * @param viewportTopLeft top left visible tile
  * @param viewportBottomRight bottom right visible tile
  */
-void unitManagerProcessUnits(tUnitManager *pUnitListHead, uint8_t **pTileData, tUbCoordYX viewportTopLeft, tUbCoordYX viewportBottomRight);
+void unitManagerProcessUnits(tUnitManager *pUnitListHead, UBYTE **pTileData, tUbCoordYX viewportTopLeft, tUbCoordYX viewportBottomRight);
 
 /**
  * @brief Return unit on tile, if any
@@ -178,7 +177,7 @@ static inline void unitDraw(Unit *self) {
 }
 
 static inline void unitSetFrame(Unit *self, UBYTE ubFrame) {
-    uint16_t offset = ubFrame * UNIT_FRAME_BYTES;
+    UWORD offset = ubFrame * UNIT_FRAME_BYTES;
     bobSetFrame(&self->bob, UnitTypes[self->type].spritesheet->Planes[0] + offset, UnitTypes[self->type].mask->Planes[0] + offset);
 }
 

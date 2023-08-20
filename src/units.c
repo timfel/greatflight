@@ -4,8 +4,6 @@
 #include "ace/macros.h"
 #include "ace/managers/memory.h"
 
-#include <stdint.h>
-
 UnitType UnitTypes[] = {
     [dead] = {},
     [peasant] = {},
@@ -54,7 +52,7 @@ struct _unitmanager {
 #define UNIT_MANAGER_SIZE (sizeof(struct _unitmanager) + sizeof(struct _unitLink) * MAX_UNITS)
 
 #ifdef ACE_DEBUG
-static inline uint8_t unitManagerUnitIsActive(Unit *unit) {
+static inline UBYTE unitManagerUnitIsActive(Unit *unit) {
     return unitGetTilePosition(unit).uwYX != UNIT_FREE_TILE_POSITION.uwYX;
 }
 #endif
@@ -64,7 +62,7 @@ tUnitManager * unitManagerCreate(void) {
     
     // link all units together into the singly linked free list
     mgr->nextFreeUnit = &mgr->unitList[0];
-    for (uint16_t i = 0; i < MAX_UNITS - 1; i++) {
+    for (UWORD i = 0; i < MAX_UNITS - 1; i++) {
 #ifdef ACE_DEBUG
         unitSetTilePosition((Unit *)(&mgr->unitList[i]), NULL, UNIT_FREE_TILE_POSITION);
 #endif
@@ -78,7 +76,7 @@ tUnitManager * unitManagerCreate(void) {
     mgr->firstActiveUnit = NULL;
 
     // TODO: lazy loading of spritesheets
-    for (uint16_t i = 0; i < sizeof(UnitTypes) / sizeof(UnitType); i++) {
+    for (UWORD i = 0; i < sizeof(UnitTypes) / sizeof(UnitType); i++) {
         if (UnitTypes[i].spritesheetPath) {
             tBitMap *bmp = bitmapCreateFromFile(UnitTypes[i].spritesheetPath, 0);
             tBitMap *mask = bitmapCreateFromFile(UnitTypes[i].maskPath, 0);
@@ -91,7 +89,7 @@ tUnitManager * unitManagerCreate(void) {
 }
 
 void unitManagerDestroy(tUnitManager *pUnitListHead) {
-    for (uint16_t i = 0; i < sizeof(UnitTypes) / sizeof(UnitType); i++) {
+    for (UWORD i = 0; i < sizeof(UnitTypes) / sizeof(UnitType); i++) {
         if (UnitTypes[i].spritesheet) {
             bitmapDestroy(UnitTypes[i].spritesheet);
             bitmapDestroy(UnitTypes[i].mask);
@@ -108,7 +106,7 @@ void unitManagerDestroy(tUnitManager *pUnitListHead) {
     memFree(pUnitListHead, UNIT_MANAGER_SIZE);
 }
 
-void unitManagerProcessUnits(tUnitManager *pUnitListHead, uint8_t **pTileData, tUbCoordYX viewportTopLeft, tUbCoordYX viewportBottomRight) {
+void unitManagerProcessUnits(tUnitManager *pUnitListHead, UBYTE **pTileData, tUbCoordYX viewportTopLeft, tUbCoordYX viewportBottomRight) {
     struct _unitLink *link = pUnitListHead->firstActiveUnit;
     while (link) {
         actionDo((Unit *)link, pTileData);

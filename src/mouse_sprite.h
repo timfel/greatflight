@@ -1,10 +1,9 @@
 #ifndef MOUSE_SPRITE_H
 #define MOUSE_SPRITE_H
 
-#include <stdint.h>
 #include <ace/utils/extview.h>
 
-static inline uint8_t mouseSpriteGetRawCopplistInstructionCountLength() {
+static inline UBYTE mouseSpriteGetRawCopplistInstructionCountLength() {
     return 2;
 }
 
@@ -14,7 +13,7 @@ static inline uint8_t mouseSpriteGetRawCopplistInstructionCountLength() {
  * @param pView - the view into which to store the cop commands
  * @param copListStart - at which index into the cop list to insert the commands
  */
-void mouseSpriteSetup(tView *pView, uint16_t copListStart);
+void mouseSpriteSetup(tView *pView, UWORD copListStart);
 
 /**
  * @brief Update the mouse's sprite data with the current position.
@@ -22,6 +21,6 @@ void mouseSpriteSetup(tView *pView, uint16_t copListStart);
  * @param mouseX
  * @param mouseY
  */
-void mouseSpriteUpdate(uint16_t mouseX, uint16_t mouseY);
+void mouseSpriteUpdate(UWORD mouseX, UWORD mouseY);
 
 #endif

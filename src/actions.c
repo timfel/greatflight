@@ -22,7 +22,7 @@ void actionMoveTo(Unit *unit, tUbCoordYX goal) {
 #define moveTargetXShift 10
 #define moveTargetYShift 4
 #define moveCounterShift 0
-void actionMove(Unit *unit, uint8_t **map) {
+void actionMove(Unit *unit, UBYTE **map) {
     UnitType type = UnitTypes[unit->type];
     UBYTE speed = type.stats.speed;
 
@@ -96,7 +96,7 @@ void actionDie(Unit  __attribute__((__unused__)) *unit) {
     return;
 };
 
-void actionDo(Unit *unit, uint8_t **map) {
+void actionDo(Unit *unit, UBYTE **map) {
     switch (unit->action) {
         case ActionStill:
             return;

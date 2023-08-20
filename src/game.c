@@ -1,8 +1,7 @@
-#include <stdint.h>
 #include <limits.h>
 
 #include "game.h"
-#include "map.h"
+#include "include/map.h"
 #include "units.h"
 #include "actions.h"
 #include "icons.h"
@@ -42,8 +41,8 @@
 
 static tView *s_pView; // View containing all the viewports
 
-static uint8_t s_ubTopPanelDirty;
-static uint8_t s_ubBottomPanelDirty;
+static UBYTE s_ubTopPanelDirty;
+static UBYTE s_ubBottomPanelDirty;
 
 static tVPort *s_pVpTopPanel; // Viewport for resources
 static tSimpleBufferManager *s_pTopPanelBuffer;
@@ -51,7 +50,7 @@ static tBitMap *s_pTopPanelBackground;
 static tVPort *s_pVpPanel; // Viewport for panel
 static tSimpleBufferManager *s_pPanelBuffer;
 static tBitMap *s_pPanelBackground;
-static uint16_t s_pPanelPalette[COLORS];
+static UWORD s_pPanelPalette[COLORS];
 static tIcon s_panelUnitIcons[4];
 // static tIcon s_panelActionIcons[6];
 static tBitMap *s_pIcons;
@@ -60,9 +59,9 @@ static tVPort *s_pVpMain; // Viewport for playfield
 static tSimpleBufferManager *s_pMapBuffer;
 static tCameraManager *s_pMainCamera;
 static tBitMap *s_pMapBitmap;
-static uint16_t s_pMapPalette[COLORS];
-static uintptr_t s_ulTilemap[MAP_SIZE][MAP_SIZE];
-// static uint8_t s_ubUnitmap[MAP_WIDTH * 2][MAP_HEIGHT * 2];
+static UWORD s_pMapPalette[COLORS];
+static ULONG s_ulTilemap[MAP_SIZE][MAP_SIZE];
+// static UBYTE s_ubUnitmap[MAP_WIDTH * 2][MAP_HEIGHT * 2];
 
 static tBob s_TileCursor;
 
@@ -72,7 +71,7 @@ enum mode {
     game,
     edit
 };
-static uint16_t GameCycle = 0;
+static UWORD GameCycle = 0;
 static UBYTE s_Mode = game;
 
 // editor statics
@@ -82,7 +81,6 @@ static UBYTE SelectedTile = 0x10;
 static Unit *s_pSelectedUnit[NUM_SELECTION];
 
 #define IMGDIR "resources/"
-#define MAPDIR "resources/maps/"
 #define LONGEST_MAPNAME "human12.map"
 
 void createViewports() {
@@ -106,11 +104,11 @@ void createViewports() {
                              TAG_END);
 }
 
-uint32_t tileIndexToTileBitmapOffset(uint8_t index) {
-    return (uint32_t)(s_pMapBitmap->Planes[0] + (s_pMapBitmap->BytesPerRow * (index << TILE_SHIFT)));
+ULONG tileIndexToTileBitmapOffset(UBYTE index) {
+    return (ULONG)(s_pMapBitmap->Planes[0] + (s_pMapBitmap->BytesPerRow * (index << TILE_SHIFT)));
 }
 
-void loadMap(const char* name, uint16_t mapbufCoplistStart, uint16_t mapColorsCoplistStart) {
+void loadMap(const char* name, UWORD mapbufCoplistStart, UWORD mapColorsCoplistStart) {
     char* mapname = MAPDIR LONGEST_MAPNAME;
     char* palname = IMGDIR "palettes/wood.plt";
     char* imgname = IMGDIR "tilesets/wood.bm";
@@ -129,11 +127,11 @@ void loadMap(const char* name, uint16_t mapbufCoplistStart, uint16_t mapColorsCo
     // create map area
     paletteLoad(palname, s_pMapPalette, COLORS);
     tCopCmd *pCmds = &s_pView->pCopList->pBackBfr->pList[mapColorsCoplistStart];
-    for (uint8_t i = 0; i < COLORS; i++) {
+    for (UBYTE i = 0; i < COLORS; i++) {
         copSetMove(&pCmds[i].sMove, &g_pCustom->color[i], s_pMapPalette[i]);
     }
     pCmds = &s_pView->pCopList->pFrontBfr->pList[mapColorsCoplistStart];
-    for (uint8_t i = 0; i < COLORS; i++) {
+    for (UBYTE i = 0; i < COLORS; i++) {
         copSetMove(&pCmds[i].sMove, &g_pCustom->color[i], s_pMapPalette[i]);
     }
 
@@ -150,7 +148,7 @@ void loadMap(const char* name, uint16_t mapbufCoplistStart, uint16_t mapColorsCo
     s_pMainCamera = cameraCreate(s_pVpMain, 0, 0, MAP_SIZE * TILE_SIZE - MAP_WIDTH, MAP_SIZE * TILE_SIZE - MAP_HEIGHT, 0);
 
     for (int x = 0; x < MAP_SIZE; x++) {
-        uint8_t *ubColumn = (uint8_t*)(s_ulTilemap[x]);
+        UBYTE *ubColumn = (UBYTE*)(s_ulTilemap[x]);
         // reads MAP_SIZE bytes into the first half of the column
         fileRead(map, ubColumn, MAP_SIZE);
         // we store MAP_SIZE words with the direct offsets into the tilemap,
@@ -182,25 +180,25 @@ void initBobs(void) {
     // bobReallocateBgBuffers();
 }
 
-void loadUi(uint16_t topPanelColorsPos, uint16_t panelColorsPos, uint16_t simplePosTop, uint16_t simplePosBottom) {
+void loadUi(UWORD topPanelColorsPos, UWORD panelColorsPos, UWORD simplePosTop, UWORD simplePosBottom) {
     // create panel area
     paletteLoad("resources/palettes/hgui.plt", s_pPanelPalette, COLORS);
 
     tCopCmd *pCmds = &s_pView->pCopList->pBackBfr->pList[topPanelColorsPos];
-    for (uint8_t i = 0; i < COLORS; i++) {
+    for (UBYTE i = 0; i < COLORS; i++) {
         copSetMove(&pCmds[i].sMove, &g_pCustom->color[i], s_pPanelPalette[i]);
     }
     pCmds = &s_pView->pCopList->pFrontBfr->pList[topPanelColorsPos];
-    for (uint8_t i = 0; i < COLORS; i++) {
+    for (UBYTE i = 0; i < COLORS; i++) {
         copSetMove(&pCmds[i].sMove, &g_pCustom->color[i], s_pPanelPalette[i]);
     }
 
     pCmds = &s_pView->pCopList->pBackBfr->pList[panelColorsPos];
-    for (uint8_t i = 0; i < COLORS; i++) {
+    for (UBYTE i = 0; i < COLORS; i++) {
         copSetMove(&pCmds[i].sMove, &g_pCustom->color[i], s_pPanelPalette[i]);
     }
     pCmds = &s_pView->pCopList->pFrontBfr->pList[panelColorsPos];
-    for (uint8_t i = 0; i < COLORS; i++) {
+    for (UBYTE i = 0; i < COLORS; i++) {
         copSetMove(&pCmds[i].sMove, &g_pCustom->color[i], s_pPanelPalette[i]);
     }
 
@@ -235,15 +233,15 @@ void gameGsCreate(void) {
     viewLoad(0);
 
     // Calculate copperlist size
-    uint16_t spritePos = 0;
-    uint16_t selectionPos = spritePos + mouseSpriteGetRawCopplistInstructionCountLength();
-    uint16_t simplePosTop = selectionPos + selectionSpritesGetRawCopplistInstructionCountLength();
-    uint16_t topPanelColorsPos = simplePosTop + simpleBufferGetRawCopperlistInstructionCount(BPP);
-    uint16_t mapbufCoplistStart = topPanelColorsPos + COLORS;
-    uint16_t mapColorsCoplistStart = mapbufCoplistStart + simpleBufferGetRawCopperlistInstructionCount(BPP);
-    uint16_t simplePosBottom = mapColorsCoplistStart + COLORS;
-    uint16_t panelColorsPos = simplePosBottom + simpleBufferGetRawCopperlistInstructionCount(BPP);
-    uint16_t copListLength = panelColorsPos + COLORS;
+    UWORD spritePos = 0;
+    UWORD selectionPos = spritePos + mouseSpriteGetRawCopplistInstructionCountLength();
+    UWORD simplePosTop = selectionPos + selectionSpritesGetRawCopplistInstructionCountLength();
+    UWORD topPanelColorsPos = simplePosTop + simpleBufferGetRawCopperlistInstructionCount(BPP);
+    UWORD mapbufCoplistStart = topPanelColorsPos + COLORS;
+    UWORD mapColorsCoplistStart = mapbufCoplistStart + simpleBufferGetRawCopperlistInstructionCount(BPP);
+    UWORD simplePosBottom = mapColorsCoplistStart + COLORS;
+    UWORD panelColorsPos = simplePosBottom + simpleBufferGetRawCopperlistInstructionCount(BPP);
+    UWORD copListLength = panelColorsPos + COLORS;
 
     // Create the game view
     s_pView = viewCreate(0,
@@ -362,23 +360,23 @@ void handleInput(UWORD mouseX, UWORD mouseY) {
     } else if (lmbDown.ulYX) {
         tUbCoordYX tile1 = screenPosToTile((tUwCoordYX){.ulYX = mousePos.ulYX + s_pMainCamera->uPos.ulYX});
         tUbCoordYX tile2 = screenPosToTile((tUwCoordYX){.ulYX = lmbDown.ulYX + s_pMainCamera->uPos.ulYX});
-        uint8_t tmp = tile1.ubX - tile2.ubX;
-        uint8_t operand = tmp & (tmp >> (sizeof(int) * CHAR_BIT - 1));
-        uint8_t x1 = tile2.ubX + operand; // min(x, y)
-        uint8_t x2 = tile1.ubX - operand; // max(x, y)
+        UBYTE tmp = tile1.ubX - tile2.ubX;
+        UBYTE operand = tmp & (tmp >> (sizeof(int) * CHAR_BIT - 1));
+        UBYTE x1 = tile2.ubX + operand; // min(x, y)
+        UBYTE x2 = tile1.ubX - operand; // max(x, y)
         tmp = tile1.ubY - tile2.ubY;
         operand = tmp & (tmp >> (sizeof(int) * CHAR_BIT - 1));
-        uint8_t y1 = tile2.ubY + operand; // min(x, y)
-        uint8_t y2 = tile1.ubY - operand; // max(x, y)
+        UBYTE y1 = tile2.ubY + operand; // min(x, y)
+        UBYTE y2 = tile1.ubY - operand; // max(x, y)
         tmp = 0;
         while (y1 <= y2) {
-            uint8_t xcur = x1;
+            UBYTE xcur = x1;
             while (xcur <= x2) {
                 tUbCoordYX tile = (tUbCoordYX){.ubX = xcur, .ubY = y1};
                 Unit *unit = unitManagerUnitAt(s_pUnitManager, tile);
                 if (unit) {
                     if (keyCheck(KEY_LSHIFT) || keyCheck(KEY_RSHIFT) || tmp) {
-                        for(uint8_t idx = 0; idx < NUM_SELECTION; ++idx) {
+                        for(UBYTE idx = 0; idx < NUM_SELECTION; ++idx) {
                             Unit *sel = s_pSelectedUnit[idx];
                             if (!sel) {
                                 s_pSelectedUnit[idx] = unit;
@@ -391,7 +389,7 @@ void handleInput(UWORD mouseX, UWORD mouseY) {
                         }
                     } else {
                         s_pSelectedUnit[0] = unit;
-                        for(uint8_t idx = 1; idx < NUM_SELECTION; ++idx) {
+                        for(UBYTE idx = 1; idx < NUM_SELECTION; ++idx) {
                             s_pSelectedUnit[idx] = NULL;
                             s_ubBottomPanelDirty = 1;
                         }
@@ -403,7 +401,7 @@ void handleInput(UWORD mouseX, UWORD mouseY) {
             ++y1;
         }
         if (!tmp) {
-            for(uint8_t idx = 0; idx < NUM_SELECTION; ++idx) {
+            for(UBYTE idx = 0; idx < NUM_SELECTION; ++idx) {
                 s_pSelectedUnit[idx] = NULL;
                 s_ubBottomPanelDirty = 1;
             }
@@ -412,7 +410,7 @@ void handleInput(UWORD mouseX, UWORD mouseY) {
         selectionRectangleUpdate(-1, -1, -1, -1);
     } else if (s_pSelectedUnit[0] && mouseCheck(MOUSE_PORT_1, MOUSE_RMB)) {
         tUbCoordYX tile = screenPosToTile((tUwCoordYX){.ulYX = mousePos.ulYX + s_pMainCamera->uPos.ulYX});
-        for(uint8_t idx = 0; idx < NUM_SELECTION; ++idx) {
+        for(UBYTE idx = 0; idx < NUM_SELECTION; ++idx) {
             Unit *unit = s_pSelectedUnit[idx];
             if (unit) {
                 actionMoveTo(unit, tile);
@@ -456,7 +454,7 @@ void drawPanel(void) {
         g_pCustom->bltsize = ((BOTTOM_PANEL_HEIGHT * BPP) << 6) | (MAP_WIDTH >> 4);
 
         Unit *unit;
-        for(uint8_t idx = 0; idx < NUM_SELECTION && (unit = s_pSelectedUnit[idx]); ++idx) {
+        for(UBYTE idx = 0; idx < NUM_SELECTION && (unit = s_pSelectedUnit[idx]); ++idx) {
             tIcon *icon = &s_panelUnitIcons[idx];
             iconSetSource(icon, s_pIcons, UnitTypes[unit->type].iconIdx);
             iconDraw(icon);
@@ -465,12 +463,12 @@ void drawPanel(void) {
 }
 
 void drawSelectionRectangles(void) {
-    for(uint8_t idx = 0; idx < NUM_SELECTION; ++idx) {
+    for(UBYTE idx = 0; idx < NUM_SELECTION; ++idx) {
         Unit *unit = s_pSelectedUnit[idx];
         if (unit) {
-            int16_t bobPosOnScreenX = s_pSelectedUnit[idx]->bob.sPos.uwX - s_pMainCamera->uPos.uwX;
+            WORD bobPosOnScreenX = s_pSelectedUnit[idx]->bob.sPos.uwX - s_pMainCamera->uPos.uwX;
             if (bobPosOnScreenX >= -8) {
-                int16_t bobPosOnScreenY = s_pSelectedUnit[idx]->bob.sPos.uwY - s_pMainCamera->uPos.uwY + TOP_PANEL_HEIGHT;
+                WORD bobPosOnScreenY = s_pSelectedUnit[idx]->bob.sPos.uwY - s_pMainCamera->uPos.uwY + TOP_PANEL_HEIGHT;
                 if (bobPosOnScreenX >= -8) {
                     selectionSpritesUpdate(idx, bobPosOnScreenX + 8, bobPosOnScreenY + 8);
                     continue;
@@ -494,9 +492,9 @@ void drawAllTiles(void) {
 
     // Figure out which tiles to actually draw, depending on the
     // current camera position
-    uint8_t ubStartX = /*MAX(0, (*/s_pMainCamera->uPos.uwX >> TILE_SHIFT/*))*/;
-	uint8_t ubStartY = /*MAX(0, (*/s_pMainCamera->uPos.uwY >> TILE_SHIFT/*))*/;
-	uint8_t ubEndX = ubStartX + (MAP_WIDTH >> TILE_SHIFT);
+    UBYTE ubStartX = /*MAX(0, (*/s_pMainCamera->uPos.uwX >> TILE_SHIFT/*))*/;
+	UBYTE ubStartY = /*MAX(0, (*/s_pMainCamera->uPos.uwY >> TILE_SHIFT/*))*/;
+	UBYTE ubEndX = ubStartX + (MAP_WIDTH >> TILE_SHIFT);
 
     // Get pointer to start of drawing area
     PLANEPTR pDstPlane = s_pMapBuffer->pBack->Planes[0];
@@ -512,9 +510,9 @@ void drawAllTiles(void) {
 	g_pCustom->bltdmod = wDstModulo;
 
     // draw as fast as we can
-    for (uint8_t x = ubStartX; x < ubEndX; x++) {
+    for (UBYTE x = ubStartX; x < ubEndX; x++) {
         // manually unrolled loop to draw (MAP_BUFFER_HEIGHT / TILE_SIZE) tiles
-        uintptr_t *pTileBitmapOffset = &(s_ulTilemap[x][ubStartY]);
+        ULONG *pTileBitmapOffset = &(s_ulTilemap[x][ubStartY]);
         blitWait();
         g_pCustom->bltdpt = pDstPlane;
         g_pCustom->bltapt = (APTR)*pTileBitmapOffset;
@@ -551,7 +549,7 @@ void gameGsLoop(void) {
     // tUbCoordYX tileTopLeft = screenPosToTile(s_pMainCamera->uPos);
     // unitManagerProcessUnits(
     //     s_pUnitManager,
-    //     (uint8_t **)s_ubUnitmap,
+    //     (UBYTE **)s_ubUnitmap,
     //     tileTopLeft,
     //     (tUbCoordYX){.ubX = tileTopLeft.ubX + VISIBLE_TILES_X, .ubY = tileTopLeft.ubY + VISIBLE_TILES_Y}
     // );
@@ -560,7 +558,7 @@ void gameGsLoop(void) {
     UWORD mouseY = mouseGetY(MOUSE_PORT_1);
 
     // do other actions (AI, sounds)
-    uint8_t renderCycle = GameCycle & 0b1111;
+    UBYTE renderCycle = GameCycle & 0b1111;
     switch (renderCycle) {
         // handle input once per 8 frames
         case 0b0000:

@@ -27,14 +27,14 @@
     }
 
 /* real boring sprite data */
-static uint16_t CHIP s_spriteData[NUM_SELECTION][SIZE_OF_SPRITE_DATA] = {
+static UWORD CHIP s_spriteData[NUM_SELECTION][SIZE_OF_SPRITE_DATA] = {
     SPRITE_DATA,
     SPRITE_DATA,
     SPRITE_DATA,
     SPRITE_DATA
 };
 
-static uint16_t CHIP s_selectionRectangleSpriteUpDown[SIZE_OF_SPRITE_DATA * 2 - 2] = {
+static UWORD CHIP s_selectionRectangleSpriteUpDown[SIZE_OF_SPRITE_DATA * 2 - 2] = {
     0, 0, /* position control for top corner */
     0b1111111111111110, 0b1111111111111110,
     0b1111111111111110, 0b1111111111111110,
@@ -71,7 +71,7 @@ static uint16_t CHIP s_selectionRectangleSpriteUpDown[SIZE_OF_SPRITE_DATA * 2 - 
     0, 0, /* end of sprite data */
 };
 
-static uint16_t CHIP s_selectionRectangleSpriteHorizontal[SIZE_OF_SPRITE_DATA] = {
+static UWORD CHIP s_selectionRectangleSpriteHorizontal[SIZE_OF_SPRITE_DATA] = {
         0, 0, /* position control for 2nd horizontal corner */
         0b0000000110000000, 0b0000000110000000,
         0b0000000110000000, 0b0000000110000000,
@@ -91,9 +91,9 @@ static uint16_t CHIP s_selectionRectangleSpriteHorizontal[SIZE_OF_SPRITE_DATA] =
         0, 0, /* end of sprite data */
 };
 
-void selectionSpritesSetup(tView *pView, uint16_t copListStart) {
+void selectionSpritesSetup(tView *pView, UWORD copListStart) {
     for (int i = 0; i < NUM_SELECTION; i++) {
-        uint32_t ulSpriteData = (uint32_t)(s_spriteData[i]);
+        ULONG ulSpriteData = (ULONG)(s_spriteData[i]);
         tCopCmd *pCmds = &pView->pCopList->pBackBfr->pList[copListStart];
         copSetMove(&pCmds[0].sMove, &g_pSprFetch[i + 1].uwHi, ulSpriteData << 16);
         copSetMove(&pCmds[1].sMove, &g_pSprFetch[i + 1].uwLo, ulSpriteData & 0xFFFF);
@@ -117,15 +117,15 @@ void selectionSpritesSetup(tView *pView, uint16_t copListStart) {
     }
 }
 
-void selectionSpritesUpdate(uint8_t selectionIdx, int16_t selectionX, int16_t selectionY) {
+void selectionSpritesUpdate(UBYTE selectionIdx, WORD selectionX, WORD selectionY) {
     if (selectionX < 0) {
         s_spriteData[selectionIdx][0] = 0;
         s_spriteData[selectionIdx][1] = 0;
         return;
     }
-    uint16_t hstart = selectionX + 128;
-    uint16_t vstart = selectionY + 44;
-    uint16_t vstop = vstart + 15;
+    UWORD hstart = selectionX + 128;
+    UWORD vstart = selectionY + 44;
+    UWORD vstop = vstart + 15;
     s_spriteData[selectionIdx][0] = ((vstart & 0xff) << 8) | ((hstart >> 1) & 0xff); /* VSTART bits 7-0, HSTART bits 8-1 */
     s_spriteData[selectionIdx][1] = ((vstop & 0xff) << 8) | /* VSTOP = height + VSTART bits 7-0 */
                     ((vstart >> 8) & 1) << 2 | /* VSTART hight bit 8 */
@@ -133,7 +133,7 @@ void selectionSpritesUpdate(uint8_t selectionIdx, int16_t selectionX, int16_t se
                     (hstart & 1); /* HSTART low bit 0 */
 }
 
-void selectionRectangleUpdate(int16_t x1, int16_t x2, int16_t y1, int16_t y2) {
+void selectionRectangleUpdate(WORD x1, WORD x2, WORD y1, WORD y2) {
     if (x1 < 0) {
         s_selectionRectangleSpriteUpDown[0] = 0;
         s_selectionRectangleSpriteUpDown[1] = 0;
@@ -141,12 +141,12 @@ void selectionRectangleUpdate(int16_t x1, int16_t x2, int16_t y1, int16_t y2) {
         s_selectionRectangleSpriteHorizontal[1] = 0;
         return;
     }
-    uint16_t hstart1 = x1 + 128;
-    uint16_t hstart2 = x2 + 128;
-    uint16_t vstart1 = y1 + 44;
-    uint16_t vstart2 = y2 + 44;
-    uint16_t vstop1 = vstart1 + 15;
-    uint16_t vstop2 = vstart2 + 15;
+    UWORD hstart1 = x1 + 128;
+    UWORD hstart2 = x2 + 128;
+    UWORD vstart1 = y1 + 44;
+    UWORD vstart2 = y2 + 44;
+    UWORD vstop1 = vstart1 + 15;
+    UWORD vstop2 = vstart2 + 15;
     s_selectionRectangleSpriteUpDown[0] = ((vstart1 & 0xff) << 8) | ((hstart1 >> 1) & 0xff); /* VSTART bits 7-0, HSTART bits 8-1 */
     s_selectionRectangleSpriteUpDown[1] = ((vstop1 & 0xff) << 8) | /* VSTOP = height + VSTART bits 7-0 */
                     ((vstart1 >> 8) & 1) << 2 | /* VSTART hight bit 8 */

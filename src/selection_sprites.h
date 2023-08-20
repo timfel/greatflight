@@ -1,12 +1,11 @@
 #ifndef SELECTION_SPRITE_H
 #define SELECTION_SPRITE_H
 
-#include <stdint.h>
 #include <ace/utils/extview.h>
 
 #define NUM_SELECTION 4
 
-static inline uint8_t selectionSpritesGetRawCopplistInstructionCountLength() {
+static inline UBYTE selectionSpritesGetRawCopplistInstructionCountLength() {
     return 2 * NUM_SELECTION + 4 /* selection rectangle sprite */;
 }
 
@@ -16,7 +15,7 @@ static inline uint8_t selectionSpritesGetRawCopplistInstructionCountLength() {
  * @param pView - the view into which to store the cop commands
  * @param copListStart - at which index into the cop list to insert the commands
  */
-void selectionSpritesSetup(tView *pView, uint16_t copListStart);
+void selectionSpritesSetup(tView *pView, UWORD copListStart);
 
 /**
  * @brief Update the selection's sprite data with the current position.
@@ -25,7 +24,7 @@ void selectionSpritesSetup(tView *pView, uint16_t copListStart);
  * @param selectionX xPos. if <0, sprite is disabled
  * @param selectionY yPos
  */
-void selectionSpritesUpdate(uint8_t selectionIdx, int16_t selectionX, int16_t selectionY);
+void selectionSpritesUpdate(UBYTE selectionIdx, WORD selectionX, WORD selectionY);
 
 /**
  * @brief Update the 3 sprites used for corners of selection rectangles.
@@ -35,6 +34,6 @@ void selectionSpritesUpdate(uint8_t selectionIdx, int16_t selectionX, int16_t se
  * @param y1 start y of selection
  * @param y2 current y of mouse
  */
-void selectionRectangleUpdate(int16_t x1, int16_t x2, int16_t y1, int16_t y2);
+void selectionRectangleUpdate(WORD x1, WORD x2, WORD y1, WORD y2);
 
 #endif

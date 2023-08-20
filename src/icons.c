@@ -4,8 +4,8 @@
 #include <ace/managers/blit.h>
 
 void iconInit(tIcon *icon,
-    uint8_t width, uint8_t height,
-    tBitMap *iconTileMap, uint8_t iconIdx,
+    UBYTE width, UBYTE height,
+    tBitMap *iconTileMap, UBYTE iconIdx,
     tBitMap *iconBuffer, tUwCoordYX iconPosition)
 {
 #ifdef ACE_DEBUG
@@ -23,8 +23,8 @@ void iconInit(tIcon *icon,
         logWrite("ERROR: Icons need to be multiples of 8.");
     }
 #endif
-    uint16_t blitWords = width >> 4;
-    uint16_t dstOffs = iconBuffer->BytesPerRow * iconPosition.uwY + (iconPosition.uwX >> 3);
+    UWORD blitWords = width >> 4;
+    UWORD dstOffs = iconBuffer->BytesPerRow * iconPosition.uwY + (iconPosition.uwX >> 3);
 
     icon->dstModulo = bitmapGetByteWidth(iconBuffer) - (blitWords << 1);
     icon->iconDstPtr = iconBuffer->Planes[0] + dstOffs;
@@ -32,7 +32,7 @@ void iconInit(tIcon *icon,
     iconSetSource(icon, iconTileMap, iconIdx);
 }
 
-void iconSetSource(tIcon *icon, tBitMap *iconTileMap, uint8_t iconIdx) {
+void iconSetSource(tIcon *icon, tBitMap *iconTileMap, UBYTE iconIdx) {
 #ifdef ACE_DEBUG
     if (iconTileMap->Depth != icon->bpp) {
         logWrite("ERROR: Icons bpp need to match src and dst");
@@ -47,8 +47,8 @@ void iconSetSource(tIcon *icon, tBitMap *iconTileMap, uint8_t iconIdx) {
                 = widthBytes * iconIdx * height * Depth
                 = widthBytes * iconIdx * bltsize>>6
     */
-    uint8_t height = icon->bltsize >> 6;
-    uint16_t srcOffs = bitmapGetByteWidth(iconTileMap) * iconIdx * height;
+    UBYTE height = icon->bltsize >> 6;
+    UWORD srcOffs = bitmapGetByteWidth(iconTileMap) * iconIdx * height;
     icon->iconSrcPtr = iconTileMap->Planes[0] + srcOffs;
 }
 

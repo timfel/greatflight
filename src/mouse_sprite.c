@@ -4,7 +4,7 @@
 #include <ace/utils/custom.h>
 
 /* real boring sprite data */
-static uint16_t CHIP s_spriteData[] = {
+static UWORD CHIP s_spriteData[] = {
     0, 0,           /* position control           */
     0b1000000000000000, 0x0000,
     0b1100000000000000, 0x0000,
@@ -24,8 +24,8 @@ static uint16_t CHIP s_spriteData[] = {
     0, 0            /* reserved, must init to 0 0 */
 };
 
-void mouseSpriteSetup(tView *pView, uint16_t copListStart) {
-    uint32_t ulSpriteData = (uint32_t)s_spriteData;
+void mouseSpriteSetup(tView *pView, UWORD copListStart) {
+    ULONG ulSpriteData = (ULONG)s_spriteData;
     tCopCmd *pCmds = &pView->pCopList->pBackBfr->pList[copListStart];
     copSetMove(&pCmds[0].sMove, &g_pSprFetch[0].uwHi, ulSpriteData << 16);
     copSetMove(&pCmds[1].sMove, &g_pSprFetch[0].uwLo, ulSpriteData & 0xFFFF);
@@ -34,10 +34,10 @@ void mouseSpriteSetup(tView *pView, uint16_t copListStart) {
     copSetMove(&pCmds[1].sMove, &g_pSprFetch[0].uwLo, ulSpriteData & 0xFFFF);
 }
 
-void mouseSpriteUpdate(uint16_t mouseX, uint16_t mouseY) {
-    uint16_t hstart = mouseX + 128;
-    uint16_t vstart = mouseY + 44;
-    uint16_t vstop = vstart + 15;
+void mouseSpriteUpdate(UWORD mouseX, UWORD mouseY) {
+    UWORD hstart = mouseX + 128;
+    UWORD vstart = mouseY + 44;
+    UWORD vstop = vstart + 15;
     s_spriteData[0] = ((vstart & 0xff) << 8) | ((hstart >> 1) & 0xff); /* VSTART bits 7-0, HSTART bits 8-1 */
     s_spriteData[1] = ((vstop & 0xff) << 8) | /* VSTOP = height + VSTART bits 7-0 */
                     ((vstart >> 8) & 1) << 2 | /* VSTART hight bit 8 */

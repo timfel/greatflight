@@ -9,7 +9,7 @@
         [
             [
                 peon, # type
-                8, 8, # xy
+                8, 3, # xy
                 *unit_defaults
             ],
         ],

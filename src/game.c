@@ -146,12 +146,12 @@ void loadUi(UWORD topPanelColorsPos, UWORD panelColorsPos, UWORD simplePosTop, U
     g_Screen.m_panels.m_pMainPanelBackground = bitmapCreateFromFile("resources/ui/bottompanel.bm", 0);
     bitmapLoadFromFile(g_Screen.m_panels.m_pMainPanelBuffer->pFront, "resources/ui/bottompanel.bm", 0, 0);
 
-    g_Screen.m_pIcons = bitmapCreateFromFile("resources/ui/icons.bm", 0);
+    // g_Screen.m_pIcons = bitmapCreateFromFile("resources/ui/icons.bm", 0);
 
-    iconInit(&g_Screen.m_pUnitIcons[0], 32, 26, g_Screen.m_pIcons, 0, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 88, .uwY = 18});
-    iconInit(&g_Screen.m_pUnitIcons[1], 32, 26, g_Screen.m_pIcons, 0, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 150, .uwY = 18});
-    iconInit(&g_Screen.m_pUnitIcons[2], 32, 26, g_Screen.m_pIcons, 0, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 88, .uwY = 44});
-    iconInit(&g_Screen.m_pUnitIcons[3], 32, 26, g_Screen.m_pIcons, 0, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 150, .uwY = 44});
+    // iconInit(&g_Screen.m_pUnitIcons[0], 32, 26, g_Screen.m_pIcons, 0, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 88, .uwY = 18});
+    // iconInit(&g_Screen.m_pUnitIcons[1], 32, 26, g_Screen.m_pIcons, 0, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 150, .uwY = 18});
+    // iconInit(&g_Screen.m_pUnitIcons[2], 32, 26, g_Screen.m_pIcons, 0, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 88, .uwY = 44});
+    // iconInit(&g_Screen.m_pUnitIcons[3], 32, 26, g_Screen.m_pIcons, 0, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 150, .uwY = 44});
 }
 
 void gameGsCreate(void) {
@@ -199,8 +199,11 @@ void gameGsCreate(void) {
     systemUnuse();
 }
 
+/**
+ * Screen coordinates to pathmap coordinates
+ */
 static inline tUbCoordYX screenPosToTile(tUwCoordYX pos) {
-    return (tUbCoordYX){.ubX = pos.uwX >> TILE_SHIFT, .ubY = pos.uwY >> TILE_SHIFT};
+    return (tUbCoordYX){.ubX = pos.uwX >> (TILE_SHIFT - 1), .ubY = pos.uwY >> (TILE_SHIFT - 1)};
 }
 
 void handleInput(UWORD mouseX, UWORD mouseY) {
@@ -382,9 +385,9 @@ void drawPanel(void) {
 
         Unit *unit;
         for(UBYTE idx = 0; idx < NUM_SELECTION && (unit = s_pSelectedUnit[idx]); ++idx) {
-            tIcon *icon = &g_Screen.m_pUnitIcons[idx];
-            iconSetSource(icon, g_Screen.m_pIcons, UnitTypes[unit->type].iconIdx);
-            iconDraw(icon);
+            // tIcon *icon = &g_Screen.m_pUnitIcons[idx];
+            // iconSetSource(icon, g_Screen.m_pIcons, UnitTypes[unit->type].iconIdx);
+            // iconDraw(icon);
         }
     }
 }
@@ -397,7 +400,7 @@ void drawSelectionRectangles(void) {
             if (bobPosOnScreenX >= -8) {
                 WORD bobPosOnScreenY = s_pSelectedUnit[idx]->bob.sPos.uwY - g_Screen.m_map.m_pCamera->uPos.uwY + TOP_PANEL_HEIGHT;
                 if (bobPosOnScreenX >= -8) {
-                    selectionSpritesUpdate(idx, bobPosOnScreenX + 8, bobPosOnScreenY + 8);
+                    selectionSpritesUpdate(idx, bobPosOnScreenX, bobPosOnScreenY + 8);
                     continue;
                 }
             }
@@ -478,8 +481,8 @@ void gameGsLoop(void) {
     unitManagerProcessUnits(
         s_pUnitManager,
         (UBYTE **)g_Map.m_ubPathmapXY,
-        (tUbCoordYX){.ubX = tileTopLeft.ubX * 2, .ubY = tileTopLeft.ubY * 2},
-        (tUbCoordYX){.ubX = (tileTopLeft.ubX + VISIBLE_TILES_X) * 2, .ubY = (tileTopLeft.ubY + VISIBLE_TILES_Y) * 2}
+        tileTopLeft,
+        (tUbCoordYX){.ubX = (tileTopLeft.ubX + VISIBLE_TILES_X * 2), .ubY = (tileTopLeft.ubY + VISIBLE_TILES_Y * 2)}
     );
 
     UWORD mouseX = mouseGetX(MOUSE_PORT_1);

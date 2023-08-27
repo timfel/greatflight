@@ -81,8 +81,13 @@ typedef struct _unitmanager tUnitManager;
 
 typedef struct {
     UBYTE type;
-    UBYTE x;
-    UBYTE y;
+    union {
+        struct {
+            UBYTE y;
+            UBYTE x;
+        };
+        tUbCoordYX loc;
+    };
     UBYTE action;
     union {
         ULONG ulActionData;
@@ -100,6 +105,8 @@ typedef struct {
     UnitStats stats;
     tBob bob;
     UBYTE frame;
+    unsigned IX:4;
+    unsigned IY:4;
 } Unit;
 
 extern void unitsLoad(tUnitManager *mgr, tFile *map);
@@ -161,11 +168,7 @@ Unit *unitManagerUnitAt(tUnitManager *pUnitListHead, tUbCoordYX tile);
 
 _Static_assert(MAP_SIZE * TILE_SIZE < 0xfff, "map is small enough to fit locations in bytes");
 static inline tUbCoordYX unitGetTilePosition(Unit *self) {
-    tUbCoordYX loc;
-    tUwCoordYX bobLoc = self->bob.sPos;
-    loc.ubX = (bobLoc.uwX >> TILE_SHIFT) + 1;
-    loc.ubY = (bobLoc.uwY >> TILE_SHIFT) + 1;
-    return loc;
+    return self->loc;
 }
 
 static inline void unitSetTilePosition(Unit *self, UBYTE **map, tUbCoordYX pos) {
@@ -177,8 +180,8 @@ static inline void unitSetTilePosition(Unit *self, UBYTE **map, tUbCoordYX pos) 
 }
 
 static inline void unitDraw(Unit *self, tUbCoordYX viewportTopLeft) {
-    self->bob.sPos.uwX = (self->x + viewportTopLeft.ubX) * 16;
-    self->bob.sPos.uwY = (self->y + viewportTopLeft.ubY) * 16;
+    self->bob.sPos.uwX = (self->x + viewportTopLeft.ubX) * 16 + self->IX;
+    self->bob.sPos.uwY = (self->y + viewportTopLeft.ubY) * 16 + self->IY;
     bobPush(&self->bob);
 }
 

@@ -11,8 +11,10 @@ enum ActionTypes {
 };
 
 void actionMoveTo(Unit *unit, tUbCoordYX goal) {
-    unit->uwActionDataA = ((UWORD)goal.ubX << TILE_SHIFT) - UNIT_POSITION_OFFSET;
-    unit->uwActionDataB = ((UWORD)goal.ubY << TILE_SHIFT) - UNIT_POSITION_OFFSET;
+    unit->ubActionDataA = goal.ubX;
+    unit->ubActionDataB = goal.ubY;
+    unit->ubActionDataC = 0;
+    unit->ubActionDataD = 0;
     unit->action = ActionMove;
 }
 

@@ -57,9 +57,12 @@ ULONG tileIndexToTileBitmapOffset(UBYTE index) {
     return (ULONG)(g_Screen.m_map.m_pTilemap->Planes[0] + (g_Screen.m_map.m_pTilemap->BytesPerRow * (index << TILE_SHIFT)));
 }
 
+void loadTileBitmap() {
+    g_Screen.m_map.m_pTilemap = bitmapCreateFromFile(g_Map.m_pTileset, 0);
+}
+
 void loadMap(const char* name, UWORD mapbufCoplistStart, UWORD mapColorsCoplistStart) {
     char* mapname = MAPDIR LONGEST_MAPNAME;
-    char* palname = PALDIR "for.plt";
 
     snprintf(mapname + strlen(MAPDIR), strlen(LONGEST_MAPNAME) + 1, "%s.map", name);
     tFile *map = fileOpen(mapname, "r");
@@ -67,12 +70,13 @@ void loadMap(const char* name, UWORD mapbufCoplistStart, UWORD mapColorsCoplistS
         logWrite("ERROR: Cannot open file %s!\n", mapname);
     }
 
-    mapLoad(map);
+    mapLoad(map, &loadTileBitmap);
     playersLoad(map);
     unitsLoad(s_pUnitManager, map);
     fileClose(map);
 
-    // setup map drawing area
+    // now setup map viewport
+    char* palname = PALDIR "for.plt";
     strncpy(palname + strlen(PALDIR), g_Map.m_pTileset + strlen(TILESETDIR), 3);
     paletteLoad(palname, g_Screen.m_map.m_pPalette, COLORS);
     tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[mapColorsCoplistStart];
@@ -83,7 +87,6 @@ void loadMap(const char* name, UWORD mapbufCoplistStart, UWORD mapColorsCoplistS
     for (UBYTE i = 0; i < COLORS; i++) {
         copSetMove(&pCmds[i].sMove, &g_pCustom->color[i], g_Screen.m_map.m_pPalette[i]);
     }
-    g_Screen.m_map.m_pTilemap = bitmapCreateFromFile(g_Map.m_pTileset, 0);
     g_Screen.m_map.m_pBuffer = simpleBufferCreate(0,
                                     TAG_SIMPLEBUFFER_VPORT, g_Screen.m_map.m_pVPort,
                                     TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR | BMF_INTERLEAVED,

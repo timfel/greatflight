@@ -26,7 +26,7 @@ struct Map {
  */
 extern struct Map g_Map;
 
-extern void mapLoad(tFile *file);
+extern void mapLoad(tFile *file, void(*loadTileBitmap)());
 
 static inline UBYTE mapIsWalkable(UBYTE **map, UBYTE x, UBYTE y) {
     return map[x][y] < 15;

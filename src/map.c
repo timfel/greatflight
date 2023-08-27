@@ -5,9 +5,11 @@
 
 struct Map g_Map;
 
-void mapLoad(tFile *file) {
+void mapLoad(tFile *file, void(*loadTileBitmap)()) {
     g_Map.m_pTileset = TILESETDIR "xxx.bm";
     fileRead(file, (char*)(g_Map.m_pTileset + strlen(TILESETDIR)), 3);
+
+    loadTileBitmap();
 
     for (int x = 0; x < MAP_SIZE; x++) {
         UBYTE *ubColumn = (UBYTE*)(g_Map.m_ulTilemapXY[x]);

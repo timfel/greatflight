@@ -102,7 +102,7 @@ typedef struct {
     UBYTE frame;
 } Unit;
 
-extern void loadUnits(tUnitManager *mgr, tFile *map);
+extern void unitsLoad(tUnitManager *mgr, tFile *map);
 
 /* The global list of unit types */
 extern UnitType UnitTypes[];

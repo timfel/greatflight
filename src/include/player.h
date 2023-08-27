@@ -12,7 +12,7 @@ struct Player {
 
 extern struct Player g_pPlayers[2];
 
-void loadPlayerInfo(tFile *map);
+void playersLoad(tFile *map);
 void savePlayerInfo(tFile *map);
 
 #endif

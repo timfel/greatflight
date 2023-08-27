@@ -2,6 +2,7 @@
 #define MAP_H
 
 #include "ace/types.h"
+#include "ace/utils/file.h"
 
 #define MAPDIR "resources/maps/"
 
@@ -25,6 +26,8 @@ struct Map {
  */
 extern struct Map g_Map;
 
+extern void mapLoad(tFile *file);
+
 static inline UBYTE mapIsWalkable(UBYTE **map, UBYTE x, UBYTE y) {
     return map[x][y] < 15;
 }
@@ -34,11 +37,11 @@ static inline UBYTE mapIsHarvestable(UBYTE **map, UBYTE x, UBYTE y) {
 }
 
 static inline void markMapTile(UBYTE **map, UBYTE x, UBYTE y) {
-    // map[x][y] = ~map[x][y];
+    map[x][y] |= 1;
 }
 
 static inline void unmarkMapTile(UBYTE **map, UBYTE x, UBYTE y) {
-    // map[x][y] = ~map[x][y];
+    map[x][y] ^= 1;
 }
 
 /*

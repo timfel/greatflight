@@ -4,6 +4,7 @@
 #include "include/map.h"
 #include "include/player.h"
 #include "include/units.h"
+#include "include/resources.h"
 #include "actions.h"
 #include "mouse_sprite.h"
 #include "selection_sprites.h"
@@ -30,11 +31,6 @@ static UBYTE SelectedTile = 0x10;
 
 // game statics
 static Unit *s_pSelectedUnit[NUM_SELECTION];
-
-#define IMGDIR "resources/"
-#define PALDIR IMGDIR "palettes/"
-#define TILESETDIR IMGDIR "tilesets/"
-#define LONGEST_MAPNAME "human12.map"
 
 void createViewports() {
     g_Screen.m_panels.m_pTopPanel = vPortCreate(0,
@@ -64,7 +60,6 @@ ULONG tileIndexToTileBitmapOffset(UBYTE index) {
 void loadMap(const char* name, UWORD mapbufCoplistStart, UWORD mapColorsCoplistStart) {
     char* mapname = MAPDIR LONGEST_MAPNAME;
     char* palname = PALDIR "for.plt";
-    g_Map.m_pTileset = TILESETDIR "for.bm";
 
     snprintf(mapname + strlen(MAPDIR), strlen(LONGEST_MAPNAME) + 1, "%s.map", name);
     tFile *map = fileOpen(mapname, "r");
@@ -72,12 +67,13 @@ void loadMap(const char* name, UWORD mapbufCoplistStart, UWORD mapColorsCoplistS
         logWrite("ERROR: Cannot open file %s!\n", mapname);
     }
 
-    // first three bytes are simply name of the palette/terrain
-    fileRead(map, palname + strlen(PALDIR), 3);
-    strncpy((char*)(g_Map.m_pTileset + strlen(TILESETDIR)), palname + strlen(PALDIR), 3);
+    mapLoad(map);
+    playersLoad(map);
+    unitsLoad(s_pUnitManager, map);
+    fileClose(map);
 
-    logWrite("Loading map: %s %s\n", palname, g_Map.m_pTileset);
-    // create map area
+    // setup map drawing area
+    strncpy(palname + strlen(PALDIR), g_Map.m_pTileset + strlen(TILESETDIR), 3);
     paletteLoad(palname, g_Screen.m_map.m_pPalette, COLORS);
     tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[mapColorsCoplistStart];
     for (UBYTE i = 0; i < COLORS; i++) {
@@ -87,7 +83,6 @@ void loadMap(const char* name, UWORD mapbufCoplistStart, UWORD mapColorsCoplistS
     for (UBYTE i = 0; i < COLORS; i++) {
         copSetMove(&pCmds[i].sMove, &g_pCustom->color[i], g_Screen.m_map.m_pPalette[i]);
     }
-
     g_Screen.m_map.m_pTilemap = bitmapCreateFromFile(g_Map.m_pTileset, 0);
     g_Screen.m_map.m_pBuffer = simpleBufferCreate(0,
                                     TAG_SIMPLEBUFFER_VPORT, g_Screen.m_map.m_pVPort,
@@ -99,23 +94,6 @@ void loadMap(const char* name, UWORD mapbufCoplistStart, UWORD mapColorsCoplistS
                                     TAG_SIMPLEBUFFER_USE_X_SCROLLING, 0,
                                     TAG_END);
     g_Screen.m_map.m_pCamera = cameraCreate(g_Screen.m_map.m_pVPort, 0, 0, MAP_SIZE * TILE_SIZE - MAP_WIDTH, MAP_SIZE * TILE_SIZE - MAP_HEIGHT, 0);
-
-    for (int x = 0; x < MAP_SIZE; x++) {
-        UBYTE *ubColumn = (UBYTE*)(g_Map.m_ulTilemapXY[x]);
-        // reads MAP_SIZE bytes into the first half of the column
-        fileRead(map, ubColumn, MAP_SIZE);
-        // we store MAP_SIZE words with the direct offsets into the tilemap,
-        // so fill from the back the actual offsets
-        for (int y = MAP_SIZE - 1; y >= 0; --y) {
-            g_Map.m_ulTilemapXY[x][y] = tileIndexToTileBitmapOffset(ubColumn[y]);
-        }
-    }
-
-    loadPlayerInfo(map);
-
-    loadUnits(s_pUnitManager, map);
-
-    fileClose(map);
 }
 
 void initBobs(void) {

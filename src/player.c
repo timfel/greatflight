@@ -2,7 +2,7 @@
 
 struct Player g_pPlayers[2] = {0};
 
-void loadPlayerInfo(tFile *map) {
+void playersLoad(tFile *map) {
     UBYTE playerinfo;
     fileRead(map, &playerinfo, 1);
     g_pPlayers[0].gold = playerinfo << 8;

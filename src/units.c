@@ -202,7 +202,7 @@ void loadUnit(tUnitManager *mgr, tFile *map) {
     }
 }
 
-void loadUnits(tUnitManager *mgr, tFile *map) {
+void unitsLoad(tUnitManager *mgr, tFile *map) {
     for (UBYTE i = 0; i < sizeof(g_pPlayers) / sizeof(struct Player); ++i) {
         UBYTE count;
         fileRead(map, &count, 1);

@@ -78,6 +78,15 @@ function(tileize DESTINATION TILESIZEX TILESIZEY PALETTE)
 	)
 endfunction()
 
+function(palettize DESTINATION PALETTE SOURCE)
+	add_custom_command(
+		OUTPUT ${DESTINATION}
+		COMMAND python3 ${PROJECT_SOURCE_DIR}/tools/tileize.py ${PALETTE} ${DESTINATION} ${SOURCE}
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+		DEPENDS ${ARGN}
+	)
+endfunction()
+
 # Viewport
 
 png2gpl(${PROJECT_SOURCE_DIR}/resources/Palettes/Viewport.png ${PROJECT_BINARY_DIR}/tmp/Palettes/Viewport.gpl)
@@ -134,15 +143,15 @@ convertTileset(
 png2gpl(${PROJECT_SOURCE_DIR}/resources/Palettes/HumanGUI.png ${PROJECT_BINARY_DIR}/tmp/Palettes/HumanGUI.gpl)
 convertPalette(${GAME_LINKED} ${PROJECT_BINARY_DIR}/tmp/Palettes/HumanGUI.gpl ${PROJECT_BINARY_DIR}/resources/palettes/hgui.plt)
 
-tileize(
+palettize(
   ${PROJECT_BINARY_DIR}/tmp/GUI/Bottom_GUI.png
-  320 70 ${PROJECT_SOURCE_DIR}/resources/Palettes/HumanGUI.png
+  ${PROJECT_SOURCE_DIR}/resources/Palettes/HumanGUI.png
   ${PROJECT_SOURCE_DIR}/resources/GUI/Bottom_GUI.png
 )
 
-tileize(
+palettize(
   ${PROJECT_BINARY_DIR}/tmp/GUI/Top_GUI.png
-  320 10 ${PROJECT_SOURCE_DIR}/resources/Palettes/HumanGUI.png
+  ${PROJECT_SOURCE_DIR}/resources/Palettes/HumanGUI.png
   ${PROJECT_SOURCE_DIR}/resources/GUI/Top_GUI.png
 )
 
@@ -154,4 +163,30 @@ convertBitmaps(
           ${PROJECT_BINARY_DIR}/tmp/GUI/Top_GUI.png
   DESTINATIONS ${PROJECT_BINARY_DIR}/resources/ui/bottompanel.bm
                ${PROJECT_BINARY_DIR}/resources/ui/toppanel.bm
+)
+
+palettize(
+  ${PROJECT_BINARY_DIR}/tmp/Units/peon.png
+  ${PROJECT_SOURCE_DIR}/resources/Palettes/Viewport.png
+  ${PROJECT_SOURCE_DIR}/resources/Units/peon.png
+)
+
+convertTileset(
+       INTERLEAVED
+       TARGET ${GAME_LINKED}
+       SOURCE ${PROJECT_BINARY_DIR}/tmp/Units/peon.png
+       TILE_PATHS ${PROJECT_BINARY_DIR}/tmp/Units/peon.png
+       DESTINATION ${PROJECT_BINARY_DIR}/tmp/Units/peon.tileset.png
+       SIZE 16
+       PALETTE ${PROJECT_BINARY_DIR}/resources/palettes/for.plt
+)
+
+convertBitmaps(
+       INTERLEAVED
+       TARGET ${GAME_LINKED}
+       PALETTE ${PROJECT_BINARY_DIR}/resources/palettes/for.plt
+       MASK_COLOR "#ff00ee"
+       SOURCES ${PROJECT_BINARY_DIR}/tmp/Units/peon.tileset.png
+       DESTINATIONS ${PROJECT_BINARY_DIR}/resources/units/peon.bm
+       MASKS ${PROJECT_BINARY_DIR}/resources/units/peon.msk
 )

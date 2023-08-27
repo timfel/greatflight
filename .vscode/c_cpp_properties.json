@@ -4,7 +4,8 @@
             "name": "Amiga",
             "configurationProvider": "BartmanAbyss.amiga-debug",
             "includePath": [
-                "${workspaceFolder}/**",
+                "${workspaceFolder}/",
+                "${workspaceFolder}/deps/**",
                 "${env:USERPROFILE}/.vscode/extensions/bartmanabyss.amiga-debug-1.7.2/bin/linux/opt/lib/gcc/m68k-amiga-elf/13.1.0/include",
                 "${env:USERPROFILE}/.vscode/extensions/bartmanabyss.amiga-debug-1.7.2/bin/linux/opt/m68k-amiga-elf/sys-include",
                 "${env:HOME}/.vscode/extensions/bartmanabyss.amiga-debug-1.7.2/bin/linux/opt/lib/gcc/m68k-amiga-elf/13.1.0/include",

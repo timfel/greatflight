@@ -22,10 +22,10 @@ with open(sys.argv[2], "wb") as output:
             for x in range(32):
                 output.write(bytearray([mapdict["map"][x][y]]))
         for player in mapdict["players"]:
-            output.write(bytearray(player["gold"] >> 8))
-            output.write(bytearray(player["lumber"] >> 8))
-            output.write(bytearray(player["ai"]))
+            output.write(bytearray([player["gold"] >> 8]))
+            output.write(bytearray([player["lumber"] >> 8]))
+            output.write(bytearray([player["ai"]]))
         for units in mapdict["units"]:
-            output.write(bytearray(len(units)))
+            output.write(bytearray([len(units)]))
             for unit in units:
                 output.write(bytearray(unit))

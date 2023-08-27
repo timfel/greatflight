@@ -1,4 +1,5 @@
-#include "units.h"
+#include "include/units.h"
+#include "include/player.h"
 #include "actions.h"
 #include "ace/types.h"
 #include "ace/macros.h"
@@ -12,7 +13,7 @@ UnitType UnitTypes[] = {
         .maskPath = "resources/units/peon.msk",
         .stats = {
             .maxHP = 30,
-            .hasMana = 0,
+            .maxMana = 0,
             .speed = 4,
         },
         .iconIdx = 54,
@@ -20,16 +21,7 @@ UnitType UnitTypes[] = {
     [footman] = {},
     [grunt] = {},
     [archer] = {},
-    [spearman] = {
-        .spritesheetPath = "resources/units/spearthrower.bm",
-        .maskPath = "resources/units/spearthrower.msk",
-        .stats = {
-            .maxHP = 60,
-            .hasMana = 0,
-            .speed = 4,
-        },
-        .iconIdx = 54,
-    },
+    [spearman] = {},
     [catapult] = {},
     [knight] = {},
     [raider] = {},
@@ -124,7 +116,7 @@ void unitManagerProcessUnits(tUnitManager *pUnitListHead, UBYTE **pTileData, tUb
                 && loc.ubY >= viewportTopLeft.ubY
                 && loc.ubX <= viewportBottomRight.ubX
                 && loc.ubY <= viewportBottomRight.ubY) {
-            unitDraw((Unit *)link);
+            unitDraw((Unit *)link, viewportTopLeft);
         }
         if(blitIsIdle()) {
             bobProcessNext();
@@ -164,7 +156,6 @@ Unit * unitNew(tUnitManager *pUnitListHead, enum UnitTypes typeIdx) {
         link->next->prev = link;
     }
     bobInit(&((Unit *)link)->bob, 16, 16, 0, type->spritesheet->Planes[0], type->mask->Planes[0], 0, 0);
-    unitSetFrame((Unit *)link, 0);
     ((Unit *)link)->type = typeIdx;
     unitSetTilePosition((Unit *)link, NULL, UNIT_INIT_TILE_POSITION);
     return (Unit *)link;
@@ -188,4 +179,35 @@ void unitDelete(tUnitManager *pUnitListHead, Unit *unit) {
     }
     ((struct _unitLink *)unit)->next = pUnitListHead->nextFreeUnit;
     pUnitListHead->nextFreeUnit = (struct _unitLink *)unit;
+}
+
+void loadUnit(tUnitManager *mgr, tFile *map) {
+    UBYTE type;
+    fileRead(map, &type, 1);
+    Unit *unit = unitNew(mgr, type);
+    fileRead(map, &unit->x, 1);
+    fileRead(map, &unit->y, 1);
+    fileRead(map, &unit->action, 1);
+    fileRead(map, &unit->ubActionDataA, 1);
+    fileRead(map, &unit->ubActionDataB, 1);
+    fileRead(map, &unit->ubActionDataC, 1);
+    fileRead(map, &unit->ubActionDataD, 1);
+    fileRead(map, &unit->stats.hp, 1);
+    if (unit->stats.hp == 0) {
+        unit->stats.hp = UnitTypes[unit->type].stats.maxHP;
+    }
+    fileRead(map, &unit->stats.mana, 1);
+    if (unit->stats.mana == 0) {
+        unit->stats.mana = UnitTypes[unit->type].stats.maxMana;
+    }
+}
+
+void loadUnits(tUnitManager *mgr, tFile *map) {
+    for (UBYTE i = 0; i < sizeof(g_pPlayers) / sizeof(struct Player); ++i) {
+        UBYTE count;
+        fileRead(map, &count, 1);
+        for (UBYTE unit = 0; unit < count; ++unit) {
+            loadUnit(mgr, map);
+        }
+    }
 }

@@ -2,7 +2,8 @@
 
 #include "game.h"
 #include "include/map.h"
-#include "units.h"
+#include "include/player.h"
+#include "include/units.h"
 #include "actions.h"
 #include "mouse_sprite.h"
 #include "selection_sprites.h"
@@ -109,23 +110,18 @@ void loadMap(const char* name, UWORD mapbufCoplistStart, UWORD mapColorsCoplistS
             g_Map.m_ulTilemapXY[x][y] = tileIndexToTileBitmapOffset(ubColumn[y]);
         }
     }
+
+    loadPlayerInfo(map);
+
+    loadUnits(s_pUnitManager, map);
+
     fileClose(map);
 }
 
 void initBobs(void) {
-    // the bobs are not double buffered, since we never undraw
     bobManagerCreate(g_Screen.m_map.m_pBuffer->pFront, g_Screen.m_map.m_pBuffer->pBack, MAP_BUFFER_HEIGHT);
-
     bobInit(&s_TileCursor, TILE_SIZE, TILE_SIZE, 0, g_Screen.m_map.m_pTilemap->Planes[0], 0, 0, 0);
     bobSetFrame(&s_TileCursor, g_Screen.m_map.m_pTilemap->Planes[0] + (0x10 * TILE_FRAME_BYTES), 0);
-
-    // s_pUnitManager = unitManagerCreate();
-    // unitSetTilePosition(unitNew(s_pUnitManager, spearman), g_Screen.m_map.m_pBuffer->pTileData, (tUbCoordYX){.ubX = 7, .ubY = 7});
-    // unitSetTilePosition(unitNew(s_pUnitManager, spearman), g_Screen.m_map.m_pBuffer->pTileData, (tUbCoordYX){.ubX = 8, .ubY = 7});
-    // unitSetTilePosition(unitNew(s_pUnitManager, spearman), g_Screen.m_map.m_pBuffer->pTileData, (tUbCoordYX){.ubX = 7, .ubY = 8});
-    // unitSetTilePosition(unitNew(s_pUnitManager, spearman), g_Screen.m_map.m_pBuffer->pTileData, (tUbCoordYX){.ubX = 8, .ubY = 8});
-
-    // bobReallocateBgBuffers();
 }
 
 void loadUi(UWORD topPanelColorsPos, UWORD panelColorsPos, UWORD simplePosTop, UWORD simplePosBottom) {
@@ -205,6 +201,8 @@ void gameGsCreate(void) {
     selectionSpritesSetup(g_Screen.m_pView, selectionPos);
 
     createViewports();
+
+    s_pUnitManager = unitManagerCreate();
 
     // load map file
     loadMap(g_Map.m_pName, mapbufCoplistStart, mapColorsCoplistStart);
@@ -489,18 +487,19 @@ void drawAllTiles(void) {
 void gameGsLoop(void) {
     // redraw map
     drawAllTiles();
+    // vPortWaitUntilEnd(g_Screen.m_panels.m_pMainPanel);
 
     // redraw units and missiles
     bobBegin(g_Screen.m_map.m_pBuffer->pBack);
 
     // process all units
-    // tUbCoordYX tileTopLeft = screenPosToTile(g_Screen.m_map.m_pCamera->uPos);
-    // unitManagerProcessUnits(
-    //     s_pUnitManager,
-    //     (UBYTE **)s_ubUnitmap,
-    //     tileTopLeft,
-    //     (tUbCoordYX){.ubX = tileTopLeft.ubX + VISIBLE_TILES_X, .ubY = tileTopLeft.ubY + VISIBLE_TILES_Y}
-    // );
+    tUbCoordYX tileTopLeft = screenPosToTile(g_Screen.m_map.m_pCamera->uPos);
+    unitManagerProcessUnits(
+        s_pUnitManager,
+        (UBYTE **)g_Map.m_ubPathmapXY,
+        (tUbCoordYX){.ubX = tileTopLeft.ubX * 2, .ubY = tileTopLeft.ubY * 2},
+        (tUbCoordYX){.ubX = (tileTopLeft.ubX + VISIBLE_TILES_X) * 2, .ubY = (tileTopLeft.ubY + VISIBLE_TILES_Y) * 2}
+    );
 
     UWORD mouseX = mouseGetX(MOUSE_PORT_1);
     UWORD mouseY = mouseGetY(MOUSE_PORT_1);

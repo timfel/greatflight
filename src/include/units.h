@@ -10,15 +10,15 @@
 
 // TODO: this can be configurable for different systems
 #define BPP 4
-#define UNIT_SIZE 32
-#define UNIT_SIZE_SHIFT 5
+#define UNIT_SIZE 16
+#define UNIT_SIZE_SHIFT 4
 #define UNIT_FRAME_BYTES (UNIT_SIZE / 8 + UNIT_SIZE * BPP)
 /* Units are centered on a 2x2 tilegrid. So to position a unit on a tile, we subtract 8px */
 #define UNIT_POSITION_OFFSET 8
 
-#define FRAME_SIZE 32
-#define WALK_FRAMES 2
-#define ATTACK_FRAMES 3
+#define FRAME_SIZE 16
+#define WALK_FRAMES 3
+#define ATTACK_FRAMES 2
 #define FRAME_COUNT (WALK_FRAMES + ATTACK_FRAMES)
 #define DIRECTION_NORTH 0
 #define DIRECTION_EAST (FRAME_COUNT * FRAME_SIZE)
@@ -41,7 +41,7 @@ typedef struct {
     struct {
         UBYTE maxHP;
         UBYTE speed;
-        UBYTE hasMana;
+        UBYTE maxMana;
     } stats;
 } UnitType;
 
@@ -101,6 +101,8 @@ typedef struct {
     tBob bob;
     UBYTE frame;
 } Unit;
+
+extern void loadUnits(tUnitManager *mgr, tFile *map);
 
 /* The global list of unit types */
 extern UnitType UnitTypes[];
@@ -174,7 +176,9 @@ static inline void unitSetTilePosition(Unit *self, UBYTE **map, tUbCoordYX pos) 
     }
 }
 
-static inline void unitDraw(Unit *self) {
+static inline void unitDraw(Unit *self, tUbCoordYX viewportTopLeft) {
+    self->bob.sPos.uwX = (self->x + viewportTopLeft.ubX) * 16;
+    self->bob.sPos.uwY = (self->y + viewportTopLeft.ubY) * 16;
     bobPush(&self->bob);
 }
 

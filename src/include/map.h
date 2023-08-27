@@ -34,11 +34,11 @@ static inline UBYTE mapIsHarvestable(UBYTE **map, UBYTE x, UBYTE y) {
 }
 
 static inline void markMapTile(UBYTE **map, UBYTE x, UBYTE y) {
-    map[x][y] = ~map[x][y];
+    // map[x][y] = ~map[x][y];
 }
 
 static inline void unmarkMapTile(UBYTE **map, UBYTE x, UBYTE y) {
-    map[x][y] = ~map[x][y];
+    // map[x][y] = ~map[x][y];
 }
 
 /*

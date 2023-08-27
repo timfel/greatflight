@@ -81,6 +81,8 @@ typedef struct _unitmanager tUnitManager;
 
 typedef struct {
     UBYTE type;
+    UBYTE x;
+    UBYTE y;
     UBYTE action;
     union {
         ULONG ulActionData;

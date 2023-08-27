@@ -37,7 +37,6 @@ if len(IMAGES) > 1:
     xoff = 0
     yoff = 0
     for i in IMAGES:
-        # TODO: support filling with the first tile
         if i.width % TILESIZEX != 0:
             print(f"skipping {i!r} for now")
             continue
@@ -52,7 +51,7 @@ if len(IMAGES) > 1:
                 if xoff > TILESIZEX * 16:
                     xoff = 0
                     yoff += TILESIZEY
-    outimg.crop((0, 0, TILESIZEX * 16, yoff + TILESIZEY))
+    outimg = outimg.crop((0, 0, TILESIZEX * 16, yoff + TILESIZEY))
 else:
     outimg = IMAGES[0]
 

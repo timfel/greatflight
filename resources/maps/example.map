@@ -1,0 +1,18 @@
+{
+    "tileset": "for",
+    "map": [[0] * 32] * 32,
+    "players": [
+        {"gold": 1000, "lumber": 1000, "ai": 0},
+        {"gold": 1000, "lumber": 1000, "ai": 0},
+    ],
+    "units": [
+        [
+            [
+                peon, # type
+                0, 0, # xy
+                *unit_defaults
+            ],
+        ],
+        [],
+    ]
+}

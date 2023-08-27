@@ -17,7 +17,7 @@ void genericCreate(void) {
   g_pGameStateManager = stateManagerCreate();
 
   // TODO: these are filled by the menu UI
-  g_Map.m_pName = "game2";
+  g_Map.m_pName = "example";
 
   g_pGameState = stateCreate(gameGsCreate, gameGsLoop, gameGsDestroy, 0, 0, 0);
 

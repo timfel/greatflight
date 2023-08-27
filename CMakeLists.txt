@@ -53,12 +53,6 @@ target_link_libraries(${GAME_LINKED} ace)
 # resources
 execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/resources/maps)
 
-add_custom_command(
-  TARGET ${GAME_LINKED} POST_BUILD
-	COMMAND ${CMAKE_COMMAND} ARGS -E copy ${PROJECT_SOURCE_DIR}/resources/maps/game.map ${PROJECT_BINARY_DIR}/resources/maps/game.map
-	COMMAND ${CMAKE_COMMAND} ARGS -E copy ${PROJECT_SOURCE_DIR}/resources/maps/game2.map ${PROJECT_BINARY_DIR}/resources/maps/game2.map
-)
-
 ## Helper functions
 function(png2gpl SOURCE DESTINATION)
 	add_custom_command(
@@ -86,6 +80,20 @@ function(palettize DESTINATION PALETTE SOURCE)
 		DEPENDS ${ARGN}
 	)
 endfunction()
+
+function(map2bin SOURCE DESTINATION)
+	add_custom_command(
+		OUTPUT ${DESTINATION}
+		COMMAND python3 ${PROJECT_SOURCE_DIR}/tools/map2bin.py ${SOURCE} ${DESTINATION}
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+		DEPENDS ${SOURCE}
+	)
+  target_sources(${GAME_LINKED} PUBLIC ${DESTINATION})
+endfunction()
+
+# Map
+
+map2bin(${PROJECT_SOURCE_DIR}/resources/maps/example.map ${PROJECT_BINARY_DIR}/resources/maps/example.map)
 
 # Viewport
 
@@ -190,3 +198,4 @@ convertBitmaps(
        DESTINATIONS ${PROJECT_BINARY_DIR}/resources/units/peon.bm
        MASKS ${PROJECT_BINARY_DIR}/resources/units/peon.msk
 )
+

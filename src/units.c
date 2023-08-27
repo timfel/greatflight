@@ -7,7 +7,16 @@
 UnitType UnitTypes[] = {
     [dead] = {},
     [peasant] = {},
-    [peon] = {},
+    [peon] = {
+        .spritesheetPath = "resources/units/peon.bm",
+        .maskPath = "resources/units/peon.msk",
+        .stats = {
+            .maxHP = 30,
+            .hasMana = 0,
+            .speed = 4,
+        },
+        .iconIdx = 54,
+    },
     [footman] = {},
     [grunt] = {},
     [archer] = {},
@@ -154,7 +163,7 @@ Unit * unitNew(tUnitManager *pUnitListHead, enum UnitTypes typeIdx) {
     if (link->next) {
         link->next->prev = link;
     }
-    bobInit(&((Unit *)link)->bob, 32, 32, 0, type->spritesheet->Planes[0], type->mask->Planes[0], 0, 0);
+    bobInit(&((Unit *)link)->bob, 16, 16, 0, type->spritesheet->Planes[0], type->mask->Planes[0], 0, 0);
     unitSetFrame((Unit *)link, 0);
     ((Unit *)link)->type = typeIdx;
     unitSetTilePosition((Unit *)link, NULL, UNIT_INIT_TILE_POSITION);

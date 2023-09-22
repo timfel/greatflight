@@ -32,8 +32,8 @@ void actionMove(Unit *unit, UBYTE **map) {
 
     unmarkMapTile(map, tilePos.ubX, tilePos.ubY);
 
-    WORD vectorX = unit->uwActionDataA - unit->bob.sPos.uwX;
-    WORD vectorY = unit->uwActionDataB - unit->bob.sPos.uwY;
+    BYTE vectorX = unit->ubActionDataA - unit->loc.ubX;
+    BYTE vectorY = unit->ubActionDataB - unit->loc.ubY;
 
     if (map[tilePos.ubX + ((vectorX > 0) - (vectorX < 0))][tilePos.ubY] > 15) {
         // unwalkable tile horizontal
@@ -44,8 +44,8 @@ void actionMove(Unit *unit, UBYTE **map) {
         vectorY = 0;
     }
 
-    UWORD absVX = vectorX < 0 ? -vectorX : vectorX;
-    UWORD absVY = vectorY < 0 ? -vectorY : vectorY;
+    BYTE absVX = vectorX < 0 ? -vectorX : vectorX;
+    BYTE absVY = vectorY < 0 ? -vectorY : vectorY;
     UWORD length = absVX + absVY;
     if (length == 0) {
         // reached goal or unreachable goal
@@ -53,10 +53,18 @@ void actionMove(Unit *unit, UBYTE **map) {
         unit->action = ActionStill;
     }
     if (absVX) {
-        unit->bob.sPos.uwX += vectorX / absVX * speed;
+        BYTE xdist = vectorX / absVX * speed + unit->IX;
+        BYTE tileStep = xdist / (TILE_SIZE / 2);
+        BYTE stepRem = xdist % (TILE_SIZE / 2);
+        unit->loc.ubX += tileStep;
+        unit->IX = stepRem;
     }
     if (absVY) {
-        unit->bob.sPos.uwY += vectorY / absVY * speed;
+        BYTE ydist = vectorY / absVY * speed + unit->IY;
+        BYTE tileStep = ydist / (TILE_SIZE / 2);
+        BYTE stepRem = ydist % (TILE_SIZE / 2);
+        unit->loc.ubY += tileStep;
+        unit->IY = stepRem;
     }
 
     tilePos = unitGetTilePosition(unit);

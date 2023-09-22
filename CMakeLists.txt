@@ -193,7 +193,7 @@ convertBitmaps(
        INTERLEAVED
        TARGET ${GAME_LINKED}
        PALETTE ${PROJECT_BINARY_DIR}/resources/palettes/for.plt
-       MASK_COLOR "#ff00ee"
+       MASK_COLOR "#ff00dd"
        SOURCES ${PROJECT_BINARY_DIR}/tmp/Units/peon.tileset.png
        DESTINATIONS ${PROJECT_BINARY_DIR}/resources/units/peon.bm
        MASKS ${PROJECT_BINARY_DIR}/resources/units/peon.msk

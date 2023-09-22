@@ -172,16 +172,15 @@ static inline tUbCoordYX unitGetTilePosition(Unit *self) {
 }
 
 static inline void unitSetTilePosition(Unit *self, UBYTE **map, tUbCoordYX pos) {
-    self->bob.sPos.uwX = (pos.ubX << TILE_SHIFT) - 8;
-    self->bob.sPos.uwY = (pos.ubY << TILE_SHIFT) - 8;
+    self->loc = pos;
     if (pos.ubX > 1) {
         markMapTile(map, pos.ubX, pos.ubY);
     }
 }
 
 static inline void unitDraw(Unit *self, tUbCoordYX viewportTopLeft) {
-    self->bob.sPos.uwX = (self->x + viewportTopLeft.ubX) * 16 + self->IX;
-    self->bob.sPos.uwY = (self->y + viewportTopLeft.ubY) * 16 + self->IY;
+    self->bob.sPos.uwX = (self->x + viewportTopLeft.ubX) * (TILE_SIZE / 2) + self->IX;
+    self->bob.sPos.uwY = (self->y + viewportTopLeft.ubY) * (TILE_SIZE / 2) + self->IY;
     bobPush(&self->bob);
 }
 

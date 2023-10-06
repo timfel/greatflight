@@ -206,7 +206,9 @@ static inline tUbCoordYX screenPosToTile(tUwCoordYX pos) {
     return (tUbCoordYX){.ubX = pos.uwX >> (TILE_SHIFT - 1), .ubY = pos.uwY >> (TILE_SHIFT - 1)};
 }
 
-void handleInput(UWORD mouseX, UWORD mouseY) {
+void handleInput() {
+    UWORD mouseX = mouseGetX(MOUSE_PORT_1);
+    UWORD mouseY = mouseGetY(MOUSE_PORT_1);
     static tUwCoordYX lmbDown = {.ulYX = 0};
     
     tUwCoordYX mousePos = {.uwX = mouseX / TILE_SIZE * TILE_SIZE, .uwY = mouseY / TILE_SIZE * TILE_SIZE};
@@ -351,23 +353,7 @@ void handleInput(UWORD mouseX, UWORD mouseY) {
     }
 }
 
-void drawPanel(void) {
-    if (g_Screen.m_ubTopPanelDirty) {
-        // TODO: only store and redraw the dirty part
-        g_Screen.m_ubTopPanelDirty = 0;
-        // the panel is never actually swapped, the backbuffer is just the plain panel for redraw
-        blitWait(); // Don't modify registers when other blit is in progress
-        g_pCustom->bltcon0 = USEA|USED|MINTERM_A;
-        g_pCustom->bltcon1 = 0;
-        g_pCustom->bltafwm = 0xffff;
-        g_pCustom->bltalwm = 0xffff;
-        g_pCustom->bltamod = 0;
-        g_pCustom->bltdmod = 0;
-        g_pCustom->bltapt = g_Screen.m_panels.s_pTopPanelBackground->Planes[0];
-        g_pCustom->bltdpt = g_Screen.m_panels.m_pTopPanelBuffer->pFront->Planes[0];
-        g_pCustom->bltsize = ((TOP_PANEL_HEIGHT * BPP) << 6) | (MAP_WIDTH >> 4);
-    }
-
+void drawInfoPanel(void) {
     if (g_Screen.m_ubBottomPanelDirty) {
         // TODO: only store and redraw the dirty part?
         g_Screen.m_ubBottomPanelDirty = 0;
@@ -468,50 +454,50 @@ void drawAllTiles(void) {
     systemSetDmaBit(DMAB_BLITHOG, 0);
 }
 
+void logicLoop(void) {
+    GameCycle++;
+}
+
 void gameGsLoop(void) {
-    // redraw map
-    drawAllTiles();
-    // vPortWaitUntilEnd(g_Screen.m_panels.m_pMainPanel);
+    displayLoop();
+    logicLoop();
+}
 
-    // redraw units and missiles
-    bobBegin(g_Screen.m_map.m_pBuffer->pBack);
+void displayLoop(void) {
+    minimapUpdate();
+    handleInput();
+    colorCycle();
+    fowUpdate();
+    updateDisplay();
+}
 
-    // process all units
-    tUbCoordYX tileTopLeft = screenPosToTile(g_Screen.m_map.m_pCamera->uPos);
-    unitManagerProcessUnits(
-        s_pUnitManager,
-        (UBYTE **)g_Map.m_ubPathmapXY,
-        tileTopLeft,
-        (tUbCoordYX){.ubX = (tileTopLeft.ubX + VISIBLE_TILES_X * 2), .ubY = (tileTopLeft.ubY + VISIBLE_TILES_Y * 2)}
-    );
-
-    UWORD mouseX = mouseGetX(MOUSE_PORT_1);
-    UWORD mouseY = mouseGetY(MOUSE_PORT_1);
-
-    // do other actions (AI, sounds)
-    UBYTE renderCycle = GameCycle & 0b1111;
-    switch (renderCycle) {
-        // handle input once per 8 frames
-        case 0b0000:
-        case 0b1000:
-            handleInput(mouseX, mouseY);
-            break;
-        // handle income once per 16 frames
-        case 0b0001:
-            // redrawIncome();
-            break;
-        default:
-            break;
+void drawResources(void) {
+    if (g_Screen.m_ubTopPanelDirty) {
+        // TODO: only store and redraw the dirty part
+        g_Screen.m_ubTopPanelDirty = 0;
+        // the panel is never actually swapped, the backbuffer is just the plain panel for redraw
+        blitWait(); // Don't modify registers when other blit is in progress
+        g_pCustom->bltcon0 = USEA|USED|MINTERM_A;
+        g_pCustom->bltcon1 = 0;
+        g_pCustom->bltafwm = 0xffff;
+        g_pCustom->bltalwm = 0xffff;
+        g_pCustom->bltamod = 0;
+        g_pCustom->bltdmod = 0;
+        g_pCustom->bltapt = g_Screen.m_panels.s_pTopPanelBackground->Planes[0];
+        g_pCustom->bltdpt = g_Screen.m_panels.m_pTopPanelBuffer->pFront->Planes[0];
+        g_pCustom->bltsize = ((TOP_PANEL_HEIGHT * BPP) << 6) | (MAP_WIDTH >> 4);
     }
+}
 
-    if (s_Mode == edit) {
-        bobPush(&s_TileCursor);
-    }
-
-    bobEnd();
-
-    // redraw panel
-    drawPanel();
+void updateDisplay(void) {
+    drawMap();
+    drawMessages();
+    drawMenuButton();
+    drawActionButtons();
+    drawMinimap();
+    drawInfoPanel();
+    drawResources();
+    drawStatusLine();
 
     // finish frame
     viewProcessManagers(g_Screen.m_pView);
@@ -521,8 +507,32 @@ void gameGsLoop(void) {
     // update sprites during vblank
     mouseSpriteUpdate(mouseX, mouseY);
     drawSelectionRectangles();
+}
 
-    GameCycle++;
+void drawMap(void) {
+    drawAllTiles();
+    bobBegin(g_Screen.m_map.m_pBuffer->pBack);
+    drawUnits();
+    drawMissiles();
+    if (s_Mode == edit) {
+        bobPush(&s_TileCursor);
+    }
+    bobEnd();
+    drawFog();
+}
+
+void drawUnits(void) {
+    // process all units
+    tUbCoordYX tileTopLeft = screenPosToTile(g_Screen.m_map.m_pCamera->uPos);
+    unitManagerProcessUnits(
+        s_pUnitManager,
+        (UBYTE **)g_Map.m_ubPathmapXY,
+        tileTopLeft,
+        (tUbCoordYX){.ubX = (tileTopLeft.ubX + VISIBLE_TILES_X * 2), .ubY = (tileTopLeft.ubY + VISIBLE_TILES_Y * 2)}
+    );
+}
+
+void drawMissiles(void) {
 }
 
 void gameGsDestroy(void) {

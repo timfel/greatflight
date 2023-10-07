@@ -22,6 +22,7 @@ UnitType UnitTypes[] = {
             .walk = 3,
             .attack = 2,
             .fall = 0,
+            .wait = 3,
         },
     },
     [footman] = {},

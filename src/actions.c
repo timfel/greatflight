@@ -11,12 +11,21 @@ enum ActionTypes {
 };
 
 void actionMoveTo(Unit *unit, tUbCoordYX goal) {
-    unit->ubActionDataA = goal.ubX;
-    unit->ubActionDataB = goal.ubY;
-    unit->ubActionDataC = 0;
-    unit->ubActionDataD = 0;
-    unit->action = ActionMove;
-    unitSetFrame(unit, 0);
+    unit->nextAction.ubActionDataB = goal.ubY;
+    unit->nextAction.ubActionDataA = goal.ubX;
+    unit->nextAction.ubActionDataC = 0;
+    unit->nextAction.ubActionDataD = 0;
+    unit->nextAction.action = ActionMove;
+}
+
+void actionStill(Unit *unit) {
+    if (unit->nextAction.action) {
+        unit->action = unit->nextAction.action;
+        unit->ulActionData = unit->nextAction.ulActionData;
+        unit->nextAction.action = 0;
+    } else if (unit->ubActionDataA-- == 0) {
+        unitSetFrame(unit, (unitGetFrame(unit) + (UBYTE)g_pCustom->joy0dat) % DIRECTIONS);
+    }
 }
 
 #define moveTargetXMask 0b1111110000000000
@@ -26,7 +35,13 @@ void actionMoveTo(Unit *unit, tUbCoordYX goal) {
 #define moveTargetYShift 4
 #define moveCounterShift 0
 void actionMove(Unit *unit, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE]) {
+    if (unit->ubActionDataC) {
+        --unit->ubActionDataC;
+        return;
+    }
     UnitType type = UnitTypes[unit->type];
+    unit->ubActionDataC = (type.anim.wait + 2) * 2;
+
     UBYTE speed = type.stats.speed;
     BYTE vectorX = 0;
     BYTE vectorY = 0;
@@ -47,6 +62,12 @@ void actionMove(Unit *unit, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE]) {
             unit->IY += speed;
         }
     } else {
+        // can break here
+        actionStill(unit);
+        if (unit->action != ActionMove) {
+            // done moving
+            return;
+        }
         tUbCoordYX tilePos = unitGetTilePosition(unit);
         vectorX = unit->ubActionDataA - unit->loc.ubX;
         vectorY = unit->ubActionDataB - unit->loc.ubY;
@@ -119,6 +140,7 @@ void actionDie(Unit  __attribute__((__unused__)) *unit) {
 void actionDo(Unit *unit, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE]) {
     switch (unit->action) {
         case ActionStill:
+            actionStill(unit);
             return;
         case ActionMove:
             actionMove(unit, map);

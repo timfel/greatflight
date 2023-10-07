@@ -103,38 +103,44 @@ convertPalette(${GAME_LINKED} ${PROJECT_BINARY_DIR}/tmp/Palettes/Viewport.gpl ${
 tileize(
   ${PROJECT_BINARY_DIR}/tmp/Tiles/Woodland/Woodland.png
   32 32 ${PROJECT_SOURCE_DIR}/resources/Palettes/Viewport.png
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Grass.png
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Bridge0.png
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Bridge1.png
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Bridge2.png
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Bridge3.png
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Tree3.png
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Tree2.png
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Tree1.png
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Tree0.png
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Water.png
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast0.png
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast1.png
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast2.png
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast3.png
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast4.png
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast5.png
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast6.png
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast7.png
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast8.png
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast9.png
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast10.png
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast11.png
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Barracs.png
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Blacksmith.png
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Church.png
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Construction_big.png
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Construction_small.png
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Farm.png
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Hall.png
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/lumbermill.png
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Stable.png
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Tower.png
+  # ground tiles
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Grass.png              # 00
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Bridge0.png            # 04
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Bridge1.png            # 08
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Bridge2.png            # 12
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Bridge3.png            # 16
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Tree3.png              # 20
+  # harvestable tiles
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Tree2.png              # 24
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Tree1.png              # 28
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Tree0.png              # 32
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Water.png              # 36
+  # partially walkable tiles
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast0.png             # 40, 41
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast1.png             # 44, 45, 47
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast2.png             # 48, 49, 50
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast3.png             # 52, 54
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast4.png             # 57, 59
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast5.png             # 60, 62, 63
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast6.png             # 66, 67
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast7.png             # 69, 70, 71
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast8.png             # 72
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast9.png             # 77
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast10.png            # 82
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast11.png            # 87
+  # buildings
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Barracs.png            # 88
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Blacksmith.png         # 104
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Church.png             # 108
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Construction_big.png   # 114
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Construction_small.png # 130
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Farm.png               # 134
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Hall.png               # 138
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/lumbermill.png         # 154
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Stable.png             # 170
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Tower.png              # 186
+  # gold mine                                                           # 190
+  # 206 + is free for decorations or such things
 )
 
 convertTileset(

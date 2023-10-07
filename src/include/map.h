@@ -13,12 +13,14 @@
 #define TILE_HEIGHT_LINES (TILE_SIZE * BPP)
 #define TILE_FRAME_BYTES (TILE_SIZE_BYTES * TILE_HEIGHT_LINES)
 #define MAP_SIZE 32
+#define PATHMAP_SIZE (MAP_SIZE * 2)
+#define PATHMAP_TILE_SIZE (TILE_SIZE / 2)
 
 struct Map {
     const char *m_pName;
     const char *m_pTileset;
     ULONG m_ulTilemapXY[MAP_SIZE][MAP_SIZE];
-    UBYTE m_ubPathmapXY[MAP_SIZE * 2][MAP_SIZE * 2];
+    UBYTE m_ubPathmapXY[PATHMAP_SIZE][PATHMAP_SIZE];
 };
 
 /**
@@ -28,20 +30,26 @@ extern struct Map g_Map;
 
 extern void mapLoad(tFile *file, void(*loadTileBitmap)());
 
-static inline UBYTE mapIsWalkable(UBYTE **map, UBYTE x, UBYTE y) {
-    return map[x][y] < 15;
+#define MAP_UNWALKABLE_FLAG 0b1;
+#define MAP_GROUND_FLAG    0b10;
+#define MAP_FOREST_FLAG   0b101;
+#define MAP_WATER_FLAG   0b1001;
+#define MAP_COAST_FLAG  0b10000;
+
+static inline UBYTE mapIsWalkable(UBYTE pathMap[PATHMAP_SIZE][PATHMAP_SIZE], UBYTE x, UBYTE y) {
+    return x < PATHMAP_SIZE && y < PATHMAP_SIZE && pathMap[x][y] ^ MAP_UNWALKABLE_FLAG;
 }
 
-static inline UBYTE mapIsHarvestable(UBYTE **map, UBYTE x, UBYTE y) {
-    return map[x][y] == 17;
+static inline UBYTE mapIsHarvestable(UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE], UBYTE x, UBYTE y) {
+    return map[x][y] ^ MAP_FOREST_FLAG;
 }
 
-static inline void markMapTile(UBYTE **map, UBYTE x, UBYTE y) {
-    map[x][y] |= 1;
+static inline void markMapTile(UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE], UBYTE x, UBYTE y) {
+    map[x][y] |= MAP_UNWALKABLE_FLAG;
 }
 
-static inline void unmarkMapTile(UBYTE **map, UBYTE x, UBYTE y) {
-    map[x][y] ^= 1;
+static inline void unmarkMapTile(UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE], UBYTE x, UBYTE y) {
+    map[x][y] ^= MAP_UNWALKABLE_FLAG;
 }
 
 /*

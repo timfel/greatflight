@@ -17,6 +17,12 @@ UnitType UnitTypes[] = {
             .speed = 4,
         },
         .iconIdx = 54,
+        .anim = {
+            .large = 0,
+            .walk = 3,
+            .attack = 2,
+            .fall = 0,
+        },
     },
     [footman] = {},
     [grunt] = {},
@@ -107,10 +113,10 @@ void unitManagerDestroy(tUnitManager *pUnitListHead) {
     memFree(pUnitListHead, UNIT_MANAGER_SIZE);
 }
 
-void unitManagerProcessUnits(tUnitManager *pUnitListHead, UBYTE **pTileData, tUbCoordYX viewportTopLeft, tUbCoordYX viewportBottomRight) {
+void unitManagerProcessUnits(tUnitManager *pUnitListHead, UBYTE pPathMap[PATHMAP_SIZE][PATHMAP_SIZE], tUbCoordYX viewportTopLeft, tUbCoordYX viewportBottomRight) {
     struct _unitLink *link = pUnitListHead->firstActiveUnit;
     while (link) {
-        actionDo((Unit *)link, pTileData);
+        actionDo((Unit *)link, pPathMap);
         tUbCoordYX loc = unitGetTilePosition((Unit *)link);
         if (loc.ubX >= viewportTopLeft.ubX
                 && loc.ubY >= viewportTopLeft.ubY
@@ -181,12 +187,64 @@ void unitDelete(tUnitManager *pUnitListHead, Unit *unit) {
     pUnitListHead->nextFreeUnit = (struct _unitLink *)unit;
 }
 
+UBYTE unitCanBeAt(UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE], Unit __attribute__((__unused__)) *unit, UBYTE x, UBYTE y) {
+    // TODO: when we have units larger than 1 tile, check that here
+    return mapIsWalkable(map, x, y);
+}
+
+UBYTE unitPlace(UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE], Unit *unit, UBYTE x, UBYTE y) {
+    UBYTE range = 5; // drop out no further than 5 tiles away
+    UBYTE actualX, actualY;
+    for (UBYTE xoff = 0; xoff < range * 2; ++xoff) {
+        actualX = x + xoff;
+        for (UBYTE yoff = 0; yoff < range * 2; ++yoff) {
+            actualY = y + yoff;
+            if (unitCanBeAt(map, unit, actualX, actualY)) {
+                unit->x = actualX;
+                unit->y = actualY;
+                markMapTile(map, actualX, actualY);
+                return 1;
+            }
+            actualY = y - yoff;
+            if (unitCanBeAt(map, unit, actualX, actualY)) {
+                unit->x = actualX;
+                unit->y = actualY;
+                markMapTile(map, actualX, actualY);
+                return 1;
+            }
+        }
+        actualX = x - xoff;
+        for (UBYTE yoff = 0; yoff < range * 2; ++yoff) {
+            actualY = y + yoff;
+            if (unitCanBeAt(map, unit, actualX, actualY)) {
+                unit->x = actualX;
+                unit->y = actualY;
+                markMapTile(map, actualX, actualY);
+                return 1;
+            }
+            actualY = y - yoff;
+            if (unitCanBeAt(map, unit, actualX, actualY)) {
+                unit->x = actualX;
+                unit->y = actualY;
+                markMapTile(map, actualX, actualY);
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
 void loadUnit(tUnitManager *mgr, tFile *map) {
-    UBYTE type;
+    UBYTE type, x, y;
     fileRead(map, &type, 1);
     Unit *unit = unitNew(mgr, type);
-    fileRead(map, &unit->x, 1);
-    fileRead(map, &unit->y, 1);
+    fileRead(map, &x, 1);
+    fileRead(map, &y, 1);
+    if (!unitPlace(g_Map.m_ubPathmapXY, unit, x, y)) {
+        logWrite("DANGER WILL ROBINSON! Could not place unit at %d:%d", x, y);
+        unitDelete(mgr, unit);
+        return;
+    }
     fileRead(map, &unit->action, 1);
     fileRead(map, &unit->ubActionDataA, 1);
     fileRead(map, &unit->ubActionDataB, 1);

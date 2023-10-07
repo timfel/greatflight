@@ -206,6 +206,114 @@ static inline tUbCoordYX screenPosToTile(tUwCoordYX pos) {
     return (tUbCoordYX){.ubX = pos.uwX >> (TILE_SHIFT - 1), .ubY = pos.uwY >> (TILE_SHIFT - 1)};
 }
 
+void drawInfoPanel(void) {
+    if (g_Screen.m_ubBottomPanelDirty) {
+        // TODO: only store and redraw the dirty part?
+        g_Screen.m_ubBottomPanelDirty = 0;
+        // the panel is never actually swapped, the backbuffer is just the plain panel for redraw
+        blitWait(); // Don't modify registers when other blit is in progress
+        g_pCustom->bltcon0 = USEA|USED|MINTERM_A;
+        g_pCustom->bltcon1 = 0;
+        g_pCustom->bltafwm = 0xffff;
+        g_pCustom->bltalwm = 0xffff;
+        g_pCustom->bltamod = 0;
+        g_pCustom->bltdmod = 0;
+        g_pCustom->bltapt = g_Screen.m_panels.m_pMainPanelBackground->Planes[0];
+        g_pCustom->bltdpt = g_Screen.m_panels.m_pMainPanelBuffer->pFront->Planes[0];
+        g_pCustom->bltsize = ((BOTTOM_PANEL_HEIGHT * BPP) << 6) | (MAP_WIDTH >> 4);
+
+        Unit *unit;
+        for(UBYTE idx = 0; idx < NUM_SELECTION && (unit = s_pSelectedUnit[idx]); ++idx) {
+            // tIcon *icon = &g_Screen.m_pUnitIcons[idx];
+            // iconSetSource(icon, g_Screen.m_pIcons, UnitTypes[unit->type].iconIdx);
+            // iconDraw(icon);
+        }
+    }
+}
+
+void drawSelectionRectangles(void) {
+    for(UBYTE idx = 0; idx < NUM_SELECTION; ++idx) {
+        Unit *unit = s_pSelectedUnit[idx];
+        if (unit) {
+            WORD bobPosOnScreenX = s_pSelectedUnit[idx]->bob.sPos.uwX - g_Screen.m_map.m_pCamera->uPos.uwX;
+            if (bobPosOnScreenX >= -8) {
+                WORD bobPosOnScreenY = s_pSelectedUnit[idx]->bob.sPos.uwY - g_Screen.m_map.m_pCamera->uPos.uwY + TOP_PANEL_HEIGHT;
+                if (bobPosOnScreenX >= -8) {
+                    selectionSpritesUpdate(idx, bobPosOnScreenX, bobPosOnScreenY + 8);
+                    continue;
+                }
+            }
+        }
+        selectionSpritesUpdate(idx, -1, -1);
+    }
+}
+
+FN_HOTSPOT
+void drawAllTiles(void) {
+    // setup tile drawing, all of these should be compiled to immediate operations, they
+    // only use constants
+	WORD wDstModulo = MAP_BUFFER_WIDTH_BYTES - TILE_SIZE_BYTES; // same as bitmapGetByteWidth(g_Screen.m_map.m_pBuffer->pBack) - TILE_SIZE_BYTES;
+    WORD wSrcModulo = 0;
+	UWORD uwBlitWords = TILE_SIZE_WORDS;
+	UWORD uwHeight = TILE_SIZE * BPP;
+	UWORD uwBltCon0 = USEA|USED|MINTERM_A;
+	UWORD uwBltsize = (uwHeight << 6) | uwBlitWords;
+
+    // Figure out which tiles to actually draw, depending on the
+    // current camera position
+    UBYTE ubStartX = /*MAX(0, (*/g_Screen.m_map.m_pCamera->uPos.uwX >> TILE_SHIFT/*))*/;
+	UBYTE ubStartY = /*MAX(0, (*/g_Screen.m_map.m_pCamera->uPos.uwY >> TILE_SHIFT/*))*/;
+	UBYTE ubEndX = ubStartX + (MAP_WIDTH >> TILE_SHIFT);
+
+    // Get pointer to start of drawing area
+    PLANEPTR pDstPlane = g_Screen.m_map.m_pBuffer->pBack->Planes[0];
+
+    // setup blitter registers that won't change
+    systemSetDmaBit(DMAB_BLITHOG, 1);
+    blitWait();
+	g_pCustom->bltcon0 = uwBltCon0;
+	g_pCustom->bltcon1 = 0;
+	g_pCustom->bltafwm = 0xFFFF;
+	g_pCustom->bltalwm = 0xFFFF;
+	g_pCustom->bltamod = wSrcModulo;
+	g_pCustom->bltdmod = wDstModulo;
+
+    // draw as fast as we can
+    for (UBYTE x = ubStartX; x < ubEndX; x++) {
+        // manually unrolled loop to draw (MAP_BUFFER_HEIGHT / TILE_SIZE) tiles
+        ULONG *pTileBitmapOffset = &(g_Map.m_ulTilemapXY[x][ubStartY]);
+        blitWait();
+        g_pCustom->bltdpt = pDstPlane;
+        g_pCustom->bltapt = (APTR)*pTileBitmapOffset;
+        g_pCustom->bltsize = uwBltsize;
+        ++pTileBitmapOffset;
+        blitWait();
+        g_pCustom->bltapt = (APTR)*pTileBitmapOffset;
+        g_pCustom->bltsize = uwBltsize;
+        ++pTileBitmapOffset;
+        blitWait();
+        g_pCustom->bltapt = (APTR)*pTileBitmapOffset;
+        g_pCustom->bltsize = uwBltsize;
+        ++pTileBitmapOffset;
+        blitWait();
+        g_pCustom->bltapt = (APTR)*pTileBitmapOffset;
+        g_pCustom->bltsize = uwBltsize;
+        ++pTileBitmapOffset;
+        blitWait();
+        g_pCustom->bltapt = (APTR)*pTileBitmapOffset;
+        g_pCustom->bltsize = uwBltsize;
+        pDstPlane += (TILE_SIZE >> 3);
+    }
+    systemSetDmaBit(DMAB_BLITHOG, 0);
+}
+
+void logicLoop(void) {
+    GameCycle++;
+}
+
+void minimapUpdate(void) {
+}
+
 void handleInput() {
     UWORD mouseX = mouseGetX(MOUSE_PORT_1);
     UWORD mouseY = mouseGetY(MOUSE_PORT_1);
@@ -353,122 +461,10 @@ void handleInput() {
     }
 }
 
-void drawInfoPanel(void) {
-    if (g_Screen.m_ubBottomPanelDirty) {
-        // TODO: only store and redraw the dirty part?
-        g_Screen.m_ubBottomPanelDirty = 0;
-        // the panel is never actually swapped, the backbuffer is just the plain panel for redraw
-        blitWait(); // Don't modify registers when other blit is in progress
-        g_pCustom->bltcon0 = USEA|USED|MINTERM_A;
-        g_pCustom->bltcon1 = 0;
-        g_pCustom->bltafwm = 0xffff;
-        g_pCustom->bltalwm = 0xffff;
-        g_pCustom->bltamod = 0;
-        g_pCustom->bltdmod = 0;
-        g_pCustom->bltapt = g_Screen.m_panels.m_pMainPanelBackground->Planes[0];
-        g_pCustom->bltdpt = g_Screen.m_panels.m_pMainPanelBuffer->pFront->Planes[0];
-        g_pCustom->bltsize = ((BOTTOM_PANEL_HEIGHT * BPP) << 6) | (MAP_WIDTH >> 4);
-
-        Unit *unit;
-        for(UBYTE idx = 0; idx < NUM_SELECTION && (unit = s_pSelectedUnit[idx]); ++idx) {
-            // tIcon *icon = &g_Screen.m_pUnitIcons[idx];
-            // iconSetSource(icon, g_Screen.m_pIcons, UnitTypes[unit->type].iconIdx);
-            // iconDraw(icon);
-        }
-    }
+void colorCycle(void) {
 }
 
-void drawSelectionRectangles(void) {
-    for(UBYTE idx = 0; idx < NUM_SELECTION; ++idx) {
-        Unit *unit = s_pSelectedUnit[idx];
-        if (unit) {
-            WORD bobPosOnScreenX = s_pSelectedUnit[idx]->bob.sPos.uwX - g_Screen.m_map.m_pCamera->uPos.uwX;
-            if (bobPosOnScreenX >= -8) {
-                WORD bobPosOnScreenY = s_pSelectedUnit[idx]->bob.sPos.uwY - g_Screen.m_map.m_pCamera->uPos.uwY + TOP_PANEL_HEIGHT;
-                if (bobPosOnScreenX >= -8) {
-                    selectionSpritesUpdate(idx, bobPosOnScreenX, bobPosOnScreenY + 8);
-                    continue;
-                }
-            }
-        }
-        selectionSpritesUpdate(idx, -1, -1);
-    }
-}
-
-FN_HOTSPOT
-void drawAllTiles(void) {
-    // setup tile drawing, all of these should be compiled to immediate operations, they
-    // only use constants
-	WORD wDstModulo = MAP_BUFFER_WIDTH_BYTES - TILE_SIZE_BYTES; // same as bitmapGetByteWidth(g_Screen.m_map.m_pBuffer->pBack) - TILE_SIZE_BYTES;
-    WORD wSrcModulo = 0;
-	UWORD uwBlitWords = TILE_SIZE_WORDS;
-	UWORD uwHeight = TILE_SIZE * BPP;
-	UWORD uwBltCon0 = USEA|USED|MINTERM_A;
-	UWORD uwBltsize = (uwHeight << 6) | uwBlitWords;
-
-    // Figure out which tiles to actually draw, depending on the
-    // current camera position
-    UBYTE ubStartX = /*MAX(0, (*/g_Screen.m_map.m_pCamera->uPos.uwX >> TILE_SHIFT/*))*/;
-	UBYTE ubStartY = /*MAX(0, (*/g_Screen.m_map.m_pCamera->uPos.uwY >> TILE_SHIFT/*))*/;
-	UBYTE ubEndX = ubStartX + (MAP_WIDTH >> TILE_SHIFT);
-
-    // Get pointer to start of drawing area
-    PLANEPTR pDstPlane = g_Screen.m_map.m_pBuffer->pBack->Planes[0];
-
-    // setup blitter registers that won't change
-    systemSetDmaBit(DMAB_BLITHOG, 1);
-    blitWait();
-	g_pCustom->bltcon0 = uwBltCon0;
-	g_pCustom->bltcon1 = 0;
-	g_pCustom->bltafwm = 0xFFFF;
-	g_pCustom->bltalwm = 0xFFFF;
-	g_pCustom->bltamod = wSrcModulo;
-	g_pCustom->bltdmod = wDstModulo;
-
-    // draw as fast as we can
-    for (UBYTE x = ubStartX; x < ubEndX; x++) {
-        // manually unrolled loop to draw (MAP_BUFFER_HEIGHT / TILE_SIZE) tiles
-        ULONG *pTileBitmapOffset = &(g_Map.m_ulTilemapXY[x][ubStartY]);
-        blitWait();
-        g_pCustom->bltdpt = pDstPlane;
-        g_pCustom->bltapt = (APTR)*pTileBitmapOffset;
-        g_pCustom->bltsize = uwBltsize;
-        ++pTileBitmapOffset;
-        blitWait();
-        g_pCustom->bltapt = (APTR)*pTileBitmapOffset;
-        g_pCustom->bltsize = uwBltsize;
-        ++pTileBitmapOffset;
-        blitWait();
-        g_pCustom->bltapt = (APTR)*pTileBitmapOffset;
-        g_pCustom->bltsize = uwBltsize;
-        ++pTileBitmapOffset;
-        blitWait();
-        g_pCustom->bltapt = (APTR)*pTileBitmapOffset;
-        g_pCustom->bltsize = uwBltsize;
-        ++pTileBitmapOffset;
-        blitWait();
-        g_pCustom->bltapt = (APTR)*pTileBitmapOffset;
-        g_pCustom->bltsize = uwBltsize;
-        pDstPlane += (TILE_SIZE >> 3);
-    }
-    systemSetDmaBit(DMAB_BLITHOG, 0);
-}
-
-void logicLoop(void) {
-    GameCycle++;
-}
-
-void gameGsLoop(void) {
-    displayLoop();
-    logicLoop();
-}
-
-void displayLoop(void) {
-    minimapUpdate();
-    handleInput();
-    colorCycle();
-    fowUpdate();
-    updateDisplay();
+void fowUpdate(void) {
 }
 
 void drawResources(void) {
@@ -489,6 +485,50 @@ void drawResources(void) {
     }
 }
 
+void drawMissiles(void) {
+}
+
+void drawUnits(void) {
+    // process all units
+    tUbCoordYX tileTopLeft = screenPosToTile(g_Screen.m_map.m_pCamera->uPos);
+    unitManagerProcessUnits(
+        s_pUnitManager,
+        g_Map.m_ubPathmapXY,
+        tileTopLeft,
+        (tUbCoordYX){.ubX = (tileTopLeft.ubX + VISIBLE_TILES_X * 2), .ubY = (tileTopLeft.ubY + VISIBLE_TILES_Y * 2)}
+    );
+}
+
+void drawFog(void) {
+}
+
+void drawMap(void) {
+    drawAllTiles();
+    bobBegin(g_Screen.m_map.m_pBuffer->pBack);
+    drawUnits();
+    drawMissiles();
+    if (s_Mode == edit) {
+        bobPush(&s_TileCursor);
+    }
+    bobEnd();
+    drawFog();
+}
+
+void drawMessages(void) {
+}
+
+void drawActionButtons(void) {
+}
+
+void drawMenuButton(void) {
+}
+
+void drawMinimap(void) {
+}
+
+void drawStatusLine(void) {
+}
+
 void updateDisplay(void) {
     drawMap();
     drawMessages();
@@ -505,34 +545,21 @@ void updateDisplay(void) {
     vPortWaitUntilEnd(g_Screen.m_panels.m_pMainPanel);
 
     // update sprites during vblank
-    mouseSpriteUpdate(mouseX, mouseY);
+    mouseSpriteUpdate(mouseGetX(MOUSE_PORT_1), mouseGetY(MOUSE_PORT_1));
     drawSelectionRectangles();
 }
 
-void drawMap(void) {
-    drawAllTiles();
-    bobBegin(g_Screen.m_map.m_pBuffer->pBack);
-    drawUnits();
-    drawMissiles();
-    if (s_Mode == edit) {
-        bobPush(&s_TileCursor);
-    }
-    bobEnd();
-    drawFog();
+void displayLoop(void) {
+    minimapUpdate();
+    handleInput();
+    colorCycle();
+    fowUpdate();
+    updateDisplay();
 }
 
-void drawUnits(void) {
-    // process all units
-    tUbCoordYX tileTopLeft = screenPosToTile(g_Screen.m_map.m_pCamera->uPos);
-    unitManagerProcessUnits(
-        s_pUnitManager,
-        (UBYTE **)g_Map.m_ubPathmapXY,
-        tileTopLeft,
-        (tUbCoordYX){.ubX = (tileTopLeft.ubX + VISIBLE_TILES_X * 2), .ubY = (tileTopLeft.ubY + VISIBLE_TILES_Y * 2)}
-    );
-}
-
-void drawMissiles(void) {
+void gameGsLoop(void) {
+    displayLoop();
+    logicLoop();
 }
 
 void gameGsDestroy(void) {

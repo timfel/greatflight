@@ -10,23 +10,14 @@
 
 // TODO: this can be configurable for different systems
 #define BPP 4
-#define UNIT_SIZE 16
-#define UNIT_SIZE_SHIFT 4
-#define UNIT_FRAME_BYTES (UNIT_SIZE / 8 + UNIT_SIZE * BPP)
-/* Units are centered on a 2x2 tilegrid. So to position a unit on a tile, we subtract 8px */
-#define UNIT_POSITION_OFFSET 8
-
-#define FRAME_SIZE 16
-#define WALK_FRAMES 3
-#define ATTACK_FRAMES 2
-#define FRAME_COUNT (WALK_FRAMES + ATTACK_FRAMES)
-#define DIRECTION_NORTH 0
-#define DIRECTION_EAST (FRAME_COUNT * FRAME_SIZE)
-#define DIRECTION_SOUTH (FRAME_COUNT * FRAME_SIZE * 2)
-#define DIRECTION_WEST (FRAME_COUNT * FRAME_SIZE * 3)
 
 #define UNIT_FREE_TILE_POSITION ((tUbCoordYX){.ubY = -1, .ubX = -1})
 #define UNIT_INIT_TILE_POSITION ((tUbCoordYX){.ubY = 1, .ubX = 1})
+#define DIRECTION_NORTH 0
+#define DIRECTION_EAST 1
+#define DIRECTION_SOUTH 2
+#define DIRECTION_WEST 3
+#define DIRECTIONS 4
 
 typedef struct {
     union {
@@ -43,6 +34,12 @@ typedef struct {
         UBYTE speed;
         UBYTE maxMana;
     } stats;
+    struct {
+        unsigned large:1; // 16x16 or 24x24 pixels
+        unsigned walk:2; // 0,1,2,3 walking frames
+        unsigned attack:2; // 0,1,2,3 attack frames
+        unsigned fall:1; // 0,1 falling frames
+    } anim;
 } UnitType;
 
 enum UnitTypes {
@@ -105,8 +102,8 @@ typedef struct {
     UnitStats stats;
     tBob bob;
     UBYTE frame;
-    unsigned IX:4;
-    unsigned IY:4;
+    BYTE IX;
+    BYTE IY;
 } Unit;
 
 extern void unitsLoad(tUnitManager *mgr, tFile *map);
@@ -155,7 +152,7 @@ void unitDelete(tUnitManager *pUnitListHead, Unit *unit);
  * @param viewportTopLeft top left visible tile
  * @param viewportBottomRight bottom right visible tile
  */
-void unitManagerProcessUnits(tUnitManager *pUnitListHead, UBYTE **pTileData, tUbCoordYX viewportTopLeft, tUbCoordYX viewportBottomRight);
+void unitManagerProcessUnits(tUnitManager *pUnitListHead, UBYTE pTileData[PATHMAP_SIZE][PATHMAP_SIZE], tUbCoordYX viewportTopLeft, tUbCoordYX viewportBottomRight);
 
 /**
  * @brief Return unit on tile, if any
@@ -171,7 +168,7 @@ static inline tUbCoordYX unitGetTilePosition(Unit *self) {
     return self->loc;
 }
 
-static inline void unitSetTilePosition(Unit *self, UBYTE **map, tUbCoordYX pos) {
+static inline void unitSetTilePosition(Unit *self, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE], tUbCoordYX pos) {
     self->loc = pos;
     if (pos.ubX > 1) {
         markMapTile(map, pos.ubX, pos.ubY);
@@ -179,13 +176,14 @@ static inline void unitSetTilePosition(Unit *self, UBYTE **map, tUbCoordYX pos) 
 }
 
 static inline void unitDraw(Unit *self, tUbCoordYX viewportTopLeft) {
-    self->bob.sPos.uwX = (self->x + viewportTopLeft.ubX) * (TILE_SIZE / 2) + self->IX;
-    self->bob.sPos.uwY = (self->y + viewportTopLeft.ubY) * (TILE_SIZE / 2) + self->IY;
+    self->bob.sPos.uwX = (self->x + viewportTopLeft.ubX) * PATHMAP_TILE_SIZE + self->IX;
+    self->bob.sPos.uwY = (self->y + viewportTopLeft.ubY) * PATHMAP_TILE_SIZE + self->IY;
     bobPush(&self->bob);
 }
 
 static inline void unitSetFrame(Unit *self, UBYTE ubFrame) {
-    UWORD offset = ubFrame * UNIT_FRAME_BYTES;
+    self->frame = ubFrame;
+    UWORD offset = ubFrame * (UnitTypes[self->type].anim.large ? (24 / 8 * 24 * BPP) : (16 / 8 * 16 * BPP));
     bobSetFrame(&self->bob, UnitTypes[self->type].spritesheet->Planes[0] + offset, UnitTypes[self->type].mask->Planes[0] + offset);
 }
 

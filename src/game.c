@@ -203,7 +203,7 @@ void gameGsCreate(void) {
  * Screen coordinates to pathmap coordinates
  */
 static inline tUbCoordYX screenPosToTile(tUwCoordYX pos) {
-    return (tUbCoordYX){.ubX = pos.uwX >> (TILE_SHIFT - 1), .ubY = pos.uwY >> (TILE_SHIFT - 1)};
+    return (tUbCoordYX){.ubX = pos.uwX / PATHMAP_TILE_SIZE, .ubY = (pos.uwY - TOP_PANEL_HEIGHT) / PATHMAP_TILE_SIZE};
 }
 
 void drawInfoPanel(void) {
@@ -319,7 +319,7 @@ void handleInput() {
     UWORD mouseY = mouseGetY(MOUSE_PORT_1);
     static tUwCoordYX lmbDown = {.ulYX = 0};
     
-    tUwCoordYX mousePos = {.uwX = mouseX / TILE_SIZE * TILE_SIZE, .uwY = mouseY / TILE_SIZE * TILE_SIZE};
+    tUwCoordYX mousePos = {.uwX = mouseX, .uwY = mouseY};
 
     if (s_Mode == edit) {
         s_TileCursor.sPos.ulYX = mousePos.ulYX;
@@ -345,11 +345,7 @@ void handleInput() {
             s_Mode = game;
         } else if (mouseCheck(MOUSE_PORT_1, MOUSE_LMB)) {
             tUbCoordYX tile = screenPosToTile((tUwCoordYX){.ulYX = mousePos.ulYX + g_Screen.m_map.m_pCamera->uPos.ulYX});
-            // TODO
             g_Map.m_ulTilemapXY[tile.ubX][tile.ubY] = tileIndexToTileBitmapOffset(SelectedTile);
-            // tileBufferSetTile(g_Screen.m_map.m_pBuffer, tile.ubX, tile.ubY, SelectedTile);
-            // tileBufferQueueProcess(g_Screen.m_map.m_pBuffer);
-            // bobDiscardUndraw();
         }
         return;
     }
@@ -391,7 +387,7 @@ void handleInput() {
     if (mouseCheck(MOUSE_PORT_1, MOUSE_LMB)) {
         if (lmbDown.uwY) {
             if (lmbDown.uwY - mousePos.uwY) {
-                selectionRectangleUpdate(lmbDown.uwX, mousePos.uwX, lmbDown.uwY + TOP_PANEL_HEIGHT, mousePos.uwY + TOP_PANEL_HEIGHT);
+                selectionRectangleUpdate(lmbDown.uwX, mousePos.uwX, lmbDown.uwY, mousePos.uwY);
             }
         } else {
             lmbDown = mousePos;

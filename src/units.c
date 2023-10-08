@@ -14,7 +14,7 @@ UnitType UnitTypes[] = {
         .stats = {
             .maxHP = 30,
             .maxMana = 0,
-            .speed = 4,
+            .speed = 2,
         },
         .iconIdx = 54,
         .anim = {

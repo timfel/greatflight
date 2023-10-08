@@ -18,14 +18,18 @@ void actionMoveTo(Unit *unit, tUbCoordYX goal) {
     unit->nextAction.action = ActionMove;
 }
 
-void actionStill(Unit *unit) {
+UBYTE actionStill(Unit *unit) {
     if (unit->nextAction.action) {
         unit->action = unit->nextAction.action;
         unit->ulActionData = unit->nextAction.ulActionData;
         unit->nextAction.action = 0;
-    } else if (unit->ubActionDataA-- == 0) {
-        unitSetFrame(unit, (unitGetFrame(unit) + (UBYTE)g_pCustom->joy0dat) % DIRECTIONS);
+        return 1;
+    } else if (unit->action == ActionStill) {
+        if (unit->ubActionDataA-- == 0) {
+            unitSetFrame(unit, (unitGetFrame(unit) + (UBYTE)g_pCustom->joy0dat) % DIRECTIONS);
+        }
     }
+    return 0;
 }
 
 #define moveTargetXMask 0b1111110000000000
@@ -63,9 +67,7 @@ void actionMove(Unit *unit, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE]) {
         }
     } else {
         // can break here
-        actionStill(unit);
-        if (unit->action != ActionMove) {
-            // done moving
+        if (actionStill(unit)) {
             return;
         }
         tUbCoordYX tilePos = unitGetTilePosition(unit);

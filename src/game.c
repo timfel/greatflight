@@ -172,6 +172,7 @@ void gameGsCreate(void) {
     g_Screen.m_pView = viewCreate(0,
                          TAG_VIEW_COPLIST_MODE, VIEW_COPLIST_MODE_RAW,
                          TAG_VIEW_COPLIST_RAW_COUNT, copListLength,
+                         TAG_VIEW_WINDOW_START_Y, SCREEN_PAL_YOFFSET,
                          TAG_VIEW_WINDOW_HEIGHT, TOP_PANEL_HEIGHT + 1 + MAP_HEIGHT + 1 + BOTTOM_PANEL_HEIGHT,
                          TAG_DONE);
 
@@ -235,11 +236,12 @@ void drawSelectionRectangles(void) {
     for(UBYTE idx = 0; idx < NUM_SELECTION; ++idx) {
         Unit *unit = s_pSelectedUnit[idx];
         if (unit) {
-            WORD bobPosOnScreenX = s_pSelectedUnit[idx]->bob.sPos.uwX - g_Screen.m_map.m_pCamera->uPos.uwX;
-            if (bobPosOnScreenX >= -8) {
-                WORD bobPosOnScreenY = s_pSelectedUnit[idx]->bob.sPos.uwY - g_Screen.m_map.m_pCamera->uPos.uwY + TOP_PANEL_HEIGHT;
-                if (bobPosOnScreenX >= -8) {
-                    selectionSpritesUpdate(idx, bobPosOnScreenX, bobPosOnScreenY + 8);
+            WORD bobPosOnScreenX = unit->bob.sPos.uwX - g_Screen.m_map.m_pCamera->uPos.uwX;
+            BYTE offset = UnitTypes[unit->type].anim.large ? 8 : 0;
+            if (bobPosOnScreenX >= -offset && bobPosOnScreenX <= MAP_WIDTH + offset) {
+                WORD bobPosOnScreenY = unit->bob.sPos.uwY - g_Screen.m_map.m_pCamera->uPos.uwY;
+                if (bobPosOnScreenY >= -offset && bobPosOnScreenY <= MAP_HEIGHT + offset) {
+                    selectionSpritesUpdate(idx, bobPosOnScreenX, bobPosOnScreenY + TOP_PANEL_HEIGHT + 1);
                     continue;
                 }
             }

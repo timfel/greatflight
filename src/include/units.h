@@ -81,7 +81,9 @@ typedef struct {
     UBYTE type;
     union {
         struct {
+             // tile Y
             UBYTE y;
+            // tile X
             UBYTE x;
         };
         tUbCoordYX loc;
@@ -193,8 +195,8 @@ static inline void unitSetTilePosition(Unit *self, UBYTE map[PATHMAP_SIZE][PATHM
 }
 
 static inline void unitDraw(Unit *self, tUbCoordYX viewportTopLeft) {
-    self->bob.sPos.uwX = (self->x + viewportTopLeft.ubX) * PATHMAP_TILE_SIZE + self->IX;
-    self->bob.sPos.uwY = (self->y + viewportTopLeft.ubY) * PATHMAP_TILE_SIZE + self->IY;
+    self->bob.sPos.uwX = (self->x - viewportTopLeft.ubX) * PATHMAP_TILE_SIZE + self->IX;
+    self->bob.sPos.uwY = (self->y - viewportTopLeft.ubY) * PATHMAP_TILE_SIZE + self->IY;
     bobPush(&self->bob);
 }
 

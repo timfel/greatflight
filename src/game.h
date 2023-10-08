@@ -3,6 +3,7 @@
 
 #include "icons.h"
 
+#include <ace/generic/screen.h>
 #include <ace/managers/bob.h>
 #include <ace/managers/copper.h>
 #include <ace/managers/log.h>

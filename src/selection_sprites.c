@@ -1,5 +1,6 @@
 #include "selection_sprites.h"
 
+#include <ace/generic/screen.h>
 #include <ace/managers/copper.h>
 #include <ace/utils/custom.h>
 
@@ -124,7 +125,7 @@ void selectionSpritesUpdate(UBYTE selectionIdx, WORD selectionX, WORD selectionY
         return;
     }
     UWORD hstart = selectionX + 128;
-    UWORD vstart = selectionY + 44;
+    UWORD vstart = selectionY + SCREEN_PAL_YOFFSET;
     UWORD vstop = vstart + 15;
     s_spriteData[selectionIdx][0] = ((vstart & 0xff) << 8) | ((hstart >> 1) & 0xff); /* VSTART bits 7-0, HSTART bits 8-1 */
     s_spriteData[selectionIdx][1] = ((vstop & 0xff) << 8) | /* VSTOP = height + VSTART bits 7-0 */
@@ -143,8 +144,8 @@ void selectionRectangleUpdate(WORD x1, WORD x2, WORD y1, WORD y2) {
     }
     UWORD hstart1 = x1 + 128;
     UWORD hstart2 = x2 + 128;
-    UWORD vstart1 = y1 + 44;
-    UWORD vstart2 = y2 + 44;
+    UWORD vstart1 = y1 + SCREEN_PAL_YOFFSET;
+    UWORD vstart2 = y2 + SCREEN_PAL_YOFFSET;
     UWORD vstop1 = vstart1 + 15;
     UWORD vstop2 = vstart2 + 15;
     s_selectionRectangleSpriteUpDown[0] = ((vstart1 & 0xff) << 8) | ((hstart1 >> 1) & 0xff); /* VSTART bits 7-0, HSTART bits 8-1 */

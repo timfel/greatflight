@@ -29,6 +29,19 @@ static UBYTE s_Mode = game;
 // editor statics
 static UBYTE SelectedTile = 0x10;
 
+struct copOffsets_t {
+    UWORD spritePos;
+    UWORD selectionPos;
+    UWORD simplePosTop;
+    UWORD topPanelColorsPos;
+    UWORD mapbufCoplistStart;
+    UWORD mapColorsCoplistStart;
+    UWORD simplePosBottom;
+    UWORD panelColorsPos;
+    UWORD copListLength;
+};
+static struct copOffsets_t s_copOffsets;
+
 // game statics
 static Unit *s_pSelectedUnit[NUM_SELECTION];
 
@@ -158,40 +171,40 @@ void gameGsCreate(void) {
     viewLoad(0);
 
     // Calculate copperlist size
-    UWORD spritePos = 0;
-    UWORD selectionPos = spritePos + mouseSpriteGetRawCopplistInstructionCountLength();
-    UWORD simplePosTop = selectionPos + selectionSpritesGetRawCopplistInstructionCountLength();
-    UWORD topPanelColorsPos = simplePosTop + simpleBufferGetRawCopperlistInstructionCount(BPP);
-    UWORD mapbufCoplistStart = topPanelColorsPos + COLORS;
-    UWORD mapColorsCoplistStart = mapbufCoplistStart + simpleBufferGetRawCopperlistInstructionCount(BPP);
-    UWORD simplePosBottom = mapColorsCoplistStart + COLORS;
-    UWORD panelColorsPos = simplePosBottom + simpleBufferGetRawCopperlistInstructionCount(BPP);
-    UWORD copListLength = panelColorsPos + COLORS;
+    s_copOffsets.spritePos = 0;
+    s_copOffsets.selectionPos = s_copOffsets.spritePos + mouseSpriteGetRawCopplistInstructionCountLength();
+    s_copOffsets.simplePosTop = s_copOffsets.selectionPos + selectionSpritesGetRawCopplistInstructionCountLength();
+    s_copOffsets.topPanelColorsPos = s_copOffsets.simplePosTop + simpleBufferGetRawCopperlistInstructionCount(BPP);
+    s_copOffsets.mapbufCoplistStart = s_copOffsets.topPanelColorsPos + COLORS;
+    s_copOffsets.mapColorsCoplistStart = s_copOffsets.mapbufCoplistStart + simpleBufferGetRawCopperlistInstructionCount(BPP);
+    s_copOffsets.simplePosBottom = s_copOffsets.mapColorsCoplistStart + COLORS;
+    s_copOffsets.panelColorsPos = s_copOffsets.simplePosBottom + simpleBufferGetRawCopperlistInstructionCount(BPP);
+    s_copOffsets.copListLength = s_copOffsets.panelColorsPos + COLORS;
 
     // Create the game view
     g_Screen.m_pView = viewCreate(0,
                          TAG_VIEW_COPLIST_MODE, VIEW_COPLIST_MODE_RAW,
-                         TAG_VIEW_COPLIST_RAW_COUNT, copListLength,
+                         TAG_VIEW_COPLIST_RAW_COUNT, s_copOffsets.copListLength,
                          TAG_VIEW_WINDOW_START_Y, SCREEN_PAL_YOFFSET,
                          TAG_VIEW_WINDOW_HEIGHT, TOP_PANEL_HEIGHT + 1 + MAP_HEIGHT + 1 + BOTTOM_PANEL_HEIGHT,
                          TAG_DONE);
 
     // setup mouse
-    mouseSpriteSetup(g_Screen.m_pView, spritePos);
+    mouseSpriteSetup(g_Screen.m_pView, s_copOffsets.spritePos);
 
     // setup selection rectangles
-    selectionSpritesSetup(g_Screen.m_pView, selectionPos);
+    selectionSpritesSetup(g_Screen.m_pView, s_copOffsets.selectionPos);
 
     createViewports();
 
     s_pUnitManager = unitManagerCreate();
 
     // load map file
-    loadMap(g_Map.m_pName, mapbufCoplistStart, mapColorsCoplistStart);
+    loadMap(g_Map.m_pName, s_copOffsets.mapbufCoplistStart, s_copOffsets.mapColorsCoplistStart);
 
     initBobs();
 
-    loadUi(topPanelColorsPos, panelColorsPos, simplePosTop, simplePosBottom);
+    loadUi(s_copOffsets.topPanelColorsPos, s_copOffsets.panelColorsPos, s_copOffsets.simplePosTop, s_copOffsets.simplePosBottom);
 
     viewLoad(g_Screen.m_pView);
 
@@ -322,6 +335,39 @@ void handleInput() {
     static tUwCoordYX lmbDown = {.ulYX = 0};
     
     tUwCoordYX mousePos = {.uwX = mouseX, .uwY = mouseY};
+
+    // XXX: menu buttons
+    static UWORD topHighlight = 0;
+    if (mouseY < TOP_PANEL_HEIGHT && mouseX <= 60) {
+        topHighlight = 1;
+        tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[s_copOffsets.topPanelColorsPos];
+        // XXX: matches the generated gpl file index for the color i want to change, this is pretty random
+        copSetMoveVal(&pCmds[10].sMove, g_Screen.m_panels.m_pPalette[11]);
+        pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[s_copOffsets.topPanelColorsPos];
+        copSetMoveVal(&pCmds[10].sMove, g_Screen.m_panels.m_pPalette[11]);
+    } else if (topHighlight) {
+        topHighlight = 0;
+        tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[s_copOffsets.topPanelColorsPos];
+        copSetMoveVal(&pCmds[10].sMove, g_Screen.m_panels.m_pPalette[10]);
+        pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[s_copOffsets.topPanelColorsPos];
+        copSetMoveVal(&pCmds[10].sMove, g_Screen.m_panels.m_pPalette[10]);
+    }
+    static UWORD botHighlight = 0;
+    if (mouseY > TOP_PANEL_HEIGHT + MAP_HEIGHT && mouseX >= 280) {
+        botHighlight = 1;
+        tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[s_copOffsets.panelColorsPos];
+        // XXX: matches the generated gpl file index for the color i want to change, this is pretty random
+        copSetMoveVal(&pCmds[10].sMove, g_Screen.m_panels.m_pPalette[11]);
+        pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[s_copOffsets.panelColorsPos];
+        copSetMoveVal(&pCmds[10].sMove, g_Screen.m_panels.m_pPalette[11]);
+    } else if (botHighlight) {
+        botHighlight = 0;
+        tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[s_copOffsets.panelColorsPos];
+        copSetMoveVal(&pCmds[10].sMove, g_Screen.m_panels.m_pPalette[10]);
+        pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[s_copOffsets.panelColorsPos];
+        copSetMoveVal(&pCmds[10].sMove, g_Screen.m_panels.m_pPalette[10]);
+    }
+    // END XXX
 
     if (s_Mode == edit) {
         s_TileCursor.sPos.ulYX = mousePos.ulYX;

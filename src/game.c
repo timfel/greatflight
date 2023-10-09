@@ -54,12 +54,14 @@ void createViewports() {
                              TAG_END);
     g_Screen.m_map.m_pVPort = vPortCreate(0,
                             TAG_VPORT_VIEW, g_Screen.m_pView,
+                            TAG_VPORT_OFFSET_TOP, UWORD_MAX - 1,
                             TAG_VPORT_BPP, BPP,
                             TAG_VPORT_WIDTH, MAP_WIDTH,
                             TAG_VPORT_HEIGHT, MAP_HEIGHT,
                             TAG_END);
     g_Screen.m_panels.m_pMainPanel = vPortCreate(0,
                              TAG_VPORT_VIEW, g_Screen.m_pView,
+                             TAG_VPORT_OFFSET_TOP, UWORD_MAX - 1,
                              TAG_VPORT_BPP, BPP,
                              TAG_VPORT_WIDTH, MAP_WIDTH,
                              TAG_VPORT_HEIGHT, BOTTOM_PANEL_HEIGHT,
@@ -186,7 +188,7 @@ void gameGsCreate(void) {
                          TAG_VIEW_COPLIST_MODE, VIEW_COPLIST_MODE_RAW,
                          TAG_VIEW_COPLIST_RAW_COUNT, s_copOffsets.copListLength,
                          TAG_VIEW_WINDOW_START_Y, SCREEN_PAL_YOFFSET,
-                         TAG_VIEW_WINDOW_HEIGHT, TOP_PANEL_HEIGHT + 1 + MAP_HEIGHT + 1 + BOTTOM_PANEL_HEIGHT,
+                         TAG_VIEW_WINDOW_HEIGHT, TOP_PANEL_HEIGHT + MAP_HEIGHT + BOTTOM_PANEL_HEIGHT,
                          TAG_DONE);
 
     // setup mouse
@@ -338,34 +340,30 @@ void handleInput() {
 
     // XXX: menu buttons
     static UWORD topHighlight = 0;
+    // XXX: matches the generated gpl file index for the color i want to change, this is pretty random
+    static UBYTE blue1 = 10; static UWORD red1 = 0xd45;
+    static UBYTE blue2 = 6; static UWORD red2 = 0xa44;
+    static UBYTE blue3 = 5; static UWORD red3 = 0x724;
     if (mouseY < TOP_PANEL_HEIGHT && mouseX <= 60) {
         topHighlight = 1;
         tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[s_copOffsets.topPanelColorsPos];
-        // XXX: matches the generated gpl file index for the color i want to change, this is pretty random
-        copSetMoveVal(&pCmds[10].sMove, g_Screen.m_panels.m_pPalette[11]);
+        copSetMoveVal(&pCmds[blue1].sMove, red1);
+        copSetMoveVal(&pCmds[blue2].sMove, red2);
+        copSetMoveVal(&pCmds[blue3].sMove, red3);
         pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[s_copOffsets.topPanelColorsPos];
-        copSetMoveVal(&pCmds[10].sMove, g_Screen.m_panels.m_pPalette[11]);
+        copSetMoveVal(&pCmds[blue1].sMove, red1);
+        copSetMoveVal(&pCmds[blue2].sMove, red2);
+        copSetMoveVal(&pCmds[blue3].sMove, red3);
     } else if (topHighlight) {
         topHighlight = 0;
         tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[s_copOffsets.topPanelColorsPos];
-        copSetMoveVal(&pCmds[10].sMove, g_Screen.m_panels.m_pPalette[10]);
+        copSetMoveVal(&pCmds[blue1].sMove, g_Screen.m_panels.m_pPalette[blue1]);
+        copSetMoveVal(&pCmds[blue2].sMove, g_Screen.m_panels.m_pPalette[blue2]);
+        copSetMoveVal(&pCmds[blue3].sMove, g_Screen.m_panels.m_pPalette[blue3]);
         pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[s_copOffsets.topPanelColorsPos];
-        copSetMoveVal(&pCmds[10].sMove, g_Screen.m_panels.m_pPalette[10]);
-    }
-    static UWORD botHighlight = 0;
-    if (mouseY > TOP_PANEL_HEIGHT + MAP_HEIGHT && mouseX >= 280) {
-        botHighlight = 1;
-        tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[s_copOffsets.panelColorsPos];
-        // XXX: matches the generated gpl file index for the color i want to change, this is pretty random
-        copSetMoveVal(&pCmds[10].sMove, g_Screen.m_panels.m_pPalette[11]);
-        pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[s_copOffsets.panelColorsPos];
-        copSetMoveVal(&pCmds[10].sMove, g_Screen.m_panels.m_pPalette[11]);
-    } else if (botHighlight) {
-        botHighlight = 0;
-        tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[s_copOffsets.panelColorsPos];
-        copSetMoveVal(&pCmds[10].sMove, g_Screen.m_panels.m_pPalette[10]);
-        pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[s_copOffsets.panelColorsPos];
-        copSetMoveVal(&pCmds[10].sMove, g_Screen.m_panels.m_pPalette[10]);
+        copSetMoveVal(&pCmds[blue1].sMove, g_Screen.m_panels.m_pPalette[blue1]);
+        copSetMoveVal(&pCmds[blue2].sMove, g_Screen.m_panels.m_pPalette[blue2]);
+        copSetMoveVal(&pCmds[blue3].sMove, g_Screen.m_panels.m_pPalette[blue3]);
     }
     // END XXX
 

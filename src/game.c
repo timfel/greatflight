@@ -9,6 +9,7 @@
 #include "mouse_sprite.h"
 #include "selection_sprites.h"
 
+#include <ace/utils/font.h>
 #include <graphics/sprite.h>
 
 #define VISIBLE_TILES_X (MAP_WIDTH >> TILE_SHIFT)
@@ -18,6 +19,8 @@
 struct Screen g_Screen;
 static tBob s_TileCursor;
 static tUnitManager *s_pUnitManager;
+
+static tFont *font54;
 
 enum mode {
     game,
@@ -44,6 +47,10 @@ static struct copOffsets_t s_copOffsets;
 
 // game statics
 static Unit *s_pSelectedUnit[NUM_SELECTION];
+
+void loadFonts() {
+    font54 = fontCreate("resources/ui/uni54.fnt");
+}
 
 void createViewports() {
     g_Screen.m_panels.m_pTopPanel = vPortCreate(0,
@@ -207,6 +214,8 @@ void gameGsCreate(void) {
     initBobs();
 
     loadUi(s_copOffsets.topPanelColorsPos, s_copOffsets.panelColorsPos, s_copOffsets.simplePosTop, s_copOffsets.simplePosBottom);
+
+    loadFonts();
 
     viewLoad(g_Screen.m_pView);
 
@@ -510,20 +519,41 @@ void fowUpdate(void) {
 }
 
 void drawResources(void) {
-    if (g_Screen.m_ubTopPanelDirty) {
+    if ((GameCycle & 63) == 63) {
         // TODO: only store and redraw the dirty part
-        g_Screen.m_ubTopPanelDirty = 0;
-        // the panel is never actually swapped, the backbuffer is just the plain panel for redraw
-        blitWait(); // Don't modify registers when other blit is in progress
-        g_pCustom->bltcon0 = USEA|USED|MINTERM_A;
-        g_pCustom->bltcon1 = 0;
-        g_pCustom->bltafwm = 0xffff;
-        g_pCustom->bltalwm = 0xffff;
-        g_pCustom->bltamod = 0;
-        g_pCustom->bltdmod = 0;
-        g_pCustom->bltapt = g_Screen.m_panels.s_pTopPanelBackground->Planes[0];
-        g_pCustom->bltdpt = g_Screen.m_panels.m_pTopPanelBuffer->pFront->Planes[0];
-        g_pCustom->bltsize = ((TOP_PANEL_HEIGHT * BPP) << 6) | (MAP_WIDTH >> 4);
+        // g_Screen.m_ubTopPanelDirty = 0;
+        // // the panel is never actually swapped, the backbuffer is just the plain panel for redraw
+        // blitWait(); // Don't modify registers when other blit is in progress
+        // g_pCustom->bltcon0 = USEA|USED|MINTERM_A;
+        // g_pCustom->bltcon1 = 0;
+        // g_pCustom->bltafwm = 0xffff;
+        // g_pCustom->bltalwm = 0xffff;
+        // g_pCustom->bltamod = 0;
+        // g_pCustom->bltdmod = 0;
+        // g_pCustom->bltapt = g_Screen.m_panels.s_pTopPanelBackground->Planes[0];
+        // g_pCustom->bltdpt = g_Screen.m_panels.m_pTopPanelBuffer->pFront->Planes[0];
+        // g_pCustom->bltsize = ((TOP_PANEL_HEIGHT * BPP) << 6) | (MAP_WIDTH >> 4);
+
+        static tTextBitMap *goldBitmap = NULL;
+        static tTextBitMap *lumberBitmap = NULL;
+        static UWORD gold = -1;
+        static UWORD lumber = -1;
+        static char str[7] = {'\0'};
+        if (GameCycle & 64) {
+            if (gold != g_pPlayers[0].gold) {
+                gold = g_pPlayers[0].gold;
+                snprintf(str, 6, "%d", gold);
+                goldBitmap = fontCreateTextBitMapFromStr(font54, str);
+            }
+            fontDrawTextBitMap(g_Screen.m_panels.m_pTopPanelBuffer->pBack, goldBitmap, 128, 0, 1, 0);
+        } else {
+            if (lumber != g_pPlayers[0].lumber) {
+                lumber = g_pPlayers[0].lumber;
+                snprintf(str, 6, "%d", lumber);
+                lumberBitmap = fontCreateTextBitMapFromStr(font54, str);
+            }
+            fontDrawTextBitMap(g_Screen.m_panels.m_pTopPanelBuffer->pBack, lumberBitmap, 232, 0, 1, 0);
+        }
     }
 }
 

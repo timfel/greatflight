@@ -91,6 +91,16 @@ function(map2bin SOURCE DESTINATION)
   target_sources(${GAME_LINKED} PUBLIC ${DESTINATION})
 endfunction()
 
+function(font2pngs SOURCE DESTINATION)
+	add_custom_command(
+		OUTPUT ${DESTINATION}
+		COMMAND python3 ${PROJECT_SOURCE_DIR}/tools/map2bin.py ${SOURCE} ${DESTINATION}
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+		DEPENDS ${SOURCE}
+	)
+  target_sources(${GAME_LINKED} PUBLIC ${DESTINATION})
+endfunction()
+
 # Map
 
 map2bin(${PROJECT_SOURCE_DIR}/resources/maps/example.map ${PROJECT_BINARY_DIR}/resources/maps/example.map)
@@ -205,3 +215,9 @@ convertBitmaps(
        MASKS ${PROJECT_BINARY_DIR}/resources/units/peon.msk
 )
 
+convertFont(
+       TARGET ${GAME_LINKED}
+       FIRST_CHAR 29
+       SOURCE ${PROJECT_SOURCE_DIR}/resources/GUI/font_uni54.png
+       DESTINATION ${PROJECT_BINARY_DIR}/resources/ui/uni54.fnt
+)

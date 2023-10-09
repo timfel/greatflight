@@ -12,6 +12,7 @@
                 "${env:HOME}/.vscode/extensions/bartmanabyss.amiga-debug-1.7.4/bin/linux/opt/m68k-amiga-elf/sys-include"
             ],
             "defines": [
+                "__GNUG__=12",
                 "__GNUC__=12",
                 "BARTMAN_GCC",
                 "_DEBUG",

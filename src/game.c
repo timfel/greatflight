@@ -14,7 +14,7 @@
 
 #define VISIBLE_TILES_X (MAP_WIDTH >> TILE_SHIFT)
 #define VISIBLE_TILES_Y (MAP_HEIGHT >> TILE_SHIFT)
-#define CAMERA_MOVE_DELTA 32
+#define CAMERA_MOVE_DELTA PATHMAP_TILE_SIZE
 
 struct Screen g_Screen;
 static tBob s_TileCursor;
@@ -260,10 +260,10 @@ void drawSelectionRectangles(void) {
     for(UBYTE idx = 0; idx < NUM_SELECTION; ++idx) {
         Unit *unit = s_pSelectedUnit[idx];
         if (unit) {
-            WORD bobPosOnScreenX = unit->bob.sPos.uwX - g_Screen.m_map.m_pCamera->uPos.uwX;
+            WORD bobPosOnScreenX = unit->bob.sPos.uwX - g_Screen.m_map.m_pBuffer->pCamera->uPos.uwX;
             BYTE offset = UnitTypes[unit->type].anim.large ? 8 : 0;
             if (bobPosOnScreenX >= -offset && bobPosOnScreenX <= MAP_WIDTH + offset) {
-                WORD bobPosOnScreenY = unit->bob.sPos.uwY - g_Screen.m_map.m_pCamera->uPos.uwY;
+                WORD bobPosOnScreenY = unit->bob.sPos.uwY - g_Screen.m_map.m_pBuffer->pCamera->uPos.uwY;
                 if (bobPosOnScreenY >= -offset && bobPosOnScreenY <= MAP_HEIGHT + offset) {
                     selectionSpritesUpdate(idx, bobPosOnScreenX, bobPosOnScreenY + TOP_PANEL_HEIGHT + 1);
                     continue;
@@ -410,7 +410,7 @@ void handleInput() {
     } else if (keyCheck(KEY_C)) {
         copDumpBfr(g_Screen.m_pView->pCopList->pBackBfr);
     } else if (keyCheck(KEY_E)) {
-        s_Mode = edit;
+        s_Mode = edit;  
     } else if (keyCheck(KEY_UP)) {
         cameraMoveBy(g_Screen.m_map.m_pCamera, 0, -CAMERA_MOVE_DELTA);
         g_Screen.m_map.m_pBuffer->pCamera->uPos.uwY = g_Screen.m_map.m_pCamera->uPos.uwY % TILE_SIZE;

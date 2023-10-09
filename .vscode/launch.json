@@ -5,7 +5,7 @@
             "type": "amiga",
             "request": "launch",
             "name": "AROS",
-            "config": "A500",
+            "config": "A1200-FAST",
             "program": "${workspaceFolder}/build/aceproject",
             "internalConsoleOptions": "openOnSessionStart"
         },

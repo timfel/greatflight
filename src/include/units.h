@@ -194,12 +194,6 @@ static inline void unitSetTilePosition(Unit *self, UBYTE map[PATHMAP_SIZE][PATHM
     }
 }
 
-static inline void unitDraw(Unit *self, tUbCoordYX viewportTopLeft) {
-    self->bob.sPos.uwX = (self->x - viewportTopLeft.ubX) * PATHMAP_TILE_SIZE + self->IX;
-    self->bob.sPos.uwY = (self->y - viewportTopLeft.ubY) * PATHMAP_TILE_SIZE + self->IY;
-    bobPush(&self->bob);
-}
-
 static inline void unitSetFrame(Unit *self, UBYTE ubFrame) {
     self->frame = ubFrame;
     UWORD offset = ubFrame * (UnitTypes[self->type].anim.large ? (24 / 8 * 24 * BPP) : (16 / 8 * 16 * BPP));

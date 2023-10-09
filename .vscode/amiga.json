@@ -3,6 +3,7 @@
         "${workspaceFolder}/**"
     ],
     "defines": [
+        "__GNUG__=12",
         "__GNUC__=12",
         "BARTMAN_GCC",
         "_DEBUG",

@@ -114,6 +114,16 @@ void unitManagerDestroy(tUnitManager *pUnitListHead) {
     memFree(pUnitListHead, UNIT_MANAGER_SIZE);
 }
 
+static inline void unitDraw(Unit *self, tUbCoordYX viewportTopLeft) {
+    self->bob.sPos.uwX = (self->x - viewportTopLeft.ubX) * PATHMAP_TILE_SIZE + self->IX;
+    self->bob.sPos.uwY = (self->y - viewportTopLeft.ubY) * PATHMAP_TILE_SIZE + self->IY;
+    bobPush(&self->bob);
+}
+
+static inline void unitOffscreen(Unit *self) {
+    self->bob.sPos.uwX = UWORD_MAX;
+}
+
 void unitManagerProcessUnits(tUnitManager *pUnitListHead, UBYTE pPathMap[PATHMAP_SIZE][PATHMAP_SIZE], tUbCoordYX viewportTopLeft, tUbCoordYX viewportBottomRight) {
     struct _unitLink *link = pUnitListHead->firstActiveUnit;
     while (link) {
@@ -124,6 +134,8 @@ void unitManagerProcessUnits(tUnitManager *pUnitListHead, UBYTE pPathMap[PATHMAP
                 && loc.ubX <= viewportBottomRight.ubX
                 && loc.ubY <= viewportBottomRight.ubY) {
             unitDraw((Unit *)link, viewportTopLeft);
+        } else {
+            unitOffscreen((Unit *)link);
         }
         if(blitIsIdle()) {
             bobProcessNext();

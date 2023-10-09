@@ -328,6 +328,10 @@ void drawAllTiles(void) {
         blitWait();
         g_pCustom->bltapt = (APTR)*pTileBitmapOffset;
         g_pCustom->bltsize = uwBltsize;
+        ++pTileBitmapOffset;
+        blitWait();
+        g_pCustom->bltapt = (APTR)*pTileBitmapOffset;
+        g_pCustom->bltsize = uwBltsize;
         pDstPlane += (TILE_SIZE >> 3);
     }
     systemSetDmaBit(DMAB_BLITHOG, 0);

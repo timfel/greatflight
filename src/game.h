@@ -63,7 +63,6 @@ struct Screen {
         UWORD m_pPalette[COLORS];
     } m_map;
 
-    unsigned m_ubTopPanelDirty:1;
     unsigned m_ubBottomPanelDirty:1;
 };
 

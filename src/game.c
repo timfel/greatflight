@@ -20,6 +20,9 @@ struct Screen g_Screen;
 static tBob s_TileCursor;
 static tUnitManager *s_pUnitManager;
 
+static UWORD s_mouseX;
+static UWORD s_mouseY;
+
 static tFont *font54;
 
 enum mode {
@@ -345,40 +348,11 @@ void minimapUpdate(void) {
 }
 
 void handleInput() {
-    UWORD mouseX = mouseGetX(MOUSE_PORT_1);
-    UWORD mouseY = mouseGetY(MOUSE_PORT_1);
+    s_mouseX = mouseGetX(MOUSE_PORT_1);
+    s_mouseY = mouseGetY(MOUSE_PORT_1);
     static tUwCoordYX lmbDown = {.ulYX = 0};
     
-    tUwCoordYX mousePos = {.uwX = mouseX, .uwY = mouseY};
-
-    // XXX: menu buttons
-    static UWORD topHighlight = 0;
-    // XXX: matches the generated gpl file index for the color i want to change, this is pretty random
-    static UBYTE blue1 = 10; static UWORD red1 = 0xd45;
-    static UBYTE blue2 = 6; static UWORD red2 = 0xa44;
-    static UBYTE blue3 = 5; static UWORD red3 = 0x724;
-    if (mouseY < TOP_PANEL_HEIGHT && mouseX <= 60) {
-        topHighlight = 1;
-        tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[s_copOffsets.topPanelColorsPos];
-        copSetMoveVal(&pCmds[blue1].sMove, red1);
-        copSetMoveVal(&pCmds[blue2].sMove, red2);
-        copSetMoveVal(&pCmds[blue3].sMove, red3);
-        pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[s_copOffsets.topPanelColorsPos];
-        copSetMoveVal(&pCmds[blue1].sMove, red1);
-        copSetMoveVal(&pCmds[blue2].sMove, red2);
-        copSetMoveVal(&pCmds[blue3].sMove, red3);
-    } else if (topHighlight) {
-        topHighlight = 0;
-        tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[s_copOffsets.topPanelColorsPos];
-        copSetMoveVal(&pCmds[blue1].sMove, g_Screen.m_panels.m_pPalette[blue1]);
-        copSetMoveVal(&pCmds[blue2].sMove, g_Screen.m_panels.m_pPalette[blue2]);
-        copSetMoveVal(&pCmds[blue3].sMove, g_Screen.m_panels.m_pPalette[blue3]);
-        pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[s_copOffsets.topPanelColorsPos];
-        copSetMoveVal(&pCmds[blue1].sMove, g_Screen.m_panels.m_pPalette[blue1]);
-        copSetMoveVal(&pCmds[blue2].sMove, g_Screen.m_panels.m_pPalette[blue2]);
-        copSetMoveVal(&pCmds[blue3].sMove, g_Screen.m_panels.m_pPalette[blue3]);
-    }
-    // END XXX
+    tUwCoordYX mousePos = {.uwX = s_mouseX, .uwY = s_mouseY};
 
     if (s_Mode == edit) {
         s_TileCursor.sPos.ulYX = mousePos.ulYX;
@@ -544,20 +518,6 @@ void fowUpdate(void) {
 
 void drawResources(void) {
     if ((GameCycle & 63) == 63) {
-        // TODO: only store and redraw the dirty part
-        // g_Screen.m_ubTopPanelDirty = 0;
-        // // the panel is never actually swapped, the backbuffer is just the plain panel for redraw
-        // blitWait(); // Don't modify registers when other blit is in progress
-        // g_pCustom->bltcon0 = USEA|USED|MINTERM_A;
-        // g_pCustom->bltcon1 = 0;
-        // g_pCustom->bltafwm = 0xffff;
-        // g_pCustom->bltalwm = 0xffff;
-        // g_pCustom->bltamod = 0;
-        // g_pCustom->bltdmod = 0;
-        // g_pCustom->bltapt = g_Screen.m_panels.s_pTopPanelBackground->Planes[0];
-        // g_pCustom->bltdpt = g_Screen.m_panels.m_pTopPanelBuffer->pFront->Planes[0];
-        // g_pCustom->bltsize = ((TOP_PANEL_HEIGHT * BPP) << 6) | (MAP_WIDTH >> 4);
-
         static tTextBitMap *goldBitmap = NULL;
         static tTextBitMap *lumberBitmap = NULL;
         static UWORD gold = -1;
@@ -617,6 +577,32 @@ void drawActionButtons(void) {
 }
 
 void drawMenuButton(void) {
+    static UWORD topHighlight = 0;
+    // XXX: matches the generated gpl file index for the color i want to change, this is pretty random
+    static UBYTE blue1 = 10; static UWORD red1 = 0xd45;
+    static UBYTE blue2 = 6; static UWORD red2 = 0xa44;
+    static UBYTE blue3 = 5; static UWORD red3 = 0x724;
+    if (s_mouseY < TOP_PANEL_HEIGHT && s_mouseX <= 60) {
+        topHighlight = 1;
+        tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[s_copOffsets.topPanelColorsPos];
+        copSetMoveVal(&pCmds[blue1].sMove, red1);
+        copSetMoveVal(&pCmds[blue2].sMove, red2);
+        copSetMoveVal(&pCmds[blue3].sMove, red3);
+        pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[s_copOffsets.topPanelColorsPos];
+        copSetMoveVal(&pCmds[blue1].sMove, red1);
+        copSetMoveVal(&pCmds[blue2].sMove, red2);
+        copSetMoveVal(&pCmds[blue3].sMove, red3);
+    } else if (topHighlight) {
+        topHighlight = 0;
+        tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[s_copOffsets.topPanelColorsPos];
+        copSetMoveVal(&pCmds[blue1].sMove, g_Screen.m_panels.m_pPalette[blue1]);
+        copSetMoveVal(&pCmds[blue2].sMove, g_Screen.m_panels.m_pPalette[blue2]);
+        copSetMoveVal(&pCmds[blue3].sMove, g_Screen.m_panels.m_pPalette[blue3]);
+        pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[s_copOffsets.topPanelColorsPos];
+        copSetMoveVal(&pCmds[blue1].sMove, g_Screen.m_panels.m_pPalette[blue1]);
+        copSetMoveVal(&pCmds[blue2].sMove, g_Screen.m_panels.m_pPalette[blue2]);
+        copSetMoveVal(&pCmds[blue3].sMove, g_Screen.m_panels.m_pPalette[blue3]);
+    }
 }
 
 void drawMinimap(void) {
@@ -641,7 +627,7 @@ void updateDisplay(void) {
     vPortWaitUntilEnd(g_Screen.m_panels.m_pMainPanel);
 
     // update sprites during vblank
-    mouseSpriteUpdate(mouseGetX(MOUSE_PORT_1), mouseGetY(MOUSE_PORT_1));
+    mouseSpriteUpdate(s_mouseX, s_mouseY);
     drawSelectionRectangles();
 }
 

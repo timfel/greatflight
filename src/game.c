@@ -289,7 +289,7 @@ void drawAllTiles(void) {
     // current camera position
     UBYTE ubStartX = /*MAX(0, (*/g_Screen.m_map.m_pCamera->uPos.uwX >> TILE_SHIFT/*))*/;
 	UBYTE ubStartY = /*MAX(0, (*/g_Screen.m_map.m_pCamera->uPos.uwY >> TILE_SHIFT/*))*/;
-	UBYTE ubEndX = ubStartX + (MAP_WIDTH >> TILE_SHIFT);
+	UBYTE ubEndX = ubStartX + (MAP_BUFFER_WIDTH >> TILE_SHIFT);
 
     // Get pointer to start of drawing area
     PLANEPTR pDstPlane = g_Screen.m_map.m_pBuffer->pBack->Planes[0];

@@ -42,56 +42,56 @@ void mapLoad(tFile *file, void(*loadTileBitmap)()) {
                     g_Map.m_ubPathmapXY[x * 2][y * 2 + 1] = MAP_WATER_FLAG;
                     break;
                 case 10:
-                    g_Map.m_ubPathmapXY[x * 2][y * 2] = MAP_GROUND_FLAG;
-                    g_Map.m_ubPathmapXY[x * 2 + 1][y * 2] = MAP_GROUND_FLAG;
+                    g_Map.m_ubPathmapXY[x * 2][y * 2] = MAP_GROUND_FLAG | MAP_COAST_FLAG;
+                    g_Map.m_ubPathmapXY[x * 2 + 1][y * 2] = MAP_GROUND_FLAG | MAP_COAST_FLAG;
                     g_Map.m_ubPathmapXY[x * 2 + 1][y * 2 + 1] = MAP_WATER_FLAG;
                     g_Map.m_ubPathmapXY[x * 2][y * 2 + 1] = MAP_WATER_FLAG;
                     break;
                 case 11:
-                    g_Map.m_ubPathmapXY[x * 2][y * 2] = MAP_GROUND_FLAG;
-                    g_Map.m_ubPathmapXY[x * 2 + 1][y * 2] = MAP_GROUND_FLAG;
-                    g_Map.m_ubPathmapXY[x * 2 + 1][y * 2 + 1] = MAP_GROUND_FLAG;
+                    g_Map.m_ubPathmapXY[x * 2][y * 2] = MAP_GROUND_FLAG | MAP_COAST_FLAG;
+                    g_Map.m_ubPathmapXY[x * 2 + 1][y * 2] = MAP_GROUND_FLAG | MAP_COAST_FLAG;
+                    g_Map.m_ubPathmapXY[x * 2 + 1][y * 2 + 1] = MAP_GROUND_FLAG | MAP_COAST_FLAG;
                     g_Map.m_ubPathmapXY[x * 2][y * 2 + 1] = MAP_WATER_FLAG;
                     break;
                 case 12:
-                    g_Map.m_ubPathmapXY[x * 2][y * 2] = MAP_GROUND_FLAG;
-                    g_Map.m_ubPathmapXY[x * 2 + 1][y * 2] = MAP_GROUND_FLAG;
+                    g_Map.m_ubPathmapXY[x * 2][y * 2] = MAP_GROUND_FLAG | MAP_COAST_FLAG;
+                    g_Map.m_ubPathmapXY[x * 2 + 1][y * 2] = MAP_GROUND_FLAG | MAP_COAST_FLAG;
                     g_Map.m_ubPathmapXY[x * 2 + 1][y * 2 + 1] = MAP_WATER_FLAG;
-                    g_Map.m_ubPathmapXY[x * 2][y * 2 + 1] = MAP_GROUND_FLAG;
+                    g_Map.m_ubPathmapXY[x * 2][y * 2 + 1] = MAP_GROUND_FLAG | MAP_COAST_FLAG;
                     break;
                 case 13:
-                    g_Map.m_ubPathmapXY[x * 2][y * 2] = MAP_GROUND_FLAG;
+                    g_Map.m_ubPathmapXY[x * 2][y * 2] = MAP_GROUND_FLAG | MAP_COAST_FLAG;
                     g_Map.m_ubPathmapXY[x * 2 + 1][y * 2] = MAP_WATER_FLAG;
                     g_Map.m_ubPathmapXY[x * 2 + 1][y * 2 + 1] = MAP_WATER_FLAG;
-                    g_Map.m_ubPathmapXY[x * 2][y * 2 + 1] = MAP_GROUND_FLAG;
+                    g_Map.m_ubPathmapXY[x * 2][y * 2 + 1] = MAP_GROUND_FLAG | MAP_COAST_FLAG;
                     break;
                 case 14:
                     g_Map.m_ubPathmapXY[x * 2][y * 2] = MAP_WATER_FLAG;
-                    g_Map.m_ubPathmapXY[x * 2 + 1][y * 2] = MAP_GROUND_FLAG;
-                    g_Map.m_ubPathmapXY[x * 2 + 1][y * 2 + 1] = MAP_GROUND_FLAG;
+                    g_Map.m_ubPathmapXY[x * 2 + 1][y * 2] = MAP_GROUND_FLAG | MAP_COAST_FLAG;
+                    g_Map.m_ubPathmapXY[x * 2 + 1][y * 2 + 1] = MAP_GROUND_FLAG | MAP_COAST_FLAG;
                     g_Map.m_ubPathmapXY[x * 2][y * 2 + 1] = MAP_WATER_FLAG;
                     break;
                 case 15:
-                    g_Map.m_ubPathmapXY[x * 2][y * 2] = MAP_GROUND_FLAG;
+                    g_Map.m_ubPathmapXY[x * 2][y * 2] = MAP_GROUND_FLAG | MAP_COAST_FLAG;
                     g_Map.m_ubPathmapXY[x * 2 + 1][y * 2] = MAP_WATER_FLAG;
-                    g_Map.m_ubPathmapXY[x * 2 + 1][y * 2 + 1] = MAP_GROUND_FLAG;
-                    g_Map.m_ubPathmapXY[x * 2][y * 2 + 1] = MAP_GROUND_FLAG;
+                    g_Map.m_ubPathmapXY[x * 2 + 1][y * 2 + 1] = MAP_GROUND_FLAG | MAP_COAST_FLAG;
+                    g_Map.m_ubPathmapXY[x * 2][y * 2 + 1] = MAP_GROUND_FLAG | MAP_COAST_FLAG;
                     break;
                 case 16:
                     g_Map.m_ubPathmapXY[x * 2][y * 2] = MAP_WATER_FLAG;
-                    g_Map.m_ubPathmapXY[x * 2 + 1][y * 2] = MAP_GROUND_FLAG;
-                    g_Map.m_ubPathmapXY[x * 2 + 1][y * 2 + 1] = MAP_GROUND_FLAG;
-                    g_Map.m_ubPathmapXY[x * 2][y * 2 + 1] = MAP_GROUND_FLAG;
+                    g_Map.m_ubPathmapXY[x * 2 + 1][y * 2] = MAP_GROUND_FLAG | MAP_COAST_FLAG;
+                    g_Map.m_ubPathmapXY[x * 2 + 1][y * 2 + 1] = MAP_GROUND_FLAG | MAP_COAST_FLAG;
+                    g_Map.m_ubPathmapXY[x * 2][y * 2 + 1] = MAP_GROUND_FLAG | MAP_COAST_FLAG;
                     break;
                 case 17:
-                    g_Map.m_ubPathmapXY[x * 2][y * 2] = MAP_GROUND_FLAG;
+                    g_Map.m_ubPathmapXY[x * 2][y * 2] = MAP_GROUND_FLAG | MAP_COAST_FLAG;
                     g_Map.m_ubPathmapXY[x * 2 + 1][y * 2] = MAP_WATER_FLAG;
                     g_Map.m_ubPathmapXY[x * 2 + 1][y * 2 + 1] = MAP_WATER_FLAG;
                     g_Map.m_ubPathmapXY[x * 2][y * 2 + 1] = MAP_WATER_FLAG;
                     break;
                 case 18:
                     g_Map.m_ubPathmapXY[x * 2][y * 2] = MAP_WATER_FLAG;
-                    g_Map.m_ubPathmapXY[x * 2 + 1][y * 2] = MAP_GROUND_FLAG;
+                    g_Map.m_ubPathmapXY[x * 2 + 1][y * 2] = MAP_GROUND_FLAG | MAP_COAST_FLAG;
                     g_Map.m_ubPathmapXY[x * 2 + 1][y * 2 + 1] = MAP_WATER_FLAG;
                     g_Map.m_ubPathmapXY[x * 2][y * 2 + 1] = MAP_WATER_FLAG;
                     break;
@@ -99,12 +99,12 @@ void mapLoad(tFile *file, void(*loadTileBitmap)()) {
                     g_Map.m_ubPathmapXY[x * 2][y * 2] = MAP_WATER_FLAG;
                     g_Map.m_ubPathmapXY[x * 2 + 1][y * 2] = MAP_WATER_FLAG;
                     g_Map.m_ubPathmapXY[x * 2 + 1][y * 2 + 1] = MAP_WATER_FLAG;
-                    g_Map.m_ubPathmapXY[x * 2][y * 2 + 1] = MAP_GROUND_FLAG;
+                    g_Map.m_ubPathmapXY[x * 2][y * 2 + 1] = MAP_GROUND_FLAG | MAP_COAST_FLAG;
                     break;
                 case 20:
                     g_Map.m_ubPathmapXY[x * 2][y * 2] = MAP_WATER_FLAG;
                     g_Map.m_ubPathmapXY[x * 2 + 1][y * 2] = MAP_WATER_FLAG;
-                    g_Map.m_ubPathmapXY[x * 2 + 1][y * 2 + 1] = MAP_GROUND_FLAG;
+                    g_Map.m_ubPathmapXY[x * 2 + 1][y * 2 + 1] = MAP_GROUND_FLAG | MAP_COAST_FLAG;
                     g_Map.m_ubPathmapXY[x * 2][y * 2 + 1] = MAP_WATER_FLAG;
                     break;
                 // buildings or decorations

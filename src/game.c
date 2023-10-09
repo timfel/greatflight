@@ -345,6 +345,68 @@ void logicLoop(void) {
 }
 
 void minimapUpdate(void) {
+    if (GameCycle && (GameCycle & 127) != 127) {
+        return;
+    }
+    UBYTE *pMinimap = g_Screen.m_panels.m_pMainPanelBuffer->pBack->Planes[0] + (MINIMAP_OFFSET_X / 8) + (MINIMAP_OFFSET_Y * MINIMAP_MODULO);
+    UBYTE *pMinimap2 = g_Screen.m_panels.m_pMainPanelBuffer->pBack->Planes[1] + (MINIMAP_OFFSET_X / 8) + (MINIMAP_OFFSET_Y * MINIMAP_MODULO);
+    UBYTE *pMinimap3 = g_Screen.m_panels.m_pMainPanelBuffer->pBack->Planes[2] + (MINIMAP_OFFSET_X / 8) + (MINIMAP_OFFSET_Y * MINIMAP_MODULO);
+    for (UBYTE y = 0; y < MAP_SIZE * 2; ++y) {
+        for (UBYTE x = 0; x < MAP_SIZE * 2;) {
+            UBYTE minimapStatePixels = 0;
+            UBYTE minimapStatePixels2 = 0;
+            UBYTE minimapStatePixels3 = 0;
+            for (UBYTE bit = 0; bit < 8; ++bit) {
+                minimapStatePixels <<= 1;
+                minimapStatePixels2 <<= 1;
+                minimapStatePixels3 <<= 1;
+                UWORD tile = g_Map.m_ubPathmapXY[x][y];
+                switch (tile) {
+                    case MAP_GROUND_FLAG:
+                        minimapStatePixels  |= 0b0;
+                        minimapStatePixels2 |= 0b0;
+                        minimapStatePixels3 |= 0b0;
+                        break;
+                    case MAP_GROUND_FLAG | MAP_COAST_FLAG:
+                        minimapStatePixels  |= 0b1;
+                        minimapStatePixels2 |= 0b0;
+                        minimapStatePixels3 |= 0b0;
+                        break;
+                    case MAP_GROUND_FLAG | MAP_UNWALKABLE_FLAG:
+                    case MAP_GROUND_FLAG | MAP_COAST_FLAG | MAP_UNWALKABLE_FLAG:
+                        minimapStatePixels  |= 0b0;
+                        minimapStatePixels2 |= 0b1;
+                        minimapStatePixels3 |= 0b0;
+                        break;
+                    case MAP_FOREST_FLAG:
+                        minimapStatePixels  |= 0b0;
+                        minimapStatePixels2 |= 0b1;
+                        minimapStatePixels3 |= 0b1;
+                        break;
+                    case MAP_WATER_FLAG:
+                        minimapStatePixels  |= 0b1;
+                        minimapStatePixels2 |= 0b0;
+                        minimapStatePixels3 |= 0b0;
+                        break;
+                    case MAP_UNWALKABLE_FLAG:
+                        minimapStatePixels  |= 0b1;
+                        minimapStatePixels2 |= 0b0;
+                        minimapStatePixels3 |= 0b1;
+                    
+                }
+                x++;
+            }
+            *pMinimap = minimapStatePixels;
+            *pMinimap2 = minimapStatePixels2;
+            *pMinimap3 = minimapStatePixels3;
+            ++pMinimap;
+            ++pMinimap2;
+            ++pMinimap3;
+        }
+        pMinimap += (MINIMAP_MODULO - (MINIMAP_WIDTH / 8));
+        pMinimap2 += (MINIMAP_MODULO - (MINIMAP_WIDTH / 8));
+        pMinimap3 += (MINIMAP_MODULO - (MINIMAP_WIDTH / 8));
+    }
 }
 
 void handleInput() {

@@ -33,6 +33,10 @@
 #define MAP_BUFFER_HEIGHT (MAP_HEIGHT + TILE_SIZE)
 #define TOP_PANEL_HEIGHT 10
 #define BOTTOM_PANEL_HEIGHT 70
+#define MINIMAP_OFFSET_X 8 // TODO: adapt graphics
+#define MINIMAP_OFFSET_Y 3
+#define MINIMAP_WIDTH 64
+#define MINIMAP_MODULO (320 / 8 * BPP)
 
 struct Screen {
     tView *m_pView; // View containing all the viewports

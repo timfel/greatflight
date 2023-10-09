@@ -126,18 +126,18 @@ tileize(
   ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Tree0.png              # 32
   ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Water.png              # 36
   # partially walkable tiles
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast0.png             # 40, 41
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast1.png             # 44, 45, 47
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast2.png             # 48, 49, 50
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast3.png             # 52, 54
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast4.png             # 57, 59
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast5.png             # 60, 62, 63
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast6.png             # 66, 67
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast7.png             # 69, 70, 71
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast8.png             # 72
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast9.png             # 77
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast10.png            # 82
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast11.png            # 87
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast0.png             # 40, 41 - 11
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast1.png             # 44, 45, 47 - 12
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast2.png             # 48, 49, 50 - 13
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast3.png             # 52, 54 - 14
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast4.png             # 57, 59 - 15
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast5.png             # 60, 62, 63 - 16
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast6.png             # 66, 67 - 17
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast7.png             # 69, 70, 71 - 18
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast8.png             # 72 - 19
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast9.png             # 77 - 20
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast10.png            # 82 - 21
+  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast11.png            # 87 - 22
   # buildings
   ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Barracs.png            # 88
   ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Blacksmith.png         # 104

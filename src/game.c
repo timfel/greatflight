@@ -513,6 +513,26 @@ void handleInput() {
 }
 
 void colorCycle(void) {
+    if ((GameCycle & 31) == 31) {
+        if (GameCycle & 32) {
+            // XXX: hardcoded gpl indices
+            tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[s_copOffsets.mapColorsCoplistStart];
+            copSetMoveVal(&pCmds[12].sMove, g_Screen.m_map.m_pPalette[5]);
+            pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[s_copOffsets.mapColorsCoplistStart];
+            copSetMoveVal(&pCmds[12].sMove, g_Screen.m_map.m_pPalette[5]);
+        } else if (GameCycle & 64) {
+            // XXX: hardcoded gpl indices
+            tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[s_copOffsets.mapColorsCoplistStart];
+            copSetMoveVal(&pCmds[12].sMove, g_Screen.m_map.m_pPalette[3]);
+            pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[s_copOffsets.mapColorsCoplistStart];
+            copSetMoveVal(&pCmds[12].sMove, g_Screen.m_map.m_pPalette[3]);
+        } else {
+            tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[s_copOffsets.mapColorsCoplistStart];
+            copSetMoveVal(&pCmds[12].sMove, g_Screen.m_map.m_pPalette[12]);
+            pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[s_copOffsets.mapColorsCoplistStart];
+            copSetMoveVal(&pCmds[12].sMove, g_Screen.m_map.m_pPalette[12]);
+        }
+    }
 }
 
 void fowUpdate(void) {

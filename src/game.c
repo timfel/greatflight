@@ -103,7 +103,7 @@ void loadMap(const char* name, UWORD mapbufCoplistStart, UWORD mapColorsCoplistS
     // now setup map viewport
     char* palname = PALDIR "for.plt";
     strncpy(palname + strlen(PALDIR), g_Map.m_pTileset + strlen(TILESETDIR), 3);
-    paletteLoad(palname, g_Screen.m_map.m_pPalette, COLORS);
+    paletteLoad(palname, g_Screen.m_map.m_pPalette, COLORS + 1);
     tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[mapColorsCoplistStart];
     for (UBYTE i = 0; i < COLORS; i++) {
         copSetMove(&pCmds[i].sMove, &g_pCustom->color[i], g_Screen.m_map.m_pPalette[i]);
@@ -640,10 +640,9 @@ void drawActionButtons(void) {
 
 void drawMenuButton(void) {
     static UWORD topHighlight = 0;
-    // XXX: matches the generated gpl file index for the color i want to change, this is pretty random
-    static UBYTE blue1 = 10; static UWORD red1 = 0xd45;
-    static UBYTE blue2 = 6; static UWORD red2 = 0xa44;
-    static UBYTE blue3 = 5; static UWORD red3 = 0x724;
+    static UBYTE blue1 = 13; static UWORD red1 = 0x724;
+    static UBYTE blue2 = 14; static UWORD red2 = 0xa44;
+    static UBYTE blue3 = 15; static UWORD red3 = 0xd45;
     if (s_mouseY < TOP_PANEL_HEIGHT && s_mouseX <= 60) {
         topHighlight = 1;
         tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[s_copOffsets.topPanelColorsPos];

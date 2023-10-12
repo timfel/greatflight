@@ -107,84 +107,27 @@ map2bin(${PROJECT_SOURCE_DIR}/resources/maps/example.map ${PROJECT_BINARY_DIR}/r
 
 # Viewport
 
-png2gpl(${PROJECT_SOURCE_DIR}/resources/Palettes/Viewport.png ${PROJECT_BINARY_DIR}/tmp/Palettes/Viewport.gpl)
-convertPalette(${GAME_LINKED} ${PROJECT_BINARY_DIR}/tmp/Palettes/Viewport.gpl ${PROJECT_BINARY_DIR}/resources/palettes/for.plt)
-
-tileize(
-  ${PROJECT_BINARY_DIR}/tmp/Tiles/Woodland/Woodland.png
-  32 32 ${PROJECT_SOURCE_DIR}/resources/Palettes/Viewport.png
-  # ground tiles
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Grass.png              # 00
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Bridge0.png            # 04
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Bridge1.png            # 08
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Bridge2.png            # 12
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Bridge3.png            # 16
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Tree3.png              # 20
-  # harvestable tiles
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Tree2.png              # 24
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Tree1.png              # 28
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Tree0.png              # 32
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Water.png              # 36
-  # partially walkable tiles
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast0.png             # 40, 41 - 11
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast1.png             # 44, 45, 47 - 12
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast2.png             # 48, 49, 50 - 13
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast3.png             # 52, 54 - 14
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast4.png             # 57, 59 - 15
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast5.png             # 60, 62, 63 - 16
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast6.png             # 66, 67 - 17
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast7.png             # 69, 70, 71 - 18
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast8.png             # 72 - 19
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast9.png             # 77 - 20
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast10.png            # 82 - 21
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Coast11.png            # 87 - 22
-  # buildings
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Barracs.png            # 88
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Blacksmith.png         # 104
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Church.png             # 108
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Construction_big.png   # 114
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Construction_small.png # 130
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Farm.png               # 134
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Hall.png               # 138
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/lumbermill.png         # 154
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Stable.png             # 170
-  ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Tower.png              # 186
-  # gold mine                                                           # 190
-  # 206 + is free for decorations or such things
-)
+convertPalette(${GAME_LINKED} ${PROJECT_SOURCE_DIR}/resources/Palettes/Woodland.gpl ${PROJECT_BINARY_DIR}/resources/palettes/for.plt)
 
 convertTileset(
   INTERLEAVED
   TARGET ${GAME_LINKED}
-  SOURCE ${PROJECT_BINARY_DIR}/tmp/Tiles/Woodland/Woodland.png
-  TILE_PATHS ${PROJECT_BINARY_DIR}/tmp/Tiles/Woodland/Woodland.png
+  SOURCE ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Woodland.png
+  TILE_PATHS ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Woodland.png
   DESTINATION ${PROJECT_BINARY_DIR}/resources/tilesets/for.bm
   SIZE 32
   PALETTE ${PROJECT_BINARY_DIR}/resources/palettes/for.plt
 )
 
 # Human UI
-png2gpl(${PROJECT_SOURCE_DIR}/resources/Palettes/HumanGUI.png ${PROJECT_BINARY_DIR}/tmp/Palettes/HumanGUI.gpl)
-convertPalette(${GAME_LINKED} ${PROJECT_BINARY_DIR}/tmp/Palettes/HumanGUI.gpl ${PROJECT_BINARY_DIR}/resources/palettes/hgui.plt)
-
-palettize(
-  ${PROJECT_BINARY_DIR}/tmp/GUI/Bottom_GUI.png
-  ${PROJECT_SOURCE_DIR}/resources/Palettes/HumanGUI.png
-  ${PROJECT_SOURCE_DIR}/resources/GUI/Bottom_GUI.png
-)
-
-palettize(
-  ${PROJECT_BINARY_DIR}/tmp/GUI/Top_GUI.png
-  ${PROJECT_SOURCE_DIR}/resources/Palettes/HumanGUI.png
-  ${PROJECT_SOURCE_DIR}/resources/GUI/Top_GUI.png
-)
+convertPalette(${GAME_LINKED} ${PROJECT_SOURCE_DIR}/resources/Palettes/HumanGUI.gpl ${PROJECT_BINARY_DIR}/resources/palettes/hgui.plt)
 
 convertBitmaps(
   INTERLEAVED
   TARGET ${GAME_LINKED}
   PALETTE ${PROJECT_BINARY_DIR}/resources/palettes/hgui.plt
-  SOURCES ${PROJECT_BINARY_DIR}/tmp/GUI/Bottom_GUI.png
-          ${PROJECT_BINARY_DIR}/tmp/GUI/Top_GUI.png
+  SOURCES ${PROJECT_SOURCE_DIR}/resources/GUI/Bottom_GUI.png
+          ${PROJECT_SOURCE_DIR}/resources/GUI/Top_GUI.png
   DESTINATIONS ${PROJECT_BINARY_DIR}/resources/ui/bottompanel.bm
                ${PROJECT_BINARY_DIR}/resources/ui/toppanel.bm
 )
@@ -198,8 +141,8 @@ palettize(
 convertTileset(
        INTERLEAVED
        TARGET ${GAME_LINKED}
-       SOURCE ${PROJECT_BINARY_DIR}/tmp/Units/peon.png
-       TILE_PATHS ${PROJECT_BINARY_DIR}/tmp/Units/peon.png
+       SOURCE ${PROJECT_SOURCE_DIR}/resources/Units/peon.png
+       TILE_PATHS ${PROJECT_SOURCE_DIR}/resources/Units/peon.png
        DESTINATION ${PROJECT_BINARY_DIR}/tmp/Units/peon.tileset.png
        SIZE 16
        PALETTE ${PROJECT_BINARY_DIR}/resources/palettes/for.plt
@@ -209,7 +152,7 @@ convertBitmaps(
        INTERLEAVED
        TARGET ${GAME_LINKED}
        PALETTE ${PROJECT_BINARY_DIR}/resources/palettes/for.plt
-       MASK_COLOR "#ff00dd"
+       MASK_COLOR "#000000"
        SOURCES ${PROJECT_BINARY_DIR}/tmp/Units/peon.tileset.png
        DESTINATIONS ${PROJECT_BINARY_DIR}/resources/units/peon.bm
        MASKS ${PROJECT_BINARY_DIR}/resources/units/peon.msk

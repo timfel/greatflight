@@ -1,6 +1,6 @@
+#include "include/actions.h"
 #include "include/units.h"
 #include "include/player.h"
-#include "actions.h"
 #include "ace/types.h"
 #include "ace/macros.h"
 #include "ace/managers/memory.h"
@@ -259,10 +259,10 @@ void loadUnit(tUnitManager *mgr, tFile *map) {
         return;
     }
     fileRead(map, &unit->action, 1);
-    fileRead(map, &unit->ubActionDataA, 1);
-    fileRead(map, &unit->ubActionDataB, 1);
-    fileRead(map, &unit->ubActionDataC, 1);
-    fileRead(map, &unit->ubActionDataD, 1);
+    fileRead(map, &unit->action.ubActionDataA, 1);
+    fileRead(map, &unit->action.ubActionDataB, 1);
+    fileRead(map, &unit->action.ubActionDataC, 1);
+    fileRead(map, &unit->action.ubActionDataD, 1);
     fileRead(map, &unit->stats.hp, 1);
     if (unit->stats.hp == 0) {
         unit->stats.hp = UnitTypes[unit->type].stats.maxHP;

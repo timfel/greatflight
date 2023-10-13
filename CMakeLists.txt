@@ -132,10 +132,15 @@ convertBitmaps(
                ${PROJECT_BINARY_DIR}/resources/ui/toppanel.bm
 )
 
-palettize(
-  ${PROJECT_BINARY_DIR}/tmp/Units/peon.png
-  ${PROJECT_SOURCE_DIR}/resources/Palettes/Viewport.png
-  ${PROJECT_SOURCE_DIR}/resources/Units/peon.png
+convertTileset(
+  INTERLEAVED
+  TARGET ${GAME_LINKED}
+  SOURCE ${PROJECT_SOURCE_DIR}/resources/GUI/icons.png
+  TILE_PATHS ${PROJECT_SOURCE_DIR}/resources/GUI/icons.png
+  DESTINATION ${PROJECT_BINARY_DIR}/resources/ui/icons.bm
+  SIZE 32
+  HEIGHT 18
+  PALETTE ${PROJECT_BINARY_DIR}/resources/palettes/hgui.plt
 )
 
 convertTileset(

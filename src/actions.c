@@ -1,14 +1,5 @@
-#include "actions.h"
-
-enum ActionTypes {
-    ActionStill,
-    ActionMove,
-    ActionAttackMove,
-    ActionAttackTarget,
-    ActionHarvest,
-    ActionCast,
-    ActionDie
-};
+#include "include/actions.h"
+#include "include/units.h"
 
 void actionMoveTo(Unit *unit, tUbCoordYX goal) {
     unit->nextAction.ubActionDataB = goal.ubY;
@@ -20,12 +11,12 @@ void actionMoveTo(Unit *unit, tUbCoordYX goal) {
 
 UBYTE actionStill(Unit *unit) {
     if (unit->nextAction.action) {
-        unit->action = unit->nextAction.action;
-        unit->ulActionData = unit->nextAction.ulActionData;
+        unit->action.action = unit->nextAction.action;
+        unit->action.ulActionData = unit->nextAction.ulActionData;
         unit->nextAction.action = 0;
         return 1;
-    } else if (unit->action == ActionStill) {
-        if (unit->ubActionDataA-- == 0) {
+    } else if (unit->action.action == ActionStill) {
+        if (unit->action.ubActionDataA-- == 0) {
             unitSetFrame(unit, (unitGetFrame(unit) + (UBYTE)g_pCustom->joy0dat) % DIRECTIONS);
         }
     }
@@ -39,12 +30,12 @@ UBYTE actionStill(Unit *unit) {
 #define moveTargetYShift 4
 #define moveCounterShift 0
 void actionMove(Unit *unit, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE]) {
-    if (unit->ubActionDataC) {
-        --unit->ubActionDataC;
+    if (unit->action.ubActionDataC) {
+        --unit->action.ubActionDataC;
         return;
     }
     UnitType type = UnitTypes[unit->type];
-    unit->ubActionDataC = (type.anim.wait + 2) * 2;
+    unit->action.ubActionDataC = (type.anim.wait + 2) * 2;
 
     UBYTE speed = type.stats.speed;
     BYTE vectorX = 0;
@@ -71,8 +62,8 @@ void actionMove(Unit *unit, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE]) {
             return;
         }
         tUbCoordYX tilePos = unitGetTilePosition(unit);
-        vectorX = unit->ubActionDataA - unit->loc.ubX;
-        vectorY = unit->ubActionDataB - unit->loc.ubY;
+        vectorX = unit->action.ubActionDataA - unit->loc.ubX;
+        vectorY = unit->action.ubActionDataB - unit->loc.ubY;
         if (vectorX) {
             vectorX = vectorX > 0 ? 1 : -1;
             if (!mapIsWalkable(map, tilePos.ubX + vectorX, tilePos.ubY)) {
@@ -90,7 +81,7 @@ void actionMove(Unit *unit, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE]) {
         if (!vectorX && !vectorY) {
             // reached goal or unreachable goal
             unitSetFrame(unit, 0);
-            unit->action = ActionStill;
+            unit->action.action = ActionStill;
             return;
         }
         unmarkMapTile(map, tilePos.ubX, tilePos.ubY);
@@ -140,13 +131,14 @@ void actionDie(Unit  __attribute__((__unused__)) *unit) {
 };
 
 void actionDo(Unit *unit, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE]) {
-    switch (unit->action) {
+    switch (unit->action.action) {
         case ActionStill:
             actionStill(unit);
             return;
         case ActionMove:
             actionMove(unit, map);
             return;
-        // TODO:
+        default:
+            return;
     }
 }

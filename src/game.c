@@ -5,7 +5,6 @@
 #include "include/player.h"
 #include "include/units.h"
 #include "include/resources.h"
-#include "actions.h"
 #include "mouse_sprite.h"
 #include "selection_sprites.h"
 
@@ -171,12 +170,14 @@ void loadUi(UWORD topPanelColorsPos, UWORD panelColorsPos, UWORD simplePosTop, U
     g_Screen.m_panels.m_pMainPanelBackground = bitmapCreateFromFile("resources/ui/bottompanel.bm", 0);
     bitmapLoadFromFile(g_Screen.m_panels.m_pMainPanelBuffer->pFront, "resources/ui/bottompanel.bm", 0, 0);
 
-    // g_Screen.m_pIcons = bitmapCreateFromFile("resources/ui/icons.bm", 0);
+    g_Screen.m_pIcons = bitmapCreateFromFile("resources/ui/icons.bm", 0);
 
-    // iconInit(&g_Screen.m_pUnitIcons[0], 32, 26, g_Screen.m_pIcons, 0, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 88, .uwY = 18});
-    // iconInit(&g_Screen.m_pUnitIcons[1], 32, 26, g_Screen.m_pIcons, 0, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 150, .uwY = 18});
-    // iconInit(&g_Screen.m_pUnitIcons[2], 32, 26, g_Screen.m_pIcons, 0, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 88, .uwY = 44});
-    // iconInit(&g_Screen.m_pUnitIcons[3], 32, 26, g_Screen.m_pIcons, 0, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 150, .uwY = 44});
+    iconInit(&g_Screen.m_pActionIcons[0], 32, 18, g_Screen.m_pIcons, ICON_MOVE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 211, .uwY = 24});
+    iconInit(&g_Screen.m_pActionIcons[1], 32, 18, g_Screen.m_pIcons, ICON_STOP, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 244, .uwY = 24});
+    iconInit(&g_Screen.m_pActionIcons[2], 32, 18, g_Screen.m_pIcons, ICON_HARVEST, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 277, .uwY = 24});
+    iconInit(&g_Screen.m_pActionIcons[3], 32, 18, g_Screen.m_pIcons, ICON_BUILD_BASIC, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 211, .uwY = 46});
+    iconInit(&g_Screen.m_pActionIcons[4], 32, 18, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 244, .uwY = 46});
+    iconInit(&g_Screen.m_pActionIcons[5], 32, 18, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 277, .uwY = 46});
 }
 
 void gameGsCreate(void) {
@@ -234,6 +235,13 @@ static inline tUbCoordYX screenPosToTile(tUwCoordYX pos) {
     return (tUbCoordYX){.ubX = pos.uwX / PATHMAP_TILE_SIZE, .ubY = (pos.uwY - TOP_PANEL_HEIGHT) / PATHMAP_TILE_SIZE};
 }
 
+void drawUnitIcon(UnitType *type, UBYTE idx) {
+    tIcon *icon = &g_Screen.m_pUnitIcons[idx];
+    IconIdx iconIdx = type->iconIdx;
+    // iconSetSource(icon, g_Screen.m_pIcons, type->iconIdx);
+    // iconDraw(icon);
+}
+
 void drawInfoPanel(void) {
     if (g_Screen.m_ubBottomPanelDirty) {
         // TODO: only store and redraw the dirty part?
@@ -250,11 +258,16 @@ void drawInfoPanel(void) {
         g_pCustom->bltdpt = g_Screen.m_panels.m_pMainPanelBuffer->pFront->Planes[0];
         g_pCustom->bltsize = ((BOTTOM_PANEL_HEIGHT * BPP) << 6) | (MAP_WIDTH >> 4);
 
+
+
         Unit *unit;
         for(UBYTE idx = 0; idx < NUM_SELECTION && (unit = s_pSelectedUnit[idx]); ++idx) {
-            // tIcon *icon = &g_Screen.m_pUnitIcons[idx];
-            // iconSetSource(icon, g_Screen.m_pIcons, UnitTypes[unit->type].iconIdx);
-            // iconDraw(icon);
+            UnitType *type = &UnitTypes[unit->type];
+            drawUnitIcon(type, idx);
+            
+        }
+        for (UBYTE idx = 0; idx < 6; ++idx) {
+            iconDraw(&g_Screen.m_pActionIcons[idx]);
         }
     }
 }

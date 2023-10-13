@@ -5,7 +5,7 @@
 
 void iconInit(tIcon *icon,
     UBYTE width, UBYTE height,
-    tBitMap *iconTileMap, UBYTE iconIdx,
+    tBitMap *iconTileMap, IconIdx iconIdx,
     tBitMap *iconBuffer, tUwCoordYX iconPosition)
 {
 #ifdef ACE_DEBUG
@@ -32,7 +32,7 @@ void iconInit(tIcon *icon,
     iconSetSource(icon, iconTileMap, iconIdx);
 }
 
-void iconSetSource(tIcon *icon, tBitMap *iconTileMap, UBYTE iconIdx) {
+void iconSetSource(tIcon *icon, tBitMap *iconTileMap, IconIdx iconIdx) {
 #ifdef ACE_DEBUG
     if (iconTileMap->Depth != icon->bpp) {
         logWrite("ERROR: Icons bpp need to match src and dst");
@@ -47,12 +47,19 @@ void iconSetSource(tIcon *icon, tBitMap *iconTileMap, UBYTE iconIdx) {
                 = widthBytes * iconIdx * height * Depth
                 = widthBytes * iconIdx * bltsize>>6
     */
-    UBYTE height = icon->bltsize >> 6;
-    UWORD srcOffs = bitmapGetByteWidth(iconTileMap) * iconIdx * height;
-    icon->iconSrcPtr = iconTileMap->Planes[0] + srcOffs;
+    if (iconIdx == ICON_NONE) {
+        icon->iconSrcPtr = 0;
+    } else {
+        UBYTE height = icon->bltsize >> 6;
+        UWORD srcOffs = bitmapGetByteWidth(iconTileMap) * iconIdx * height;
+        icon->iconSrcPtr = iconTileMap->Planes[0] + srcOffs;
+    }
 }
 
 void iconDraw(tIcon *icon) {
+    if (!icon->iconSrcPtr) {
+        return;
+    }
     blitWait();
     g_pCustom->bltcon0 = USEA|USED|MINTERM_A;
     g_pCustom->bltcon1 = 0;

@@ -1,6 +1,7 @@
 #ifndef UNITS_H
 #define UNITS_H
 
+#include "include/actions.h"
 #include "include/map.h"
 #include "icons.h"
 
@@ -28,7 +29,7 @@ typedef struct {
         const char *maskPath;
         tBitMap *mask;
     };
-    UBYTE iconIdx;
+    IconIdx iconIdx;
     struct {
         UBYTE maxHP;
         UBYTE speed;
@@ -77,7 +78,7 @@ _Static_assert(sizeof(UnitStats) == sizeof(UWORD), "unit stats is not 1 word");
 
 typedef struct _unitmanager tUnitManager;
 
-typedef struct {
+typedef struct _unit {
     UBYTE type;
     union {
         struct {
@@ -88,36 +89,9 @@ typedef struct {
         };
         tUbCoordYX loc;
     };
-    UBYTE action;
-    union {
-        ULONG ulActionData;
-        struct {
-            UWORD uwActionDataA;
-            UWORD uwActionDataB;
-        };
-        struct {
-            UBYTE ubActionDataA;
-            UBYTE ubActionDataB;
-            UBYTE ubActionDataC;
-            UBYTE ubActionDataD;
-        };
-    };
-    struct {
-        UBYTE action;
-        union {
-            ULONG ulActionData;
-            struct {
-                UWORD uwActionDataA;
-                UWORD uwActionDataB;
-            };
-            struct {
-                UBYTE ubActionDataA;
-                UBYTE ubActionDataB;
-                UBYTE ubActionDataC;
-                UBYTE ubActionDataD;
-            };
-        };
-    } nextAction;
+    Action action;
+    Action nextAction;
+
     UnitStats stats;
     tBob bob;
     UBYTE frame;

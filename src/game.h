@@ -1,7 +1,7 @@
 #ifndef _GAME_H_
 #define _GAME_H_
 
-#include "icons.h"
+#include "include/icons.h"
 
 #include <ace/generic/screen.h>
 #include <ace/managers/bob.h>

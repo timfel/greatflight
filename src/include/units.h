@@ -3,7 +3,7 @@
 
 #include "include/actions.h"
 #include "include/map.h"
-#include "icons.h"
+#include "include/icons.h"
 
 #include <ace/managers/bob.h>
 #include <ace/utils/bitmap.h>

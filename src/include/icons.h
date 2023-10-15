@@ -4,8 +4,7 @@
 #include <ace/utils/bitmap.h>
 
 typedef enum  __attribute__ ((__packed__)) {
-    ICON_NONE = -1,
-    ICON_BUILD_BASIC,
+    ICON_NONE = 0,
     ICON_ATTACK,
     ICON_STOP,
     ICON_HFARM,
@@ -16,8 +15,11 @@ typedef enum  __attribute__ ((__packed__)) {
     ICON_HARVEST,
     ICON_CANCEL,
     ICON_SHIELD1,
-    ICON_MOVE2,
+    ICON_UNUSED,
     ICON_MOVE,
+    ICON_UNUSED1,
+    ICON_UNUSED2,
+    ICON_BUILD_BASIC,
     //
     ICON_MAX
 } IconIdx;

@@ -38,6 +38,9 @@
 #define MINIMAP_WIDTH 64
 #define MINIMAP_MODULO (320 / 8 * BPP)
 
+#define NUM_UNIT_ICONS 6
+#define NUM_ACTION_ICONS 6
+
 struct Screen {
     tView *m_pView; // View containing all the viewports
 
@@ -54,8 +57,8 @@ struct Screen {
     } m_panels;
 
     // icons for main panel (actions and selected units)
-    tIcon m_pUnitIcons[6];
-    tIcon m_pActionIcons[6];
+    tIcon m_pUnitIcons[NUM_UNIT_ICONS];
+    tIcon m_pActionIcons[NUM_ACTION_ICONS];
     tBitMap *m_pIcons;
 
     struct {

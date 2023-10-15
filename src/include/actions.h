@@ -14,12 +14,14 @@ typedef enum __attribute__ ((__packed__)) {
     ActionCast,
     ActionBuild,
     ActionBeingBuilt,
-    ActionChangeButtonPage,
+    ActionRepair,
+    ActionTrain,
+    ActionResearch,
     ActionDie
 } ActionType;
 _Static_assert(sizeof(ActionType) == sizeof(UBYTE), "unit stats is not 1 byte");
 
-typedef struct __attribute__ ((__packed__)) {
+typedef struct __attribute__((__packed__)) {
     ActionType action;
     union {
         ULONG ulActionData;

@@ -2,27 +2,8 @@
     "configurations": [
         {
             "name": "Amiga",
-            "configurationProvider": "BartmanAbyss.amiga-debug",
-            "includePath": [
-                "${workspaceFolder}/",
-                "${workspaceFolder}/deps/**",
-                "${env:USERPROFILE}/.vscode/extensions/bartmanabyss.amiga-debug-1.7.4/bin/linux/opt/lib/gcc/m68k-amiga-elf/13.1.0/include",
-                "${env:USERPROFILE}/.vscode/extensions/bartmanabyss.amiga-debug-1.7.4/bin/linux/opt/m68k-amiga-elf/sys-include",
-                "${env:HOME}/.vscode/extensions/bartmanabyss.amiga-debug-1.7.4/bin/linux/opt/lib/gcc/m68k-amiga-elf/13.1.0/include",
-                "${env:HOME}/.vscode/extensions/bartmanabyss.amiga-debug-1.7.4/bin/linux/opt/m68k-amiga-elf/sys-include"
-            ],
-            "defines": [
-                "__GNUG__=12",
-                "__GNUC__=12",
-                "BARTMAN_GCC",
-                "_DEBUG",
-                "UNICODE",
-                "_UNICODE",
-                "AMIGA",
-                "ACE_DEBUG",
-                "ACE_DEBUG_UAE",
-                "__CODE_CHECKER__"
-            ],
+            // "configurationProvider": "BartmanAbyss.amiga-debug"
+            "configurationProvider": "ms-vscode.cmake-tools"
         }
     ],
     "version": 4

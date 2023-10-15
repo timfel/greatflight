@@ -1,7 +1,9 @@
 #ifndef BUILDINGS
 #define BUILDINGS
 
-typedef enum {
+#include <ace/types.h>
+
+typedef enum __attribute__((__packed__)) {
     BUILDING_HUMAN_FARM,
     BUILDING_HUMAN_BARRACKS,
     BUILDING_HUMAN_LUMBERMILL,
@@ -20,5 +22,6 @@ typedef enum {
     BUILDING_ORC_TOWER,
     BUILDING_GOLD_MINE,
 } BuildingType;
+_Static_assert(sizeof(BuildingType) == sizeof(UBYTE), "not 1 byte");
 
 #endif

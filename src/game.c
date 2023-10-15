@@ -246,28 +246,31 @@ void drawInfoPanel(void) {
     if (g_Screen.m_ubBottomPanelDirty) {
         // TODO: only store and redraw the dirty part?
         g_Screen.m_ubBottomPanelDirty = 0;
-        // the panel is never actually swapped, the backbuffer is just the plain panel for redraw
-        blitWait(); // Don't modify registers when other blit is in progress
-        g_pCustom->bltcon0 = USEA|USED|MINTERM_A;
-        g_pCustom->bltcon1 = 0;
-        g_pCustom->bltafwm = 0xffff;
-        g_pCustom->bltalwm = 0xffff;
-        g_pCustom->bltamod = 0;
-        g_pCustom->bltdmod = 0;
-        g_pCustom->bltapt = g_Screen.m_panels.m_pMainPanelBackground->Planes[0];
-        g_pCustom->bltdpt = g_Screen.m_panels.m_pMainPanelBuffer->pFront->Planes[0];
-        g_pCustom->bltsize = ((BOTTOM_PANEL_HEIGHT * BPP) << 6) | (MAP_WIDTH >> 4);
-
-
-
         Unit *unit;
-        for(UBYTE idx = 0; idx < NUM_SELECTION && (unit = s_pSelectedUnit[idx]); ++idx) {
+        UBYTE idx = 0;
+        for(; idx < NUM_SELECTION && (unit = s_pSelectedUnit[idx]); ++idx) {
             UnitType *type = &UnitTypes[unit->type];
             drawUnitIcon(type, idx);
-            
         }
-        for (UBYTE idx = 0; idx < 6; ++idx) {
-            iconDraw(&g_Screen.m_pActionIcons[idx]);
+
+        if (idx == 0) {
+            for (UBYTE icon = 0; icon < NUM_ACTION_ICONS; ++icon) {
+                iconSetSource(&g_Screen.m_pActionIcons[icon], g_Screen.m_pIcons, 0);
+            }
+        } else {
+            iconSetSource(&g_Screen.m_pActionIcons[0], g_Screen.m_pIcons, ICON_MOVE);
+            iconSetSource(&g_Screen.m_pActionIcons[1], g_Screen.m_pIcons, ICON_STOP);
+            iconSetSource(&g_Screen.m_pActionIcons[2], g_Screen.m_pIcons, ICON_ATTACK);
+            if (idx == 1) {
+                // TODO
+                iconSetSource(&g_Screen.m_pActionIcons[3], g_Screen.m_pIcons, ICON_NONE);
+                iconSetSource(&g_Screen.m_pActionIcons[4], g_Screen.m_pIcons, ICON_NONE);
+                iconSetSource(&g_Screen.m_pActionIcons[5], g_Screen.m_pIcons, ICON_NONE);
+            } else {
+                iconSetSource(&g_Screen.m_pActionIcons[3], g_Screen.m_pIcons, ICON_NONE);
+                iconSetSource(&g_Screen.m_pActionIcons[4], g_Screen.m_pIcons, ICON_NONE);
+                iconSetSource(&g_Screen.m_pActionIcons[5], g_Screen.m_pIcons, ICON_NONE);
+            }
         }
     }
 }

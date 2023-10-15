@@ -48,7 +48,7 @@ void iconSetSource(tIcon *icon, tBitMap *iconTileMap, IconIdx iconIdx) {
                 = widthBytes * iconIdx * bltsize>>6
     */
     if (iconIdx == ICON_NONE) {
-        icon->iconSrcPtr = 0;
+        icon->iconSrcPtr = iconTileMap->Planes[0];
     } else {
         UBYTE height = icon->bltsize >> 6;
         UWORD srcOffs = bitmapGetByteWidth(iconTileMap) * iconIdx * height;
@@ -57,9 +57,6 @@ void iconSetSource(tIcon *icon, tBitMap *iconTileMap, IconIdx iconIdx) {
 }
 
 void iconDraw(tIcon *icon) {
-    if (!icon->iconSrcPtr) {
-        return;
-    }
     blitWait();
     g_pCustom->bltcon0 = USEA|USED|MINTERM_A;
     g_pCustom->bltcon1 = 0;

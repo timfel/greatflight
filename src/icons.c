@@ -56,15 +56,39 @@ void iconSetSource(tIcon *icon, tBitMap *iconTileMap, IconIdx iconIdx) {
     }
 }
 
-void iconDraw(tIcon *icon) {
+void iconDraw(tIcon *icon, UBYTE drawAfterOtherIcon) {
     blitWait();
-    g_pCustom->bltcon0 = USEA|USED|MINTERM_A;
-    g_pCustom->bltcon1 = 0;
-    g_pCustom->bltafwm = 0xffff;
-    g_pCustom->bltalwm = 0xffff;
-    g_pCustom->bltamod = 0;
-    g_pCustom->bltdmod = icon->dstModulo;
+    if (!drawAfterOtherIcon) {
+        g_pCustom->bltcon0 = USEA|USED|MINTERM_A;
+        g_pCustom->bltcon1 = 0;
+        g_pCustom->bltafwm = 0xffff;
+        g_pCustom->bltalwm = 0xffff;
+        g_pCustom->bltamod = 0;
+        g_pCustom->bltdmod = icon->dstModulo;
+    }
     g_pCustom->bltapt = icon->iconSrcPtr;
     g_pCustom->bltdpt = icon->iconDstPtr;
     g_pCustom->bltsize = icon->bltsize;
+}
+
+void iconSetAction(tIcon *icon, tIconAction action) {
+    icon->action = action;
+}
+
+void iconActionMove(Unit **unit, UBYTE unitc) {
+    logWrite("Move");
+}
+
+void iconActionStop(Unit **unit, UBYTE unitc) {
+    while (unitc--) {
+        actionStop(*unit++);
+    }
+}
+
+void iconActionAttack(Unit **unit, UBYTE unitc) {
+    logWrite("Attack");
+}
+
+void iconActionHarvest(Unit **unit, UBYTE unitc) {
+    logWrite("Harvest");
 }

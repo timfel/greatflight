@@ -9,6 +9,10 @@ void actionMoveTo(Unit *unit, tUbCoordYX goal) {
     unit->nextAction.action = ActionMove;
 }
 
+void actionStop(Unit *unit) {
+    unit->nextAction.action = ActionStop;
+}
+
 UBYTE actionStill(Unit *unit) {
     if (unit->nextAction.action) {
         unit->action.action = unit->nextAction.action;
@@ -137,6 +141,9 @@ void actionDo(Unit *unit, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE]) {
             return;
         case ActionMove:
             actionMove(unit, map);
+            return;
+        case ActionStop:
+            unit->action.action = ActionStill;
             return;
         default:
             return;

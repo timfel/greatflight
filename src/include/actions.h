@@ -43,5 +43,6 @@ typedef struct _unit Unit;
 
 void actionDo(Unit *unit, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE]);
 void actionMoveTo(Unit *unit, tUbCoordYX goal);
+void actionStop(Unit *unit);
 
 #endif

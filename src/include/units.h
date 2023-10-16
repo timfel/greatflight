@@ -29,7 +29,7 @@ typedef struct {
         const char *maskPath;
         tBitMap *mask;
     };
-    IconIdx iconIdx;
+    UBYTE iconIdx;
     struct {
         UBYTE maxHP;
         UBYTE speed;

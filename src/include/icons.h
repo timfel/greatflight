@@ -1,6 +1,7 @@
 #ifndef ICONS_H
 #define ICONS_H
 
+#include "include/units.h"
 #include <ace/utils/bitmap.h>
 
 typedef enum  __attribute__ ((__packed__)) {
@@ -25,11 +26,14 @@ typedef enum  __attribute__ ((__packed__)) {
 } IconIdx;
 _Static_assert(sizeof(IconIdx) == sizeof(UBYTE), "IconIdx too big");
 
+typedef void (*tIconAction)(Unit **unit, UBYTE unitc);
+
 typedef struct {
     UBYTE *iconSrcPtr;
     UBYTE *iconDstPtr;
     UWORD dstModulo;
     UWORD bltsize;
+    tIconAction action;
 #ifdef ACE_DEBUG
     UBYTE bpp;
 #endif
@@ -41,7 +45,13 @@ void iconInit(tIcon *icon,
     tBitMap *iconBuffer, tUwCoordYX iconPosition);
 
 void iconSetSource(tIcon *icon, tBitMap *iconTileMap, IconIdx iconIdx);
+void iconSetAction(tIcon *icon, tIconAction action);
+void iconDraw(tIcon *icon, UBYTE drawAfterOtherIcon);
 
-void iconDraw(tIcon *icon);
+// Now all the actual action handling
+void iconActionMove(Unit **unit, UBYTE unitc);
+void iconActionStop(Unit **unit, UBYTE unitc);
+void iconActionAttack(Unit **unit, UBYTE unitc);
+void iconActionHarvest(Unit **unit, UBYTE unitc);
 
 #endif

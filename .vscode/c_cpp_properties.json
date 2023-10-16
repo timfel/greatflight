@@ -2,7 +2,6 @@
     "configurations": [
         {
             "name": "Amiga",
-            // "configurationProvider": "BartmanAbyss.amiga-debug"
             "configurationProvider": "ms-vscode.cmake-tools"
         }
     ],

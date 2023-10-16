@@ -49,6 +49,7 @@ static struct copOffsets_t s_copOffsets;
 
 // game statics
 static Unit *s_pSelectedUnit[NUM_SELECTION];
+static UBYTE s_ubSelectedUnitCount = 0;
 
 void loadFonts() {
     font54 = fontCreate("resources/ui/uni54.fnt");
@@ -172,12 +173,16 @@ void loadUi(UWORD topPanelColorsPos, UWORD panelColorsPos, UWORD simplePosTop, U
 
     g_Screen.m_pIcons = bitmapCreateFromFile("resources/ui/icons.bm", 0);
 
-    iconInit(&g_Screen.m_pActionIcons[0], 32, 18, g_Screen.m_pIcons, ICON_MOVE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 211, .uwY = 24});
-    iconInit(&g_Screen.m_pActionIcons[1], 32, 18, g_Screen.m_pIcons, ICON_STOP, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 244, .uwY = 24});
-    iconInit(&g_Screen.m_pActionIcons[2], 32, 18, g_Screen.m_pIcons, ICON_HARVEST, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 277, .uwY = 24});
-    iconInit(&g_Screen.m_pActionIcons[3], 32, 18, g_Screen.m_pIcons, ICON_BUILD_BASIC, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 211, .uwY = 46});
-    iconInit(&g_Screen.m_pActionIcons[4], 32, 18, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 244, .uwY = 46});
-    iconInit(&g_Screen.m_pActionIcons[5], 32, 18, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 277, .uwY = 46});
+    iconInit(&g_Screen.m_pActionIcons[0], 32, 18, g_Screen.m_pIcons, ICON_MOVE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 208, .uwY = 24});
+    iconInit(&g_Screen.m_pActionIcons[1], 32, 18, g_Screen.m_pIcons, ICON_STOP, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 241, .uwY = 24});
+    iconInit(&g_Screen.m_pActionIcons[2], 32, 18, g_Screen.m_pIcons, ICON_ATTACK, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 274, .uwY = 24});
+    iconInit(&g_Screen.m_pActionIcons[3], 32, 18, g_Screen.m_pIcons, ICON_BUILD_BASIC, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 208, .uwY = 46});
+    iconInit(&g_Screen.m_pActionIcons[4], 32, 18, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 241, .uwY = 46});
+    iconInit(&g_Screen.m_pActionIcons[5], 32, 18, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 274, .uwY = 46});
+    // default actions that never change
+    iconSetAction(&g_Screen.m_pActionIcons[0], &iconActionMove);
+    iconSetAction(&g_Screen.m_pActionIcons[1], &iconActionStop);
+    iconSetAction(&g_Screen.m_pActionIcons[2], &iconActionAttack);
 }
 
 void gameGsCreate(void) {
@@ -239,7 +244,7 @@ void drawUnitIcon(UnitType *type, UBYTE idx) {
     tIcon *icon = &g_Screen.m_pUnitIcons[idx];
     IconIdx iconIdx = type->iconIdx;
     // iconSetSource(icon, g_Screen.m_pIcons, type->iconIdx);
-    // iconDraw(icon);
+    // iconDraw(icon, idx);
 }
 
 void drawInfoPanel(void) {
@@ -248,8 +253,8 @@ void drawInfoPanel(void) {
         g_Screen.m_ubBottomPanelDirty = 0;
         Unit *unit;
         UBYTE idx = 0;
-        for(; idx < NUM_SELECTION && (unit = s_pSelectedUnit[idx]); ++idx) {
-            UnitType *type = &UnitTypes[unit->type];
+        for(; idx < s_ubSelectedUnitCount; ++idx) {
+            UnitType *type = &UnitTypes[s_pSelectedUnit[idx]->type];
             drawUnitIcon(type, idx);
         }
 
@@ -272,21 +277,23 @@ void drawInfoPanel(void) {
                 iconSetSource(&g_Screen.m_pActionIcons[5], g_Screen.m_pIcons, ICON_NONE);
             }
         }
+
+        for (UBYTE icon = 0; icon < NUM_ACTION_ICONS; ++icon) {
+            iconDraw(&g_Screen.m_pActionIcons[icon], icon);
+        }
     }
 }
 
 void drawSelectionRectangles(void) {
-    for(UBYTE idx = 0; idx < NUM_SELECTION; ++idx) {
+    for(UBYTE idx = 0; idx < s_ubSelectedUnitCount; ++idx) {
         Unit *unit = s_pSelectedUnit[idx];
-        if (unit) {
-            WORD bobPosOnScreenX = unit->bob.sPos.uwX - g_Screen.m_map.m_pBuffer->pCamera->uPos.uwX;
-            BYTE offset = UnitTypes[unit->type].anim.large ? 8 : 0;
-            if (bobPosOnScreenX >= -offset && bobPosOnScreenX <= MAP_WIDTH + offset) {
-                WORD bobPosOnScreenY = unit->bob.sPos.uwY - g_Screen.m_map.m_pBuffer->pCamera->uPos.uwY;
-                if (bobPosOnScreenY >= -offset && bobPosOnScreenY <= MAP_HEIGHT + offset) {
-                    selectionSpritesUpdate(idx, bobPosOnScreenX, bobPosOnScreenY + TOP_PANEL_HEIGHT + 1);
-                    continue;
-                }
+        WORD bobPosOnScreenX = unit->bob.sPos.uwX - g_Screen.m_map.m_pBuffer->pCamera->uPos.uwX;
+        BYTE offset = UnitTypes[unit->type].anim.large ? 8 : 0;
+        if (bobPosOnScreenX >= -offset && bobPosOnScreenX <= MAP_WIDTH + offset) {
+            WORD bobPosOnScreenY = unit->bob.sPos.uwY - g_Screen.m_map.m_pBuffer->pCamera->uPos.uwY;
+            if (bobPosOnScreenY >= -offset && bobPosOnScreenY <= MAP_HEIGHT + offset) {
+                selectionSpritesUpdate(idx, bobPosOnScreenX, bobPosOnScreenY + TOP_PANEL_HEIGHT + 1);
+                continue;
             }
         }
         selectionSpritesUpdate(idx, -1, -1);
@@ -425,6 +432,77 @@ void minimapUpdate(void) {
     }
 }
 
+void handleLeftMouseUp(tUwCoordYX lmbDown, tUwCoordYX mousePos) {
+    // TODO: extract constants
+    if (lmbDown.uwY >= TOP_PANEL_HEIGHT + MAP_HEIGHT + 24) {
+        // Bottom panel
+        if (lmbDown.uwX >= 211) {
+            // Action icon area
+            UWORD line = lmbDown.uwY - (TOP_PANEL_HEIGHT + MAP_HEIGHT + 24);
+            if (line <= 18) {
+                line = 0;
+            } else if (line >= 23 && line <= 23 + 18) {
+                line = 1;
+            } else {
+                return;
+            }
+            UWORD column = lmbDown.uwX - 211;
+            if (column <= 26) {
+                column = 0;
+            } else if (column >= (26 + 7) && column <= (26 + 7) + 26) {
+                column = 1;
+            } else if (column >= (26 + 7) * 2 && column <= (26 + 7) * 2 + 26) {
+                column = 2;
+            } else {
+                return;
+            }
+            g_Screen.m_pActionIcons[column << line].action(s_pSelectedUnit, s_ubSelectedUnitCount);
+        }
+        // TODO other areas
+        return;
+    }
+    
+    // menu button
+    if (lmbDown.uwY <= TOP_PANEL_HEIGHT && lmbDown.uwX <= 60) {
+        // TODO: menu. also extract constant here and in drawMenuButton
+        return;
+    }
+
+    // If we're on the map, select units
+    tUbCoordYX tile1 = screenPosToTile((tUwCoordYX){.ulYX = mousePos.ulYX + g_Screen.m_map.m_pCamera->uPos.ulYX});
+    tUbCoordYX tile2 = screenPosToTile((tUwCoordYX){.ulYX = lmbDown.ulYX + g_Screen.m_map.m_pCamera->uPos.ulYX});
+    UBYTE tmp = tile1.ubX - tile2.ubX;
+    UBYTE operand = tmp & (tmp >> (sizeof(int) * CHAR_BIT - 1));
+    UBYTE x1 = tile2.ubX + operand; // min(x, y)
+    UBYTE x2 = tile1.ubX - operand; // max(x, y)
+    tmp = tile1.ubY - tile2.ubY;
+    operand = tmp & (tmp >> (sizeof(int) * CHAR_BIT - 1));
+    UBYTE y1 = tile2.ubY + operand; // min(x, y)
+    UBYTE y2 = tile1.ubY - operand; // max(x, y)
+    if (!(keyCheck(KEY_LSHIFT) || keyCheck(KEY_RSHIFT))) {
+        s_ubSelectedUnitCount = 0;
+    }
+    while (y1 <= y2) {
+        UBYTE xcur = x1;
+        while (xcur <= x2) {
+            outer:;
+            tUbCoordYX tile = (tUbCoordYX){.ubX = xcur, .ubY = y1};
+            Unit *unit = unitManagerUnitAt(s_pUnitManager, tile);
+            if (unit) {
+                for(UBYTE idx = 0; idx < s_ubSelectedUnitCount; ++idx) {
+                    if (s_pSelectedUnit[idx] == unit) {
+                        goto outer;
+                    }
+                }
+                s_pSelectedUnit[s_ubSelectedUnitCount++] = unit;
+                g_Screen.m_ubBottomPanelDirty = 1;
+            }
+            ++xcur;
+        }
+        ++y1;
+    }
+}
+
 void handleInput() {
     s_mouseX = mouseGetX(MOUSE_PORT_1);
     s_mouseY = mouseGetY(MOUSE_PORT_1);
@@ -505,59 +583,12 @@ void handleInput() {
             selectionRectangleUpdate(-1, -1, -1, -1);
         }
     } else if (lmbDown.ulYX) {
-        tUbCoordYX tile1 = screenPosToTile((tUwCoordYX){.ulYX = mousePos.ulYX + g_Screen.m_map.m_pCamera->uPos.ulYX});
-        tUbCoordYX tile2 = screenPosToTile((tUwCoordYX){.ulYX = lmbDown.ulYX + g_Screen.m_map.m_pCamera->uPos.ulYX});
-        UBYTE tmp = tile1.ubX - tile2.ubX;
-        UBYTE operand = tmp & (tmp >> (sizeof(int) * CHAR_BIT - 1));
-        UBYTE x1 = tile2.ubX + operand; // min(x, y)
-        UBYTE x2 = tile1.ubX - operand; // max(x, y)
-        tmp = tile1.ubY - tile2.ubY;
-        operand = tmp & (tmp >> (sizeof(int) * CHAR_BIT - 1));
-        UBYTE y1 = tile2.ubY + operand; // min(x, y)
-        UBYTE y2 = tile1.ubY - operand; // max(x, y)
-        tmp = 0;
-        while (y1 <= y2) {
-            UBYTE xcur = x1;
-            while (xcur <= x2) {
-                tUbCoordYX tile = (tUbCoordYX){.ubX = xcur, .ubY = y1};
-                Unit *unit = unitManagerUnitAt(s_pUnitManager, tile);
-                if (unit) {
-                    if (keyCheck(KEY_LSHIFT) || keyCheck(KEY_RSHIFT) || tmp) {
-                        for(UBYTE idx = 0; idx < NUM_SELECTION; ++idx) {
-                            Unit *sel = s_pSelectedUnit[idx];
-                            if (!sel) {
-                                s_pSelectedUnit[idx] = unit;
-                                g_Screen.m_ubBottomPanelDirty = 1;
-                                break;
-                            }
-                            if (sel == unit) {
-                                break;
-                            }
-                        }
-                    } else {
-                        s_pSelectedUnit[0] = unit;
-                        for(UBYTE idx = 1; idx < NUM_SELECTION; ++idx) {
-                            s_pSelectedUnit[idx] = NULL;
-                            g_Screen.m_ubBottomPanelDirty = 1;
-                        }
-                    }
-                    ++tmp;
-                }
-                ++xcur;
-            }
-            ++y1;
-        }
-        if (!tmp) {
-            for(UBYTE idx = 0; idx < NUM_SELECTION; ++idx) {
-                s_pSelectedUnit[idx] = NULL;
-                g_Screen.m_ubBottomPanelDirty = 1;
-            }
-        }
+        handleLeftMouseUp(mousePos, lmbDown);
         lmbDown.ulYX = 0;
         selectionRectangleUpdate(-1, -1, -1, -1);
-    } else if (s_pSelectedUnit[0] && mouseCheck(MOUSE_PORT_1, MOUSE_RMB)) {
+    } else if (s_ubSelectedUnitCount && mouseCheck(MOUSE_PORT_1, MOUSE_RMB)) {
         tUbCoordYX tile = screenPosToTile((tUwCoordYX){.ulYX = mousePos.ulYX + g_Screen.m_map.m_pCamera->uPos.ulYX});
-        for(UBYTE idx = 0; idx < NUM_SELECTION; ++idx) {
+        for(UBYTE idx = 0; idx < s_ubSelectedUnitCount; ++idx) {
             Unit *unit = s_pSelectedUnit[idx];
             if (unit) {
                 actionMoveTo(unit, tile);

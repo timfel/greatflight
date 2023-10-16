@@ -156,7 +156,7 @@ Unit *unitManagerUnitAt(tUnitManager *pUnitListHead, tUbCoordYX tile) {
     return NULL;
 }
 
-Unit * unitNew(tUnitManager *pUnitListHead, enum UnitTypes typeIdx) {
+Unit * unitNew(tUnitManager *pUnitListHead, UnitTypeIndex typeIdx) {
     UnitType *type = &UnitTypes[typeIdx];
     struct _unitLink *link = pUnitListHead->nextFreeUnit;
     if (!link) {

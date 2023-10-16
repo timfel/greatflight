@@ -1,4 +1,5 @@
 #include "include/icons.h"
+#include "game.h"
 
 #include <ace/utils/custom.h>
 #include <ace/managers/blit.h>
@@ -38,15 +39,6 @@ void iconSetSource(tIcon *icon, tBitMap *iconTileMap, IconIdx iconIdx) {
         logWrite("ERROR: Icons bpp need to match src and dst");
     }
 #endif
-    /*
-        icon->bltsize >> 6 == height * Depth
-        BytesPerRow == widthBytes * Depth
-        iconYOffset = iconIdx * height
-        srcOffs = BytesPerRow * iconYOffset
-                = widthBytes * Depth * iconIdx * height
-                = widthBytes * iconIdx * height * Depth
-                = widthBytes * iconIdx * bltsize>>6
-    */
     if (iconIdx == ICON_NONE) {
         icon->iconSrcPtr = iconTileMap->Planes[0];
     } else {
@@ -92,3 +84,71 @@ void iconActionAttack(Unit **unit, UBYTE unitc) {
 void iconActionHarvest(Unit **unit, UBYTE unitc) {
     logWrite("Harvest");
 }
+
+void iconBuildHumanFarm(Unit **unit, UBYTE unitc) {
+    logWrite("Build human farm");
+}
+
+void iconBuildHumanBarracks(Unit **unit, UBYTE unitc) {
+    logWrite("Build human barracks");
+}
+
+void iconBuildHumanLumbermill(Unit **unit, UBYTE unitc) {
+    logWrite("Build human lumbermill");
+}
+
+void iconBuildHumanSmithy(Unit **unit, UBYTE unitc) {
+    logWrite("Build human smithy");
+}
+
+void iconBuildHumanHall(Unit **unit, UBYTE unitc) {
+    logWrite("Build human hall");
+}
+
+static UBYTE *s_previousIcons[NUM_ACTION_ICONS];
+static tIconAction s_previousActions[NUM_ACTION_ICONS];
+
+void iconCancel(Unit **unit, UBYTE unitc) {
+    for (UBYTE i = 0; i < NUM_ACTION_ICONS; ++i) {
+        g_Screen.m_pActionIcons[i].iconSrcPtr = s_previousIcons[i];
+        g_Screen.m_pActionIcons[i].action = s_previousActions[i];
+        iconDraw(&g_Screen.m_pActionIcons[i], i);
+    }
+}
+
+void iconActionBuildBasic(Unit **unit, UBYTE unitc) {
+    for (UBYTE i = 0; i < NUM_ACTION_ICONS; ++i) {
+        s_previousIcons[i] = g_Screen.m_pActionIcons[i].iconSrcPtr;
+        s_previousActions[i] = g_Screen.m_pActionIcons[i].action;
+    }
+    iconSetSource(&g_Screen.m_pActionIcons[0], g_Screen.m_pIcons, ICON_HFARM);
+    iconSetSource(&g_Screen.m_pActionIcons[1], g_Screen.m_pIcons, ICON_HBARRACKS);
+    iconSetSource(&g_Screen.m_pActionIcons[2], g_Screen.m_pIcons, ICON_HLUMBERMILL);
+    iconSetSource(&g_Screen.m_pActionIcons[3], g_Screen.m_pIcons, ICON_HSMITHY);
+    iconSetSource(&g_Screen.m_pActionIcons[4], g_Screen.m_pIcons, ICON_HHALL);
+    iconSetSource(&g_Screen.m_pActionIcons[5], g_Screen.m_pIcons, ICON_CANCEL);
+
+    iconSetAction(&g_Screen.m_pActionIcons[0], &iconBuildHumanFarm);
+    iconSetAction(&g_Screen.m_pActionIcons[1], &iconBuildHumanBarracks);
+    iconSetAction(&g_Screen.m_pActionIcons[2], &iconBuildHumanLumbermill);
+    iconSetAction(&g_Screen.m_pActionIcons[3], &iconBuildHumanSmithy);
+    iconSetAction(&g_Screen.m_pActionIcons[4], &iconBuildHumanHall);
+    iconSetAction(&g_Screen.m_pActionIcons[5], &iconCancel);
+
+    iconDraw(&g_Screen.m_pActionIcons[0], 0);
+    iconDraw(&g_Screen.m_pActionIcons[1], 1);
+    iconDraw(&g_Screen.m_pActionIcons[2], 1);
+    iconDraw(&g_Screen.m_pActionIcons[3], 1);
+    iconDraw(&g_Screen.m_pActionIcons[4], 1);
+    iconDraw(&g_Screen.m_pActionIcons[5], 1);
+}
+
+#define PAIR0(n) {.icons = {ICON_NONE, ICON_NONE, ICON_NONE}, .actions = {NULL, NULL, NULL}}
+#define PAIR1(n, i, a) {.icons = {i, ICON_NONE, ICON_NONE}, .actions = {a, NULL, NULL}}
+#define PAIR2(n, i, a, i2, a2) {.icons = {i, i2, ICON_NONE}, .actions = {a, a2, NULL}}
+#define PAIR3(n, i, a, i2, a2, i3, a3) {.icons = {i, i2, i3}, .actions = {a, a2, a3}}
+IconDefinitions g_UnitIconDefinitions[unitTypeCount] = {
+    PAIR0(dead),
+    PAIR2(peasant, ICON_HARVEST, &iconActionHarvest, ICON_BUILD_BASIC, &iconActionBuildBasic),
+    PAIR2(peon, ICON_HARVEST, &iconActionHarvest, ICON_BUILD_BASIC, &iconActionBuildBasic),
+};

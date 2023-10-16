@@ -39,6 +39,13 @@ typedef struct {
 #endif
 } tIcon;
 
+typedef struct {
+    IconIdx icons[3];
+    tIconAction actions[3];
+} IconDefinitions;
+
+extern IconDefinitions g_UnitIconDefinitions[];
+
 void iconInit(tIcon *icon,
     UBYTE width, UBYTE height,
     tBitMap *iconTileMap, IconIdx iconIdx,

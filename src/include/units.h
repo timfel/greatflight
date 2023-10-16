@@ -44,7 +44,7 @@ typedef struct {
     } anim;
 } UnitType;
 
-enum UnitTypes {
+typedef enum __attribute__((__packed__)) {
     dead = 0,
     //
     peasant,
@@ -67,7 +67,7 @@ enum UnitTypes {
     slime,
     thief,
     unitTypeCount
-};
+} UnitTypeIndex;
 
 typedef struct {
     UBYTE hp;
@@ -127,7 +127,7 @@ void unitManagerDestroy(tUnitManager *pUnitListHead);
  * @param type of unit to initialize
  * @return new unit pointer
  */
-Unit * unitNew(tUnitManager *pUnitListHead, enum UnitTypes type);
+Unit * unitNew(tUnitManager *pUnitListHead, UnitTypeIndex type);
 
 /**
  * @brief Free the selected unit.

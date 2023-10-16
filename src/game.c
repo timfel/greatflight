@@ -176,7 +176,7 @@ void loadUi(UWORD topPanelColorsPos, UWORD panelColorsPos, UWORD simplePosTop, U
     iconInit(&g_Screen.m_pActionIcons[0], 32, 18, g_Screen.m_pIcons, ICON_MOVE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 208, .uwY = 24});
     iconInit(&g_Screen.m_pActionIcons[1], 32, 18, g_Screen.m_pIcons, ICON_STOP, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 241, .uwY = 24});
     iconInit(&g_Screen.m_pActionIcons[2], 32, 18, g_Screen.m_pIcons, ICON_ATTACK, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 274, .uwY = 24});
-    iconInit(&g_Screen.m_pActionIcons[3], 32, 18, g_Screen.m_pIcons, ICON_BUILD_BASIC, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 208, .uwY = 46});
+    iconInit(&g_Screen.m_pActionIcons[3], 32, 18, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 208, .uwY = 46});
     iconInit(&g_Screen.m_pActionIcons[4], 32, 18, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 241, .uwY = 46});
     iconInit(&g_Screen.m_pActionIcons[5], 32, 18, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 274, .uwY = 46});
     // default actions that never change
@@ -251,11 +251,11 @@ void drawInfoPanel(void) {
     if (g_Screen.m_ubBottomPanelDirty) {
         // TODO: only store and redraw the dirty part?
         g_Screen.m_ubBottomPanelDirty = 0;
-        Unit *unit;
+        UnitTypeIndex type;
         UBYTE idx = 0;
         for(; idx < s_ubSelectedUnitCount; ++idx) {
-            UnitType *type = &UnitTypes[s_pSelectedUnit[idx]->type];
-            drawUnitIcon(type, idx);
+            type = s_pSelectedUnit[idx]->type;
+            drawUnitIcon(&UnitTypes[type], idx);
         }
 
         if (idx == 0) {
@@ -267,10 +267,11 @@ void drawInfoPanel(void) {
             iconSetSource(&g_Screen.m_pActionIcons[1], g_Screen.m_pIcons, ICON_STOP);
             iconSetSource(&g_Screen.m_pActionIcons[2], g_Screen.m_pIcons, ICON_ATTACK);
             if (idx == 1) {
-                // TODO
-                iconSetSource(&g_Screen.m_pActionIcons[3], g_Screen.m_pIcons, ICON_NONE);
-                iconSetSource(&g_Screen.m_pActionIcons[4], g_Screen.m_pIcons, ICON_NONE);
-                iconSetSource(&g_Screen.m_pActionIcons[5], g_Screen.m_pIcons, ICON_NONE);
+                IconDefinitions *def = &g_UnitIconDefinitions[type];
+                for (UBYTE i = 0; i < 3; ++i) {
+                    iconSetSource(&g_Screen.m_pActionIcons[3 + i], g_Screen.m_pIcons, def->icons[i]);
+                    iconSetAction(&g_Screen.m_pActionIcons[3 + i], def->actions[i]);
+                }
             } else {
                 iconSetSource(&g_Screen.m_pActionIcons[3], g_Screen.m_pIcons, ICON_NONE);
                 iconSetSource(&g_Screen.m_pActionIcons[4], g_Screen.m_pIcons, ICON_NONE);
@@ -285,15 +286,17 @@ void drawInfoPanel(void) {
 }
 
 void drawSelectionRectangles(void) {
-    for(UBYTE idx = 0; idx < s_ubSelectedUnitCount; ++idx) {
+    for(UBYTE idx = 0; idx < NUM_SELECTION; ++idx) {
         Unit *unit = s_pSelectedUnit[idx];
-        WORD bobPosOnScreenX = unit->bob.sPos.uwX - g_Screen.m_map.m_pBuffer->pCamera->uPos.uwX;
-        BYTE offset = UnitTypes[unit->type].anim.large ? 8 : 0;
-        if (bobPosOnScreenX >= -offset && bobPosOnScreenX <= MAP_WIDTH + offset) {
-            WORD bobPosOnScreenY = unit->bob.sPos.uwY - g_Screen.m_map.m_pBuffer->pCamera->uPos.uwY;
-            if (bobPosOnScreenY >= -offset && bobPosOnScreenY <= MAP_HEIGHT + offset) {
-                selectionSpritesUpdate(idx, bobPosOnScreenX, bobPosOnScreenY + TOP_PANEL_HEIGHT + 1);
-                continue;
+        if (unit) {
+            WORD bobPosOnScreenX = unit->bob.sPos.uwX - g_Screen.m_map.m_pBuffer->pCamera->uPos.uwX;
+            BYTE offset = UnitTypes[unit->type].anim.large ? 8 : 0;
+            if (bobPosOnScreenX >= -offset && bobPosOnScreenX <= MAP_WIDTH + offset) {
+                WORD bobPosOnScreenY = unit->bob.sPos.uwY - g_Screen.m_map.m_pBuffer->pCamera->uPos.uwY;
+                if (bobPosOnScreenY >= -offset && bobPosOnScreenY <= MAP_HEIGHT + offset) {
+                    selectionSpritesUpdate(idx, bobPosOnScreenX, bobPosOnScreenY + TOP_PANEL_HEIGHT + 1);
+                    continue;
+                }
             }
         }
         selectionSpritesUpdate(idx, -1, -1);
@@ -456,7 +459,10 @@ void handleLeftMouseUp(tUwCoordYX lmbDown, tUwCoordYX mousePos) {
             } else {
                 return;
             }
-            g_Screen.m_pActionIcons[column << line].action(s_pSelectedUnit, s_ubSelectedUnitCount);
+            tIconAction action = g_Screen.m_pActionIcons[column + line * 3].action;
+            if (action) {
+                g_Screen.m_pActionIcons[column + line * 3].action(s_pSelectedUnit, s_ubSelectedUnitCount);
+            }
         }
         // TODO other areas
         return;

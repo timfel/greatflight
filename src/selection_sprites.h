@@ -3,7 +3,7 @@
 
 #include <ace/utils/extview.h>
 
-#define NUM_SELECTION 4
+#define NUM_SELECTION 6
 
 static inline UBYTE selectionSpritesGetRawCopplistInstructionCountLength() {
     return 2 * NUM_SELECTION + 4 /* selection rectangle sprite */;

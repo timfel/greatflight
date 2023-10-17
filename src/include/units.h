@@ -40,7 +40,7 @@ typedef struct {
         unsigned walk:2; // 0,1,2,3 walking frames
         unsigned attack:2; // 0,1,2,3 attack frames
         unsigned fall:1; // 0,1 falling frames
-        unsigned wait:2; // 4,6,8,10 wait frames between animationss
+        unsigned wait:1; // 2,4,6,8 wait frames between animations frames
     } anim;
 } UnitType;
 

@@ -288,7 +288,7 @@ void drawInfoPanel(void) {
 void drawSelectionRectangles(void) {
     for(UBYTE idx = 0; idx < NUM_SELECTION; ++idx) {
         Unit *unit = s_pSelectedUnit[idx];
-        if (unit) {
+        if (unit && idx < s_ubSelectedUnitCount) {
             WORD bobPosOnScreenX = unit->bob.sPos.uwX - g_Screen.m_map.m_pBuffer->pCamera->uPos.uwX;
             BYTE offset = UnitTypes[unit->type].anim.large ? 8 : 0;
             if (bobPosOnScreenX >= -offset && bobPosOnScreenX <= MAP_WIDTH + offset) {
@@ -477,19 +477,16 @@ void handleLeftMouseUp(tUwCoordYX lmbDown, tUwCoordYX mousePos) {
     // If we're on the map, select units
     tUbCoordYX tile1 = screenPosToTile((tUwCoordYX){.ulYX = mousePos.ulYX + g_Screen.m_map.m_pCamera->uPos.ulYX});
     tUbCoordYX tile2 = screenPosToTile((tUwCoordYX){.ulYX = lmbDown.ulYX + g_Screen.m_map.m_pCamera->uPos.ulYX});
-    UBYTE tmp = tile1.ubX - tile2.ubX;
-    UBYTE operand = tmp & (tmp >> (sizeof(int) * CHAR_BIT - 1));
-    UBYTE x1 = tile2.ubX + operand; // min(x, y)
-    UBYTE x2 = tile1.ubX - operand; // max(x, y)
-    tmp = tile1.ubY - tile2.ubY;
-    operand = tmp & (tmp >> (sizeof(int) * CHAR_BIT - 1));
-    UBYTE y1 = tile2.ubY + operand; // min(x, y)
-    UBYTE y2 = tile1.ubY - operand; // max(x, y)
+    UBYTE x1 = MIN(tile1.ubX, tile2.ubX);
+    UBYTE x2 = MAX(tile1.ubX, tile2.ubX);
+    UBYTE y1 = MIN(tile1.ubY, tile1.ubY);
+    UBYTE y2 = MAX(tile1.ubY, tile2.ubY);
     if (!(keyCheck(KEY_LSHIFT) || keyCheck(KEY_RSHIFT))) {
         s_ubSelectedUnitCount = 0;
+        g_Screen.m_ubBottomPanelDirty = 1;
     }
     while (y1 <= y2) {
-        UBYTE xcur = x1;
+        UBYTE xcur = x1;    
         while (xcur <= x2) {
             outer:;
             tUbCoordYX tile = (tUbCoordYX){.ubX = xcur, .ubY = y1};

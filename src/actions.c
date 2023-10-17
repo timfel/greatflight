@@ -34,13 +34,7 @@ UBYTE actionStill(Unit *unit) {
 #define moveTargetYShift 4
 #define moveCounterShift 0
 void actionMove(Unit *unit, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE]) {
-    if (unit->action.ubActionDataC) {
-        --unit->action.ubActionDataC;
-        return;
-    }
     UnitType type = UnitTypes[unit->type];
-    unit->action.ubActionDataC = (type.anim.wait + 2) * 2;
-
     UBYTE speed = type.stats.speed;
     BYTE vectorX = 0;
     BYTE vectorY = 0;
@@ -100,6 +94,12 @@ void actionMove(Unit *unit, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE]) {
         tilePos = unitGetTilePosition(unit);
         markMapTile(map, tilePos.ubX, tilePos.ubY);
     }
+    if (unit->action.ubActionDataC) {
+        --unit->action.ubActionDataC;
+        return;
+    }
+    unit->action.ubActionDataC = (type.anim.wait + 1) * 2;
+
     // next walk frame, walk frames start at row 1 (all units have 1 still frame)
     UBYTE nextFrame = ((unitGetFrame(unit) / DIRECTIONS) % type.anim.walk + 1) * DIRECTIONS;
     if (vectorX > 0) {

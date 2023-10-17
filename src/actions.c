@@ -5,7 +5,7 @@ void actionMoveTo(Unit *unit, tUbCoordYX goal) {
     unit->nextAction.ubActionDataB = goal.ubY;
     unit->nextAction.ubActionDataA = goal.ubX;
     unit->nextAction.ubActionDataC = 0;
-    unit->nextAction.ubActionDataD = 0;
+    unit->nextAction.ubActionDataD = 25; // retries
     unit->nextAction.action = ActionMove;
 }
 
@@ -62,6 +62,12 @@ void actionMove(Unit *unit, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE]) {
         tUbCoordYX tilePos = unitGetTilePosition(unit);
         vectorX = unit->action.ubActionDataA - unit->loc.ubX;
         vectorY = unit->action.ubActionDataB - unit->loc.ubY;
+        if (!vectorX && !vectorY) {
+            // reached our goal
+            unitSetFrame(unit, 0);
+            unit->action.action = ActionStill;
+            return;
+        }
         if (vectorX) {
             vectorX = vectorX > 0 ? 1 : -1;
             if (!mapIsWalkable(map, tilePos.ubX + vectorX, tilePos.ubY)) {
@@ -71,15 +77,19 @@ void actionMove(Unit *unit, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE]) {
         }
         if (vectorY) {
             vectorY = vectorY > 0 ? 1 : -1;
-            if (!mapIsWalkable(map, tilePos.ubX, tilePos.ubY + vectorY)) {
+            if (!mapIsWalkable(map, tilePos.ubX + vectorX, tilePos.ubY + vectorY)) {
                 // unwalkable tile vertical
                 vectorY = 0;
             }
         }
         if (!vectorX && !vectorY) {
-            // reached goal or unreachable goal
+            // unreachable step, wait a little?
+            --unit->action.ubActionDataD;
             unitSetFrame(unit, 0);
-            unit->action.action = ActionStill;
+            if (unit->action.ubActionDataD == 0) {
+                // done trying
+                unit->action.action = ActionStill;
+            }
             return;
         }
         unmarkMapTile(map, tilePos.ubX, tilePos.ubY);

@@ -40,11 +40,12 @@
     ],
     "units": [
         [
-            [
-                peon, # type
-                8, 3, # xy
-                *unit_defaults
-            ],
+            [peon, 8, 3, *unit_defaults],
+            [peon, 8, 3, *unit_defaults],
+            [peon, 8, 3, *unit_defaults],
+            [peon, 8, 3, *unit_defaults],
+            [peon, 8, 3, *unit_defaults],
+            [peon, 8, 3, *unit_defaults],
         ],
         [],
     ]

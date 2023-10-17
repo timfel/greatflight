@@ -22,7 +22,7 @@ UnitType UnitTypes[] = {
             .walk = 3,
             .attack = 2,
             .fall = 0,
-            .wait = 3,
+            .wait = 2,
         },
     },
     [footman] = {},
@@ -45,19 +45,11 @@ UnitType UnitTypes[] = {
 };
 _Static_assert(sizeof(UnitTypes) == unitTypeCount * sizeof(UnitType));
 
-struct _unitLink {
-    Unit unit;
-    struct _unitLink *prev;
-    struct _unitLink *next;
-};
-
-struct _unitmanager {
-    struct _unitLink *nextFreeUnit;
-    struct _unitLink *firstActiveUnit;
-    struct _unitLink unitList[0];
-};
-
-#define UNIT_MANAGER_SIZE (sizeof(struct _unitmanager) + sizeof(struct _unitLink) * MAX_UNITS)
+typedef struct _unitmanager {
+    Unit units[MAX_UNITS];
+    UBYTE freeUnitsStack[MAX_UNITS];
+    UBYTE unitCount;
+} tUnitManager;
 
 #ifdef ACE_DEBUG
 static inline UBYTE unitManagerUnitIsActive(Unit *unit) {
@@ -66,22 +58,14 @@ static inline UBYTE unitManagerUnitIsActive(Unit *unit) {
 #endif
 
 tUnitManager * unitManagerCreate(void) {
-    struct _unitmanager *mgr = (struct _unitmanager *)memAllocFastClear(UNIT_MANAGER_SIZE);
-    
-    // link all units together into the singly linked free list
-    mgr->nextFreeUnit = &mgr->unitList[0];
-    for (UWORD i = 0; i < MAX_UNITS - 1; i++) {
+    tUnitManager *mgr = (tUnitManager *)memAllocFastClear(sizeof(tUnitManager));
+    mgr->unitCount = 0;
+    for (UBYTE i = 0; i < MAX_UNITS; ++i) {
 #ifdef ACE_DEBUG
-        unitSetTilePosition((Unit *)(&mgr->unitList[i]), NULL, UNIT_FREE_TILE_POSITION);
+        unitSetTilePosition(&mgr->units[i], NULL, UNIT_FREE_TILE_POSITION);
 #endif
-        mgr->unitList[i].next = &mgr->unitList[i + 1];
-        mgr->unitList[i].prev = NULL;
+        mgr->freeUnitsStack[i] = i;
     }
-    mgr->unitList[MAX_UNITS - 1].prev = NULL;
-    mgr->unitList[MAX_UNITS - 1].next = NULL;
-
-    // active list doubly-linked, starts empty
-    mgr->firstActiveUnit = NULL;
 
     // TODO: lazy loading of spritesheets
     for (UWORD i = 0; i < sizeof(UnitTypes) / sizeof(UnitType); i++) {
@@ -96,22 +80,20 @@ tUnitManager * unitManagerCreate(void) {
     return mgr;
 }
 
-void unitManagerDestroy(tUnitManager *pUnitListHead) {
+void unitManagerDestroy(tUnitManager *mgr) {
     for (UWORD i = 0; i < sizeof(UnitTypes) / sizeof(UnitType); i++) {
         if (UnitTypes[i].spritesheet) {
             bitmapDestroy(UnitTypes[i].spritesheet);
             bitmapDestroy(UnitTypes[i].mask);
         }
     }
-    struct _unitLink *l = pUnitListHead->firstActiveUnit;
-    while (l) {
+    for (UBYTE i = 0; i < mgr->unitCount; ++i) {
 #ifdef ACE_DEBUG
-        if (unitManagerUnitIsActive((Unit *)l))
+        if (unitManagerUnitIsActive(&mgr->units[i]))
 #endif
-        unitDelete(pUnitListHead, (Unit *)l);
-        l = l->next;
+        unitDelete(mgr, &mgr->units[i]);
     }
-    memFree(pUnitListHead, UNIT_MANAGER_SIZE);
+    memFree(mgr, sizeof(tUnitManager));
 }
 
 static inline void unitDraw(Unit *self, tUbCoordYX viewportTopLeft) {
@@ -124,80 +106,64 @@ static inline void unitOffscreen(Unit *self) {
     self->bob.sPos.uwX = UWORD_MAX;
 }
 
-void unitManagerProcessUnits(tUnitManager *pUnitListHead, UBYTE pPathMap[PATHMAP_SIZE][PATHMAP_SIZE], tUbCoordYX viewportTopLeft, tUbCoordYX viewportBottomRight) {
-    struct _unitLink *link = pUnitListHead->firstActiveUnit;
-    while (link) {
-        actionDo((Unit *)link, pPathMap);
-        tUbCoordYX loc = unitGetTilePosition((Unit *)link);
+void unitManagerProcessUnits(tUnitManager *mgr, UBYTE pPathMap[PATHMAP_SIZE][PATHMAP_SIZE], tUbCoordYX viewportTopLeft, tUbCoordYX viewportBottomRight) {
+    for (UBYTE i = 0; i < mgr->unitCount; ++i) {
+        Unit *unit = &mgr->units[i];
+        actionDo(unit, pPathMap);
+        tUbCoordYX loc = unitGetTilePosition(unit);
         if (loc.ubX >= viewportTopLeft.ubX
                 && loc.ubY >= viewportTopLeft.ubY
                 && loc.ubX <= viewportBottomRight.ubX
                 && loc.ubY <= viewportBottomRight.ubY) {
-            unitDraw((Unit *)link, viewportTopLeft);
+            unitDraw(unit, viewportTopLeft);
         } else {
-            unitOffscreen((Unit *)link);
+            unitOffscreen(unit);
         }
         if(blitIsIdle()) {
             bobProcessNext();
         }
-        link = link->next;
     }
 }
 
-Unit *unitManagerUnitAt(tUnitManager *pUnitListHead, tUbCoordYX tile) {
-    struct _unitLink *link = pUnitListHead->firstActiveUnit;
-    while (link) {
-        tUbCoordYX loc = unitGetTilePosition((Unit *)link);
+Unit *unitManagerUnitAt(tUnitManager *mgr, tUbCoordYX tile) {
+    for (UBYTE i = 0; i < mgr->unitCount; ++i) {
+        Unit *unit = &mgr->units[i];
+        tUbCoordYX loc = unitGetTilePosition(unit);
         if (loc.uwYX == tile.uwYX) {
-            return (Unit *)link;
+            return unit;
         }
-        link = link->next;
     }
     return NULL;
 }
 
-Unit * unitNew(tUnitManager *pUnitListHead, UnitTypeIndex typeIdx) {
-    UnitType *type = &UnitTypes[typeIdx];
-    struct _unitLink *link = pUnitListHead->nextFreeUnit;
-    if (!link) {
+Unit * unitNew(tUnitManager *mgr, UnitTypeIndex typeIdx) {
+    if (mgr->unitCount >= MAX_UNITS) {
         return NULL;
     }
+    UnitType *type = &UnitTypes[typeIdx];
+    Unit *unit = &mgr->units[mgr->freeUnitsStack[mgr->unitCount]];
+    mgr->unitCount++;
 
-    // remove from free list, this list is singly linked,
-    // because we only ever remove or insert at the front
-    pUnitListHead->nextFreeUnit = link->next;
-
-    // add to active list, doubly linked, because random
-    // elements need to be removable
-    link->next = pUnitListHead->firstActiveUnit;
-    pUnitListHead->firstActiveUnit = link;
-    if (link->next) {
-        link->next->prev = link;
-    }
-    bobInit(&((Unit *)link)->bob, 16, 16, 0, type->spritesheet->Planes[0], type->mask->Planes[0], 0, 0);
-    ((Unit *)link)->type = typeIdx;
-    unitSetTilePosition((Unit *)link, NULL, UNIT_INIT_TILE_POSITION);
-    return (Unit *)link;
+    bobInit(&unit->bob, 16, 16, 0, type->spritesheet->Planes[0], type->mask->Planes[0], 0, 0);
+    unit->type = typeIdx;
+    unitSetTilePosition(unit, NULL, UNIT_INIT_TILE_POSITION);
+    return unit;
 }
 
-void unitDelete(tUnitManager *pUnitListHead, Unit *unit) {
+void unitDelete(tUnitManager *mgr, Unit *unit) {
 #ifdef ACE_DEBUG
     if (!unitManagerUnitIsActive(unit)) {
         logWrite("Deleting inactive unit!!!");
     }
     unitSetTilePosition(unit, NULL, UNIT_FREE_TILE_POSITION);
-#endif
-    struct _unitLink *prev = ((struct _unitLink *)unit)->prev;
-    if (prev) {
-        prev->next = ((struct _unitLink *)unit)->next;
-        // first active unit unchanged
-        ((struct _unitLink *)unit)->prev = NULL;
-    } else {
-        // this was the first active unit
-        pUnitListHead->firstActiveUnit = ((struct _unitLink *)unit)->next;
+    ULONG longIdx = (ULONG)unit - (ULONG)mgr->units;
+    if (longIdx > 255) {
+        logWrite("ALARM! unit idx is whaaat? %ld\n", longIdx);
     }
-    ((struct _unitLink *)unit)->next = pUnitListHead->nextFreeUnit;
-    pUnitListHead->nextFreeUnit = (struct _unitLink *)unit;
+#endif
+    UBYTE idx = (ULONG)unit - (ULONG)mgr->units;
+    mgr->unitCount--;
+    mgr->freeUnitsStack[mgr->unitCount] = idx;
 }
 
 UBYTE unitCanBeAt(UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE], Unit __attribute__((__unused__)) *unit, UBYTE x, UBYTE y) {
@@ -206,41 +172,43 @@ UBYTE unitCanBeAt(UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE], Unit __attribute__((__u
 }
 
 UBYTE unitPlace(UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE], Unit *unit, UBYTE x, UBYTE y) {
-    UBYTE range = 5; // drop out no further than 5 tiles away
     UBYTE actualX, actualY;
-    for (UBYTE xoff = 0; xoff < range * 2; ++xoff) {
-        actualX = x + xoff;
-        for (UBYTE yoff = 0; yoff < range * 2; ++yoff) {
-            actualY = y + yoff;
-            if (unitCanBeAt(map, unit, actualX, actualY)) {
-                unit->x = actualX;
-                unit->y = actualY;
-                markMapTile(map, actualX, actualY);
-                return 1;
+    // drop out no further than 5 tiles away
+    for (UBYTE range = 0; range < 5; ++range) {
+        for (UBYTE xoff = 0; xoff < range * 2; ++xoff) {
+            actualX = x + xoff;
+            for (UBYTE yoff = 0; yoff < range * 2; ++yoff) {
+                actualY = y + yoff;
+                if (unitCanBeAt(map, unit, actualX, actualY)) {
+                    unit->x = actualX;
+                    unit->y = actualY;
+                    markMapTile(map, actualX, actualY);
+                    return 1;
+                }
+                actualY = y - yoff;
+                if (unitCanBeAt(map, unit, actualX, actualY)) {
+                    unit->x = actualX;
+                    unit->y = actualY;
+                    markMapTile(map, actualX, actualY);
+                    return 1;
+                }
             }
-            actualY = y - yoff;
-            if (unitCanBeAt(map, unit, actualX, actualY)) {
-                unit->x = actualX;
-                unit->y = actualY;
-                markMapTile(map, actualX, actualY);
-                return 1;
-            }
-        }
-        actualX = x - xoff;
-        for (UBYTE yoff = 0; yoff < range * 2; ++yoff) {
-            actualY = y + yoff;
-            if (unitCanBeAt(map, unit, actualX, actualY)) {
-                unit->x = actualX;
-                unit->y = actualY;
-                markMapTile(map, actualX, actualY);
-                return 1;
-            }
-            actualY = y - yoff;
-            if (unitCanBeAt(map, unit, actualX, actualY)) {
-                unit->x = actualX;
-                unit->y = actualY;
-                markMapTile(map, actualX, actualY);
-                return 1;
+            actualX = x - xoff;
+            for (UBYTE yoff = 0; yoff < range * 2; ++yoff) {
+                actualY = y + yoff;
+                if (unitCanBeAt(map, unit, actualX, actualY)) {
+                    unit->x = actualX;
+                    unit->y = actualY;
+                    markMapTile(map, actualX, actualY);
+                    return 1;
+                }
+                actualY = y - yoff;
+                if (unitCanBeAt(map, unit, actualX, actualY)) {
+                    unit->x = actualX;
+                    unit->y = actualY;
+                    markMapTile(map, actualX, actualY);
+                    return 1;
+                }
             }
         }
     }

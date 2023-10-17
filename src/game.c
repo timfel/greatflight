@@ -13,7 +13,7 @@
 
 #define VISIBLE_TILES_X (MAP_WIDTH >> TILE_SHIFT)
 #define VISIBLE_TILES_Y (MAP_HEIGHT >> TILE_SHIFT)
-#define CAMERA_MOVE_DELTA PATHMAP_TILE_SIZE
+#define CAMERA_MOVE_DELTA 4
 
 struct Screen g_Screen;
 static tBob s_TileCursor;
@@ -119,7 +119,7 @@ void loadMap(const char* name, UWORD mapbufCoplistStart, UWORD mapColorsCoplistS
                                     TAG_SIMPLEBUFFER_BOUND_HEIGHT, MAP_BUFFER_HEIGHT,
                                     TAG_SIMPLEBUFFER_IS_DBLBUF, 1,
                                     TAG_SIMPLEBUFFER_COPLIST_OFFSET, mapbufCoplistStart,
-                                    TAG_SIMPLEBUFFER_USE_X_SCROLLING, 0,
+                                    TAG_SIMPLEBUFFER_USE_X_SCROLLING, 1,
                                     TAG_END);
     g_Screen.m_map.m_pCamera = cameraCreate(g_Screen.m_map.m_pVPort, 0, 0, MAP_SIZE * TILE_SIZE - MAP_WIDTH, MAP_SIZE * TILE_SIZE - MAP_HEIGHT, 0);
 }
@@ -240,6 +240,10 @@ static inline tUbCoordYX screenPosToTile(tUwCoordYX pos) {
     return (tUbCoordYX){.ubX = pos.uwX / PATHMAP_TILE_SIZE, .ubY = (pos.uwY - TOP_PANEL_HEIGHT) / PATHMAP_TILE_SIZE};
 }
 
+static inline tUbCoordYX mapPosToTile(tUwCoordYX pos) {
+    return (tUbCoordYX){.ubX = pos.uwX / PATHMAP_TILE_SIZE, .ubY = pos.uwY / PATHMAP_TILE_SIZE};
+}
+
 void drawUnitIcon(UnitType *type, UBYTE idx) {
     tIcon *icon = &g_Screen.m_pUnitIcons[idx];
     IconIdx iconIdx = type->iconIdx;
@@ -316,8 +320,8 @@ void drawAllTiles(void) {
 
     // Figure out which tiles to actually draw, depending on the
     // current camera position
-    UBYTE ubStartX = /*MAX(0, (*/g_Screen.m_map.m_pCamera->uPos.uwX >> TILE_SHIFT/*))*/;
-	UBYTE ubStartY = /*MAX(0, (*/g_Screen.m_map.m_pCamera->uPos.uwY >> TILE_SHIFT/*))*/;
+    UBYTE ubStartX = g_Screen.m_map.m_pCamera->uPos.uwX >> TILE_SHIFT;
+	UBYTE ubStartY = g_Screen.m_map.m_pCamera->uPos.uwY >> TILE_SHIFT;
 	UBYTE ubEndX = ubStartX + (MAP_BUFFER_WIDTH >> TILE_SHIFT);
 
     // Get pointer to start of drawing area
@@ -564,14 +568,14 @@ void handleInput() {
     if (!mousePos.uwY) {
         cameraMoveBy(g_Screen.m_map.m_pCamera, 0, -CAMERA_MOVE_DELTA);
         g_Screen.m_map.m_pBuffer->pCamera->uPos.uwY = g_Screen.m_map.m_pCamera->uPos.uwY % TILE_SIZE;
-    } else if (mousePos.uwY >= MAP_HEIGHT + BOTTOM_PANEL_HEIGHT - 1) {
+    } else if (mousePos.uwY >= TOP_PANEL_HEIGHT + MAP_HEIGHT + BOTTOM_PANEL_HEIGHT) {
         cameraMoveBy(g_Screen.m_map.m_pCamera, 0, CAMERA_MOVE_DELTA);
         g_Screen.m_map.m_pBuffer->pCamera->uPos.uwY = g_Screen.m_map.m_pCamera->uPos.uwY % TILE_SIZE;
     }
-    if (!mousePos.uwX) {
+    if (mousePos.uwX <= 1) {
         cameraMoveBy(g_Screen.m_map.m_pCamera, -CAMERA_MOVE_DELTA, 0);
         g_Screen.m_map.m_pBuffer->pCamera->uPos.uwX = g_Screen.m_map.m_pCamera->uPos.uwX % TILE_SIZE;
-    } else if (mousePos.uwX > MAP_WIDTH - 1) {
+    } else if (mousePos.uwX >= MAP_WIDTH - 1) {
         cameraMoveBy(g_Screen.m_map.m_pCamera, CAMERA_MOVE_DELTA, 0);
         g_Screen.m_map.m_pBuffer->pCamera->uPos.uwX = g_Screen.m_map.m_pCamera->uPos.uwX % TILE_SIZE;
     }
@@ -629,6 +633,7 @@ void fowUpdate(void) {
 }
 
 void drawResources(void) {
+    return;
     if ((GameCycle & 63) == 63) {
         static tTextBitMap *goldBitmap = NULL;
         static tTextBitMap *lumberBitmap = NULL;
@@ -658,7 +663,7 @@ void drawMissiles(void) {
 
 void drawUnits(void) {
     // process all units
-    tUbCoordYX tileTopLeft = screenPosToTile(g_Screen.m_map.m_pCamera->uPos);
+    tUbCoordYX tileTopLeft = mapPosToTile(g_Screen.m_map.m_pCamera->uPos);
     unitManagerProcessUnits(
         s_pUnitManager,
         g_Map.m_ubPathmapXY,

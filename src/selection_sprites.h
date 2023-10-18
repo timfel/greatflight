@@ -6,7 +6,7 @@
 #define NUM_SELECTION 6
 
 static inline UBYTE selectionSpritesGetRawCopplistInstructionCountLength() {
-    return 2 * NUM_SELECTION + 4 /* selection rectangle sprite */;
+    return 2 * NUM_SELECTION;
 }
 
 /**

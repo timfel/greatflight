@@ -22,6 +22,8 @@ static tUnitManager *s_pUnitManager;
 static UWORD s_mouseX;
 static UWORD s_mouseY;
 
+static tUwRect s_selectionRubberBand;
+
 static tFont *font54;
 
 enum mode {
@@ -289,8 +291,44 @@ void drawInfoPanel(void) {
     }
 }
 
-void selectionRectangleUpdate(UWORD x1, UWORD y1, UWORD x2, UWORD y2) {
-    // TODO
+void drawSelectionRubberBand(void) {
+    UWORD x1 = s_selectionRubberBand.uwX;
+    if (x1 == (UWORD)-1) {
+        return;
+    }
+    UWORD uwHeight = s_selectionRubberBand.uwHeight;
+    if (!uwHeight) {
+        return;
+    }
+    UWORD uwWidthInWords = s_selectionRubberBand.uwWidth / 16;
+    if (!uwWidthInWords) {
+        return;
+    }
+    UWORD y1 = s_selectionRubberBand.uwY;
+    UWORD uwModulo = (MAP_BUFFER_WIDTH_BYTES * uwHeight * BPP) - (uwWidthInWords * 2);
+    UWORD uwBltSize = (2 << 6) | uwWidthInWords;
+    PLANEPTR pMap = g_Screen.m_map.m_pBuffer->pBack->Planes[1] + (MAP_BUFFER_WIDTH_BYTES * y1 * BPP) + (x1 / 8);
+    blitWait();
+	g_pCustom->bltcon0 = USEA|USED|0x0F; // MINTERM_NOTA;
+	g_pCustom->bltcon1 = 0;
+	g_pCustom->bltafwm = 0xFFFF;
+	g_pCustom->bltalwm = 0xFFFF;
+	g_pCustom->bltamod = uwModulo;
+	g_pCustom->bltdmod = uwModulo;
+    g_pCustom->bltdpt = pMap;
+    g_pCustom->bltapt = pMap;
+    g_pCustom->bltsize = uwBltSize;
+}
+
+void updateSelectionRubberBand(WORD x1, WORD y1, WORD x2, WORD y2) {
+    if (x1 < 0) {
+        s_selectionRubberBand.uwX = -1;
+        return;
+    }
+    s_selectionRubberBand.uwX = MIN(x1, x2);
+    s_selectionRubberBand.uwY = MIN(y1, y2) - TOP_PANEL_HEIGHT + g_Screen.m_map.m_pBuffer->pCamera->uPos.uwY;
+    s_selectionRubberBand.uwWidth = ABS(x2 - x1);
+    s_selectionRubberBand.uwHeight = ABS(y2 - y1);
 }
 
 void drawSelectionRectangles(void) {
@@ -587,16 +625,16 @@ void handleInput() {
     if (mouseCheck(MOUSE_PORT_1, MOUSE_LMB)) {
         if (lmbDown.uwY) {
             if (lmbDown.uwY - mousePos.uwY) {
-                selectionRectangleUpdate(lmbDown.uwX, mousePos.uwX, lmbDown.uwY, mousePos.uwY);
+                updateSelectionRubberBand(lmbDown.uwX, lmbDown.uwY, mousePos.uwX, mousePos.uwY);
             }
         } else {
             lmbDown = mousePos;
-            selectionRectangleUpdate(-1, -1, -1, -1);
+            updateSelectionRubberBand(-1, -1, -1, -1);
         }
     } else if (lmbDown.ulYX) {
         handleLeftMouseUp(mousePos, lmbDown);
         lmbDown.ulYX = 0;
-        selectionRectangleUpdate(-1, -1, -1, -1);
+        updateSelectionRubberBand(-1, -1, -1, -1);
     } else if (s_ubSelectedUnitCount && mouseCheck(MOUSE_PORT_1, MOUSE_RMB)) {
         tUbCoordYX tile = screenPosToTile((tUwCoordYX){.ulYX = mousePos.ulYX + g_Screen.m_map.m_pCamera->uPos.ulYX});
         for(UBYTE idx = 0; idx < s_ubSelectedUnitCount; ++idx) {
@@ -739,6 +777,7 @@ void updateDisplay(void) {
     drawInfoPanel();
     drawResources();
     drawStatusLine();
+    drawSelectionRubberBand();
 
     // finish frame
     viewProcessManagers(g_Screen.m_pView);

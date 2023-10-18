@@ -289,6 +289,10 @@ void drawInfoPanel(void) {
     }
 }
 
+void selectionRectangleUpdate(UWORD x1, UWORD y1, UWORD x2, UWORD y2) {
+    // TODO
+}
+
 void drawSelectionRectangles(void) {
     for(UBYTE idx = 0; idx < NUM_SELECTION; ++idx) {
         Unit *unit = s_pSelectedUnit[idx];
@@ -721,7 +725,7 @@ void drawMenuButton(void) {
     }
 }
 
-void drawMinimap(void) {
+void drawMinimapRectangle(void) {
 }
 
 void drawStatusLine(void) {
@@ -732,7 +736,6 @@ void updateDisplay(void) {
     drawMessages();
     drawMenuButton();
     drawActionButtons();
-    drawMinimap();
     drawInfoPanel();
     drawResources();
     drawStatusLine();
@@ -745,6 +748,7 @@ void updateDisplay(void) {
     // update sprites during vblank
     mouseSpriteUpdate(s_mouseX, s_mouseY);
     drawSelectionRectangles();
+    drawMinimapRectangle();
 }
 
 void displayLoop(void) {

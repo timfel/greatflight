@@ -74,38 +74,202 @@
         0b0001000000000000, 0b0001000000000000,             \
         0b1111000000000000, 0b1111000000000000
 
+#define SIZE_OF_ICON_RECT_SPRITE_DATA (9 + 9 + 2)
+#define ICON_RECT_TOPLEFT                                   \
+        0, 0,           /* position control           */    \
+        0b1111111111111111, 0b1111111111111111,             \
+        0b1000000000000000, 0b1000000000000000,             \
+        0b1000000000000000, 0b1000000000000000,             \
+        0b1000000000000000, 0b1000000000000000,             \
+        0b1000000000000000, 0b1000000000000000,             \
+        0b1000000000000000, 0b1000000000000000,             \
+        0b1000000000000000, 0b1000000000000000,             \
+        0b1000000000000000, 0b1000000000000000,             \
+        0b1000000000000000, 0b1000000000000000
+#define ICON_RECT_TOPRIGHT                                  \
+        0, 0,           /* position control           */    \
+        0b1111111111000000, 0b1111111111000000,             \
+        0b0000000001000000, 0b0000000001000000,             \
+        0b0000000001000000, 0b0000000001000000,             \
+        0b0000000001000000, 0b0000000001000000,             \
+        0b0000000001000000, 0b0000000001000000,             \
+        0b0000000001000000, 0b0000000001000000,             \
+        0b0000000001000000, 0b0000000001000000,             \
+        0b0000000001000000, 0b0000000001000000,             \
+        0b0000000001000000, 0b0000000001000000
+#define ICON_RECT_BOTLEFT                                   \
+        0, 0,           /* position control           */    \
+        0b1000000000000000, 0b1000000000000000,             \
+        0b1000000000000000, 0b1000000000000000,             \
+        0b1000000000000000, 0b1000000000000000,             \
+        0b1000000000000000, 0b1000000000000000,             \
+        0b1000000000000000, 0b1000000000000000,             \
+        0b1000000000000000, 0b1000000000000000,             \
+        0b1000000000000000, 0b1000000000000000,             \
+        0b1000000000000000, 0b1000000000000000,             \
+        0b1111111111111111, 0b1111111111111111
+#define ICON_RECT_BOTRIGHT                                  \
+        0, 0,           /* position control           */    \
+        0b0000000001000000, 0b0000000001000000,             \
+        0b0000000001000000, 0b0000000001000000,             \
+        0b0000000001000000, 0b0000000001000000,             \
+        0b0000000001000000, 0b0000000001000000,             \
+        0b0000000001000000, 0b0000000001000000,             \
+        0b0000000001000000, 0b0000000001000000,             \
+        0b0000000001000000, 0b0000000001000000,             \
+        0b0000000001000000, 0b0000000001000000,             \
+        0b1111111111000000, 0b1111111111000000
+
 static UWORD CHIP s_spriteData[] = {
-    MOUSE_SPRITE_DATA, 0, 0,
+    MOUSE_SPRITE_DATA,
+    0, 0,
     SELECTION_SPRITE_DATA,
-    MINIMAP_RECT_LEFT, 0, 0,
+    MINIMAP_RECT_LEFT,
+    0, 0,
     SELECTION_SPRITE_DATA,
-    MINIMAP_RECT_RIGHT, 0, 0,
-    SELECTION_SPRITE_DATA, 0, 0,
-    SELECTION_SPRITE_DATA, 0, 0,
-    SELECTION_SPRITE_DATA, 0, 0,
-    SELECTION_SPRITE_DATA, 0, 0
+    MINIMAP_RECT_RIGHT,
+    0, 0,
+    SELECTION_SPRITE_DATA,
+    ICON_RECT_TOPLEFT,
+    0, 0,
+    SELECTION_SPRITE_DATA,
+    ICON_RECT_TOPRIGHT,
+    0, 0,
+    SELECTION_SPRITE_DATA,
+    ICON_RECT_BOTLEFT,
+    0, 0,
+    SELECTION_SPRITE_DATA,
+    ICON_RECT_BOTRIGHT,
+    0, 0
 };
 
 static UWORD s_selectionSpriteOffsets[] = {
-    SIZE_OF_MOUSE_SPRITE_DATA + 2,
-    SIZE_OF_MOUSE_SPRITE_DATA + 2 + SIZE_OF_SELECTION_SPRITE_DATA + SIZE_OF_MINIMAP_RECT_SPRITE_DATA + 2,
-    SIZE_OF_MOUSE_SPRITE_DATA + 2 + 
-        (SIZE_OF_SELECTION_SPRITE_DATA + SIZE_OF_MINIMAP_RECT_SPRITE_DATA + 2) * 2,
-    SIZE_OF_MOUSE_SPRITE_DATA + 2 +
-        (SIZE_OF_SELECTION_SPRITE_DATA + SIZE_OF_MINIMAP_RECT_SPRITE_DATA + 2) * 2 +
-        SIZE_OF_SELECTION_SPRITE_DATA + 2,
-    SIZE_OF_MOUSE_SPRITE_DATA + 2 +
-        (SIZE_OF_SELECTION_SPRITE_DATA + SIZE_OF_MINIMAP_RECT_SPRITE_DATA + 2) * 2 +
-        (SIZE_OF_SELECTION_SPRITE_DATA + 2) * 2,
-    SIZE_OF_MOUSE_SPRITE_DATA + 2 +
-        (SIZE_OF_SELECTION_SPRITE_DATA + SIZE_OF_MINIMAP_RECT_SPRITE_DATA + 2) * 2 +
-        (SIZE_OF_SELECTION_SPRITE_DATA + 2) * 3,
+    SIZE_OF_MOUSE_SPRITE_DATA
+        + 2,
+    SIZE_OF_MOUSE_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA
+        + SIZE_OF_MINIMAP_RECT_SPRITE_DATA
+        + 2,
+    SIZE_OF_MOUSE_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA
+        + SIZE_OF_MINIMAP_RECT_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA
+        + SIZE_OF_MINIMAP_RECT_SPRITE_DATA
+        + 2,
+    SIZE_OF_MOUSE_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA
+        + SIZE_OF_MINIMAP_RECT_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA
+        + SIZE_OF_MINIMAP_RECT_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA
+        + SIZE_OF_ICON_RECT_SPRITE_DATA
+        + 2,
+    SIZE_OF_MOUSE_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA
+        + SIZE_OF_MINIMAP_RECT_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA
+        + SIZE_OF_MINIMAP_RECT_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA
+        + SIZE_OF_ICON_RECT_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA
+        + SIZE_OF_ICON_RECT_SPRITE_DATA
+        + 2,
+    SIZE_OF_MOUSE_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA
+        + SIZE_OF_MINIMAP_RECT_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA
+        + SIZE_OF_MINIMAP_RECT_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA
+        + SIZE_OF_ICON_RECT_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA
+        + SIZE_OF_ICON_RECT_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA
+        + SIZE_OF_ICON_RECT_SPRITE_DATA
+        + 2,
 };
 
 static UWORD s_minimapSpriteOffsets[] = {
-    SIZE_OF_MOUSE_SPRITE_DATA + 2 + SIZE_OF_SELECTION_SPRITE_DATA,
-    SIZE_OF_MOUSE_SPRITE_DATA + 2 + SIZE_OF_SELECTION_SPRITE_DATA +
-        SIZE_OF_MINIMAP_RECT_SPRITE_DATA + 2 + SIZE_OF_SELECTION_SPRITE_DATA,
+    SIZE_OF_MOUSE_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA,
+    SIZE_OF_MOUSE_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA
+        + SIZE_OF_MINIMAP_RECT_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA,
+};
+
+static UWORD s_iconRectSpriteOffsets[] = {
+    SIZE_OF_MOUSE_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA
+        + SIZE_OF_MINIMAP_RECT_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA
+        + SIZE_OF_MINIMAP_RECT_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA,
+    SIZE_OF_MOUSE_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA
+        + SIZE_OF_MINIMAP_RECT_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA
+        + SIZE_OF_MINIMAP_RECT_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA
+        + SIZE_OF_ICON_RECT_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA,
+    SIZE_OF_MOUSE_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA
+        + SIZE_OF_MINIMAP_RECT_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA
+        + SIZE_OF_MINIMAP_RECT_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA
+        + SIZE_OF_ICON_RECT_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA
+        + SIZE_OF_ICON_RECT_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA,
+    SIZE_OF_MOUSE_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA
+        + SIZE_OF_MINIMAP_RECT_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA
+        + SIZE_OF_MINIMAP_RECT_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA
+        + SIZE_OF_ICON_RECT_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA
+        + SIZE_OF_ICON_RECT_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA
+        + SIZE_OF_ICON_RECT_SPRITE_DATA
+        + 2
+        + SIZE_OF_SELECTION_SPRITE_DATA,
 };
 
 static void moveSpritePointer(tView *pView, UWORD copListStart, UBYTE spriteIdx, UWORD *uwpSpriteData) {
@@ -137,13 +301,6 @@ void selectionSpritesSetup(tView *pView, UWORD copListStart) {
         moveSpritePointer(pView, copListStart, i + 1, spriteData);
         copListStart += 2;
     }
-}
-
-UBYTE minimapSpritesGetRawCopplistInstructionCountLength() {
-    return 0;
-}
-
-void minimapSpritesSetup(tView *, UWORD) {
 }
 
 void mouseSpriteUpdate(UWORD mouseX, UWORD mouseY) {
@@ -182,9 +339,9 @@ void minimapSpritesUpdate(UWORD minimapX, UWORD minimapY) {
     UWORD *spriteDataL = s_spriteData + s_minimapSpriteOffsets[0];
     UWORD *spriteDataR = s_spriteData + s_minimapSpriteOffsets[1];
 
-    UWORD hstart1 = minimapX + 128 + MINIMAP_OFFSET_X;
-    UWORD hstart2 = minimapX + 128 + 16 + MINIMAP_OFFSET_X;
-    UWORD vstart = minimapY + SCREEN_PAL_YOFFSET + TOP_PANEL_HEIGHT + MAP_HEIGHT + MINIMAP_OFFSET_Y;
+    UWORD hstart1 = minimapX + 128;
+    UWORD hstart2 = minimapX + 128 + 16;
+    UWORD vstart = minimapY + SCREEN_PAL_YOFFSET;
     UWORD vstop = vstart + 10;
     spriteDataL[0] = ((vstart & 0xff) << 8) | ((hstart1 >> 1) & 0xff); /* VSTART bits 7-0, HSTART bits 8-1 */
     spriteDataL[1] = ((vstop & 0xff) << 8) | /* VSTOP = height + VSTART bits 7-0 */
@@ -196,4 +353,28 @@ void minimapSpritesUpdate(UWORD minimapX, UWORD minimapY) {
                      ((vstart >> 8) & 1) << 2 | /* VSTART hight bit 8 */
                      ((vstop >> 8) & 1) << 1 | /* VSTOP high bit 8 */
                      (hstart2 & 1); /* HSTART low bit 0 */
+}
+
+void iconRectSpritesUpdate(UWORD iconX, UWORD iconY) {
+    if (!iconX) {
+        for (UBYTE i = 0; i < 4; ++i) {
+            UWORD *spriteData = s_spriteData + s_iconRectSpriteOffsets[i];
+            spriteData[0] = spriteData[1] = 0;
+        }
+        return;
+    }
+    UBYTE idx = 0;
+    for (UBYTE y = 0; y < 2; ++y) {
+        for (UBYTE x = 0; x < 2; ++x, ++idx) {
+            UWORD *spriteDataL = s_spriteData + s_iconRectSpriteOffsets[idx];
+            UWORD hstart = iconX + 128 + x * 16;
+            UWORD vstart = iconY + SCREEN_PAL_YOFFSET + y * 9;
+            UWORD vstop = vstart + 9;
+            spriteDataL[0] = ((vstart & 0xff) << 8) | ((hstart >> 1) & 0xff); /* VSTART bits 7-0, HSTART bits 8-1 */
+            spriteDataL[1] = ((vstop & 0xff) << 8) | /* VSTOP = height + VSTART bits 7-0 */
+                            ((vstart >> 8) & 1) << 2 | /* VSTART hight bit 8 */
+                            ((vstop >> 8) & 1) << 1 | /* VSTOP high bit 8 */
+                            (hstart & 1); /* HSTART low bit 0 */
+        }
+    }
 }

@@ -38,7 +38,6 @@ static UBYTE SelectedTile = 0x10;
 struct copOffsets_t {
     UWORD spritePos;
     UWORD selectionPos;
-    UWORD minimapSpritePos;
     UWORD simplePosTop;
     UWORD topPanelColorsPos;
     UWORD mapbufCoplistStart;
@@ -193,8 +192,7 @@ void gameGsCreate(void) {
     // Calculate copperlist size
     s_copOffsets.spritePos = 0;
     s_copOffsets.selectionPos = s_copOffsets.spritePos + mouseSpriteGetRawCopplistInstructionCountLength();
-    s_copOffsets.minimapSpritePos = s_copOffsets.selectionPos + selectionSpritesGetRawCopplistInstructionCountLength();
-    s_copOffsets.simplePosTop = s_copOffsets.minimapSpritePos + minimapSpritesGetRawCopplistInstructionCountLength();
+    s_copOffsets.simplePosTop = s_copOffsets.selectionPos + selectionSpritesGetRawCopplistInstructionCountLength();
     s_copOffsets.topPanelColorsPos = s_copOffsets.simplePosTop + simpleBufferGetRawCopperlistInstructionCount(BPP);
     s_copOffsets.mapbufCoplistStart = s_copOffsets.topPanelColorsPos + COLORS;
     s_copOffsets.mapColorsCoplistStart = s_copOffsets.mapbufCoplistStart + simpleBufferGetRawCopperlistInstructionCount(BPP);
@@ -215,8 +213,6 @@ void gameGsCreate(void) {
 
     // setup selection rectangles
     selectionSpritesSetup(g_Screen.m_pView, s_copOffsets.selectionPos);
-
-    minimapSpritesSetup(g_Screen.m_pView, s_copOffsets.minimapSpritePos);
 
     createViewports();
 
@@ -249,9 +245,9 @@ static inline tUbCoordYX mapPosToTile(tUwCoordYX pos) {
     return (tUbCoordYX){.ubX = pos.uwX / PATHMAP_TILE_SIZE, .ubY = pos.uwY / PATHMAP_TILE_SIZE};
 }
 
-void drawUnitIcon(UnitType *type, UBYTE idx) {
-    tIcon *icon = &g_Screen.m_pUnitIcons[idx];
-    IconIdx iconIdx = type->iconIdx;
+void drawUnitIcon(UnitType *, UBYTE) {
+    // tIcon *icon = &g_Screen.m_pUnitIcons[idx];
+    // IconIdx iconIdx = type->iconIdx;
     // iconSetSource(icon, g_Screen.m_pIcons, type->iconIdx);
     // iconDraw(icon, idx);
 }
@@ -515,6 +511,9 @@ void handleLeftMouseUp(tUwCoordYX lmbDown, tUwCoordYX mousePos) {
             }
             tIconAction action = g_Screen.m_pActionIcons[column + line * 3].action;
             if (action) {
+                iconRectSpritesUpdate(
+                    211 + column * 33,
+                    TOP_PANEL_HEIGHT + MAP_HEIGHT + 24 + line * 22);
                 g_Screen.m_pActionIcons[column + line * 3].action(s_pSelectedUnit, s_ubSelectedUnitCount);
             }
         } else if (lmbDown.uwX <= MINIMAP_OFFSET_X + 64) {
@@ -784,7 +783,9 @@ void drawMenuButton(void) {
 }
 
 void drawMinimapRectangle(void) {
-    minimapSpritesUpdate(g_Screen.m_map.m_pCamera->uPos.uwX / PATHMAP_TILE_SIZE, g_Screen.m_map.m_pCamera->uPos.uwY / PATHMAP_TILE_SIZE);
+    minimapSpritesUpdate(
+        g_Screen.m_map.m_pCamera->uPos.uwX / PATHMAP_TILE_SIZE + MINIMAP_OFFSET_X,
+        g_Screen.m_map.m_pCamera->uPos.uwY / PATHMAP_TILE_SIZE + TOP_PANEL_HEIGHT + MAP_HEIGHT + MINIMAP_OFFSET_Y);
 }
 
 void drawStatusLine(void) {

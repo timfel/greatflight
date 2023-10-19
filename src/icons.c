@@ -1,4 +1,5 @@
 #include "include/icons.h"
+#include "include/sprites.h"
 #include "game.h"
 
 #include <ace/utils/custom.h>
@@ -67,56 +68,58 @@ void iconSetAction(tIcon *icon, tIconAction action) {
     icon->action = action;
 }
 
-void iconActionMove(Unit **unit, UBYTE unitc) {
+void iconActionMove(Unit **, UBYTE ) {
     logWrite("Move");
 }
 
 void iconActionStop(Unit **unit, UBYTE unitc) {
     while (unitc--) {
         actionStop(*unit++);
+        iconRectSpritesUpdate(0, 0);
     }
 }
 
-void iconActionAttack(Unit **unit, UBYTE unitc) {
+void iconActionAttack(Unit **, UBYTE ) {
     logWrite("Attack");
 }
 
-void iconActionHarvest(Unit **unit, UBYTE unitc) {
+void iconActionHarvest(Unit **, UBYTE ) {
     logWrite("Harvest");
 }
 
-void iconBuildHumanFarm(Unit **unit, UBYTE unitc) {
+void iconBuildHumanFarm(Unit **, UBYTE ) {
     logWrite("Build human farm");
 }
 
-void iconBuildHumanBarracks(Unit **unit, UBYTE unitc) {
+void iconBuildHumanBarracks(Unit **, UBYTE ) {
     logWrite("Build human barracks");
 }
 
-void iconBuildHumanLumbermill(Unit **unit, UBYTE unitc) {
+void iconBuildHumanLumbermill(Unit **, UBYTE ) {
     logWrite("Build human lumbermill");
 }
 
-void iconBuildHumanSmithy(Unit **unit, UBYTE unitc) {
+void iconBuildHumanSmithy(Unit **, UBYTE ) {
     logWrite("Build human smithy");
 }
 
-void iconBuildHumanHall(Unit **unit, UBYTE unitc) {
+void iconBuildHumanHall(Unit **, UBYTE ) {
     logWrite("Build human hall");
 }
 
 static UBYTE *s_previousIcons[NUM_ACTION_ICONS];
 static tIconAction s_previousActions[NUM_ACTION_ICONS];
 
-void iconCancel(Unit **unit, UBYTE unitc) {
+void iconCancel(Unit **, UBYTE ) {
     for (UBYTE i = 0; i < NUM_ACTION_ICONS; ++i) {
         g_Screen.m_pActionIcons[i].iconSrcPtr = s_previousIcons[i];
         g_Screen.m_pActionIcons[i].action = s_previousActions[i];
         iconDraw(&g_Screen.m_pActionIcons[i], i);
     }
+    iconRectSpritesUpdate(0, 0);
 }
 
-void iconActionBuildBasic(Unit **unit, UBYTE unitc) {
+void iconActionBuildBasic(Unit **, UBYTE) {
     for (UBYTE i = 0; i < NUM_ACTION_ICONS; ++i) {
         s_previousIcons[i] = g_Screen.m_pActionIcons[i].iconSrcPtr;
         s_previousActions[i] = g_Screen.m_pActionIcons[i].action;
@@ -141,6 +144,8 @@ void iconActionBuildBasic(Unit **unit, UBYTE unitc) {
     iconDraw(&g_Screen.m_pActionIcons[3], 1);
     iconDraw(&g_Screen.m_pActionIcons[4], 1);
     iconDraw(&g_Screen.m_pActionIcons[5], 1);
+
+    iconRectSpritesUpdate(0, 0);
 }
 
 #define PAIR0(n) {.icons = {ICON_NONE, ICON_NONE, ICON_NONE}, .actions = {NULL, NULL, NULL}}

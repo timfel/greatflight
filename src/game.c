@@ -5,8 +5,7 @@
 #include "include/player.h"
 #include "include/units.h"
 #include "include/resources.h"
-#include "mouse_sprite.h"
-#include "selection_sprites.h"
+#include "include/sprites.h"
 
 #include <ace/utils/font.h>
 #include <graphics/sprite.h>
@@ -39,6 +38,7 @@ static UBYTE SelectedTile = 0x10;
 struct copOffsets_t {
     UWORD spritePos;
     UWORD selectionPos;
+    UWORD minimapSpritePos;
     UWORD simplePosTop;
     UWORD topPanelColorsPos;
     UWORD mapbufCoplistStart;
@@ -193,7 +193,8 @@ void gameGsCreate(void) {
     // Calculate copperlist size
     s_copOffsets.spritePos = 0;
     s_copOffsets.selectionPos = s_copOffsets.spritePos + mouseSpriteGetRawCopplistInstructionCountLength();
-    s_copOffsets.simplePosTop = s_copOffsets.selectionPos + selectionSpritesGetRawCopplistInstructionCountLength();
+    s_copOffsets.minimapSpritePos = s_copOffsets.selectionPos + selectionSpritesGetRawCopplistInstructionCountLength();
+    s_copOffsets.simplePosTop = s_copOffsets.minimapSpritePos + minimapSpritesGetRawCopplistInstructionCountLength();
     s_copOffsets.topPanelColorsPos = s_copOffsets.simplePosTop + simpleBufferGetRawCopperlistInstructionCount(BPP);
     s_copOffsets.mapbufCoplistStart = s_copOffsets.topPanelColorsPos + COLORS;
     s_copOffsets.mapColorsCoplistStart = s_copOffsets.mapbufCoplistStart + simpleBufferGetRawCopperlistInstructionCount(BPP);
@@ -214,6 +215,8 @@ void gameGsCreate(void) {
 
     // setup selection rectangles
     selectionSpritesSetup(g_Screen.m_pView, s_copOffsets.selectionPos);
+
+    minimapSpritesSetup(g_Screen.m_pView, s_copOffsets.minimapSpritePos);
 
     createViewports();
 
@@ -764,6 +767,7 @@ void drawMenuButton(void) {
 }
 
 void drawMinimapRectangle(void) {
+    minimapSpritesUpdate(g_Screen.m_map.m_pCamera->uPos.uwX / PATHMAP_TILE_SIZE, g_Screen.m_map.m_pCamera->uPos.uwY / PATHMAP_TILE_SIZE);
 }
 
 void drawStatusLine(void) {

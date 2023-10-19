@@ -20,10 +20,10 @@
         0b1111111110000000, 0x0000, \
         0b1111111111000000, 0x0000, \
         0b1111111111100000, 0x0000, \
-        0b1111111111110000, 0x0000, \
-        0b0000110000000000, 0x0000, \
-        0b0000011000000000, 0x0000, \
-        0b0000011000000000, 0x0000
+        0b1111110000000000, 0x0000, \
+        0b1110110000000000, 0x0000, \
+        0b1100011000000000, 0x0000, \
+        0b1000011000000000, 0x0000
 
 // 2 words for 15 rows of pixels, plus 2 words position
 #define SIZE_OF_SELECTION_SPRITE_DATA (15 + 15 + 2)
@@ -160,7 +160,7 @@ void mouseSpriteUpdate(UWORD mouseX, UWORD mouseY) {
 void selectionSpritesUpdate(UBYTE selectionIdx, WORD selectionX, WORD selectionY) {
     UWORD *spriteData = s_spriteData + s_selectionSpriteOffsets[selectionIdx];
     if (selectionX < 0) {
-        // put it offscreen
+        // put it offscreen, because the minimap sprites are below
         spriteData[0] = (((SCREEN_NTSC_YOFFSET & 0xff) << 8) | ((0 >> 1) & 0xff)); /* VSTART bits 7-0, HSTART bits 8-1 */
         spriteData[1] = ((((SCREEN_NTSC_YOFFSET + 15) & 0xff) << 8) | /* VSTOP = height + VSTART bits 7-0 */
                          ((SCREEN_NTSC_YOFFSET >> 8) & 1) << 2 | /* VSTART hight bit 8 */

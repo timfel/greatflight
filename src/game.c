@@ -309,7 +309,12 @@ void drawSelectionRubberBand(void) {
     }
     UWORD y1 = s_selectionRubberBand.uwY;
     UWORD uwModulo = (MAP_BUFFER_WIDTH_BYTES * uwHeight * BPP) - (uwWidthInWords * 2);
-    UWORD uwBltSize = (2 << 6) | uwWidthInWords;
+    UWORD uwBltSize = uwWidthInWords;
+    if (y1 + uwHeight > MAP_HEIGHT + TOP_PANEL_HEIGHT) {
+        uwBltSize |= (1 << 6);
+    } else {
+        uwBltSize |= (2 << 6);
+    }
     PLANEPTR pMap = g_Screen.m_map.m_pBuffer->pBack->Planes[1] + (MAP_BUFFER_WIDTH_BYTES * y1 * BPP) + (x1 / 8);
     blitWait();
 	g_pCustom->bltcon0 = USEA|USED|0x0F; // MINTERM_NOTA;

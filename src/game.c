@@ -123,7 +123,7 @@ void loadMap(const char* name, UWORD mapbufCoplistStart, UWORD mapColorsCoplistS
                                     TAG_SIMPLEBUFFER_COPLIST_OFFSET, mapbufCoplistStart,
                                     TAG_SIMPLEBUFFER_USE_X_SCROLLING, 1,
                                     TAG_END);
-    g_Screen.m_map.m_pCamera = cameraCreate(g_Screen.m_map.m_pVPort, 0, 0, MAP_SIZE * TILE_SIZE - MAP_WIDTH, MAP_SIZE * TILE_SIZE - MAP_HEIGHT, 0);
+    g_Screen.m_map.m_pCamera = cameraCreate(g_Screen.m_map.m_pVPort, 0, 0, MAP_SIZE * TILE_SIZE, MAP_SIZE * TILE_SIZE, 0);
 }
 
 void initBobs(void) {
@@ -491,7 +491,7 @@ void minimapUpdate(void) {
 
 void handleLeftMouseUp(tUwCoordYX lmbDown, tUwCoordYX mousePos) {
     // TODO: extract constants
-    if (lmbDown.uwY >= TOP_PANEL_HEIGHT + MAP_HEIGHT + 24) {
+    if (lmbDown.uwY >= TOP_PANEL_HEIGHT + MAP_HEIGHT + MINIMAP_OFFSET_Y) {
         // Bottom panel
         if (lmbDown.uwX >= 211) {
             // Action icon area
@@ -516,6 +516,18 @@ void handleLeftMouseUp(tUwCoordYX lmbDown, tUwCoordYX mousePos) {
             tIconAction action = g_Screen.m_pActionIcons[column + line * 3].action;
             if (action) {
                 g_Screen.m_pActionIcons[column + line * 3].action(s_pSelectedUnit, s_ubSelectedUnitCount);
+            }
+        } else if (lmbDown.uwX <= MINIMAP_OFFSET_X + 64) {
+            UWORD y = lmbDown.uwY - (TOP_PANEL_HEIGHT + MAP_HEIGHT + MINIMAP_OFFSET_Y);
+            if (y < 64) {
+                UWORD x = lmbDown.uwX - MINIMAP_OFFSET_X;
+                if (x < 64) {
+                    cameraSetCoord(g_Screen.m_map.m_pCamera,
+                            CLAMP((x - VISIBLE_TILES_X) / 2, 0, MAP_SIZE - VISIBLE_TILES_X) * TILE_SIZE,
+                            CLAMP((y - VISIBLE_TILES_Y) / 2, 0, MAP_SIZE - VISIBLE_TILES_Y) * TILE_SIZE);
+                    g_Screen.m_map.m_pBuffer->pCamera->uPos.uwX = g_Screen.m_map.m_pCamera->uPos.uwX % TILE_SIZE;
+                    g_Screen.m_map.m_pBuffer->pCamera->uPos.uwY = g_Screen.m_map.m_pCamera->uPos.uwY % TILE_SIZE;
+                }
             }
         }
         // TODO other areas

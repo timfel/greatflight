@@ -68,7 +68,7 @@ void iconSetAction(tIcon *icon, tIconAction action) {
     icon->action = action;
 }
 
-void iconActionMoveReally(Unit **unit, UBYTE unitc, tUbCoordYX tilePos) {
+void iconActionMoveTo(Unit **unit, UBYTE unitc, tUbCoordYX tilePos) {
     while (unitc--) {
         actionMoveTo(*unit++, tilePos);
     }
@@ -77,7 +77,7 @@ void iconActionMoveReally(Unit **unit, UBYTE unitc, tUbCoordYX tilePos) {
 }
 
 void iconActionMove(Unit **, UBYTE ) {
-    g_Screen.lmbAction = &iconActionMoveReally;
+    g_Screen.lmbAction = &iconActionMoveTo;
 }
 
 void iconActionStop(Unit **unit, UBYTE unitc) {

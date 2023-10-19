@@ -27,6 +27,7 @@ typedef enum  __attribute__ ((__packed__)) {
 _Static_assert(sizeof(IconIdx) == sizeof(UBYTE), "IconIdx too big");
 
 typedef void (*tIconAction)(Unit **unit, UBYTE unitc);
+typedef void (*tIconActionWithTarget)(Unit **unit, UBYTE unitc, tUbCoordYX tilePos);
 
 typedef struct {
     UBYTE *iconSrcPtr;

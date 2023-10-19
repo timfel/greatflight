@@ -60,6 +60,7 @@ struct Screen {
     tIcon m_pUnitIcons[NUM_UNIT_ICONS];
     tIcon m_pActionIcons[NUM_ACTION_ICONS];
     tBitMap *m_pIcons;
+    tIconActionWithTarget lmbAction;
 
     struct {
         // map viewport

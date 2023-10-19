@@ -189,6 +189,8 @@ void loadUi(UWORD topPanelColorsPos, UWORD panelColorsPos, UWORD simplePosTop, U
 void gameGsCreate(void) {
     viewLoad(0);
 
+    memset(&g_Screen, 0, sizeof(struct Screen));
+
     // Calculate copperlist size
     s_copOffsets.spritePos = 0;
     s_copOffsets.selectionPos = s_copOffsets.spritePos + mouseSpriteGetRawCopplistInstructionCountLength();
@@ -536,6 +538,11 @@ void handleLeftMouseUp(tUwCoordYX lmbDown, tUwCoordYX mousePos) {
     // menu button
     if (lmbDown.uwY <= TOP_PANEL_HEIGHT && lmbDown.uwX <= 60) {
         // TODO: menu. also extract constant here and in drawMenuButton
+        return;
+    }
+
+    if (g_Screen.lmbAction) {
+        g_Screen.lmbAction(s_pSelectedUnit, s_ubSelectedUnitCount, screenPosToTile(lmbDown));
         return;
     }
 

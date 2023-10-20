@@ -15,7 +15,6 @@
 #define RESOURCE_DIGITS 6
 
 struct Screen g_Screen;
-// static tBob s_TileCursor;
 static tUnitManager *s_pUnitManager;
 
 static UWORD s_mouseX;
@@ -432,7 +431,7 @@ void drawAllTiles(void) {
         blitWait();
         g_pCustom->bltapt = (APTR)*pTileBitmapOffset;
         g_pCustom->bltsize = uwBltsize;
-        pDstPlane += (TILE_SIZE >> 3);
+        pDstPlane += TILE_SIZE_BYTES;
     }
     systemSetDmaBit(DMAB_BLITHOG, 0);
 }
@@ -615,13 +614,18 @@ void handleInput() {
     tUwCoordYX mousePos = {.uwX = s_mouseX, .uwY = s_mouseY};
 
     if (s_Mode == edit) {
-        // s_TileCursor.sPos.ulYX = mousePos.ulYX;
-        if (keyCheck(KEY_RBRACKET)) {
+        if (keyCheck(KEY_RBRACKET) && !(GameCycle % 4)) {
             SelectedTile++;
-            // bobSetFrame(&s_TileCursor, g_Screen.m_map.m_pTilemap->Planes[0] + (SelectedTile * TILE_FRAME_BYTES), 0);
-        } else if (keyCheck(KEY_LBRACKET)) {
+            // XXX: 4-tile buildings
+            if (SelectedTile >= 24 && SelectedTile < 48 && SelectedTile % 4) {
+                SelectedTile += 3;
+            }
+        } else if (keyCheck(KEY_LBRACKET) && !(GameCycle % 4)) {
             SelectedTile--;
-            // bobSetFrame(&s_TileCursor, g_Screen.m_map.m_pTilemap->Planes[0] + (SelectedTile * TILE_FRAME_BYTES), 0);
+            // XXX: 4-tile buildings
+            if (SelectedTile >= 24 && SelectedTile < 48 && SelectedTile % 4) {
+                SelectedTile -= 3;
+            }
         } else if (keyCheck(KEY_RETURN)) {
             const char* mapname = MAPDIR "game.map";
             tFile *map = fileOpen(mapname, "w");
@@ -641,8 +645,26 @@ void handleInput() {
             if (tile.ubX >= PATHMAP_SIZE) {
                 return;
             }
-            g_Map.m_ulTilemapXY[tile.ubX][tile.ubY] = tileIndexToTileBitmapOffset(SelectedTile);
+            UBYTE ubX = tile.ubX / (TILE_SIZE / PATHMAP_TILE_SIZE);
+            UBYTE ubY = tile.ubY / (TILE_SIZE / PATHMAP_TILE_SIZE);
+            g_Map.m_ulTilemapXY[ubX][ubY] = (ULONG)g_Screen.m_cursorBobs.pFirstTile;
+            // XXX: 4-tile buildings
+            if (SelectedTile >= 24 && SelectedTile < 48) {
+                g_Map.m_ulTilemapXY[ubX + 1][ubY] = (ULONG)g_Screen.m_cursorBobs.pFirstTile + TILE_FRAME_BYTES;
+                g_Map.m_ulTilemapXY[ubX][ubY + 1] = (ULONG)g_Screen.m_cursorBobs.pFirstTile + TILE_FRAME_BYTES * 2;
+                g_Map.m_ulTilemapXY[ubX + 1][ubY + 1] = (ULONG)g_Screen.m_cursorBobs.pFirstTile + TILE_FRAME_BYTES * 3;
+            }
         }
+        // XXX: 4-tile buildings
+        if (s_Mode == game) {
+            g_Screen.m_cursorBobs.ubCount = 0;
+        } else if (SelectedTile >= 24 && SelectedTile < 48) {
+            SelectedTile = SelectedTile / 4 * 4;
+            g_Screen.m_cursorBobs.ubCount = 4;
+        } else {
+            g_Screen.m_cursorBobs.ubCount = 1;
+        }
+        g_Screen.m_cursorBobs.pFirstTile = g_Screen.m_map.m_pTilemap->Planes[0] + (SelectedTile * TILE_FRAME_BYTES);
         return;
     }
 
@@ -710,26 +732,26 @@ void handleInput() {
 }
 
 void colorCycle(void) {
-    if ((GameCycle & 31) == 31) {
-        if (GameCycle & 32) {
-            // XXX: hardcoded gpl indices
-            tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[s_copOffsets.mapColorsCoplistStart];
-            copSetMoveVal(&pCmds[12].sMove, g_Screen.m_map.m_pPalette[5]);
-            pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[s_copOffsets.mapColorsCoplistStart];
-            copSetMoveVal(&pCmds[12].sMove, g_Screen.m_map.m_pPalette[5]);
-        } else if (GameCycle & 64) {
-            // XXX: hardcoded gpl indices
-            tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[s_copOffsets.mapColorsCoplistStart];
-            copSetMoveVal(&pCmds[12].sMove, g_Screen.m_map.m_pPalette[3]);
-            pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[s_copOffsets.mapColorsCoplistStart];
-            copSetMoveVal(&pCmds[12].sMove, g_Screen.m_map.m_pPalette[3]);
-        } else {
-            tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[s_copOffsets.mapColorsCoplistStart];
-            copSetMoveVal(&pCmds[12].sMove, g_Screen.m_map.m_pPalette[12]);
-            pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[s_copOffsets.mapColorsCoplistStart];
-            copSetMoveVal(&pCmds[12].sMove, g_Screen.m_map.m_pPalette[12]);
-        }
-    }
+    // if ((GameCycle & 31) == 31) {
+    //     if (GameCycle & 32) {
+    //         // XXX: hardcoded gpl indices
+    //         tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[s_copOffsets.mapColorsCoplistStart];
+    //         copSetMoveVal(&pCmds[12].sMove, g_Screen.m_map.m_pPalette[5]);
+    //         pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[s_copOffsets.mapColorsCoplistStart];
+    //         copSetMoveVal(&pCmds[12].sMove, g_Screen.m_map.m_pPalette[5]);
+    //     } else if (GameCycle & 64) {
+    //         // XXX: hardcoded gpl indices
+    //         tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[s_copOffsets.mapColorsCoplistStart];
+    //         copSetMoveVal(&pCmds[12].sMove, g_Screen.m_map.m_pPalette[3]);
+    //         pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[s_copOffsets.mapColorsCoplistStart];
+    //         copSetMoveVal(&pCmds[12].sMove, g_Screen.m_map.m_pPalette[3]);
+    //     } else {
+    //         tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[s_copOffsets.mapColorsCoplistStart];
+    //         copSetMoveVal(&pCmds[12].sMove, g_Screen.m_map.m_pPalette[12]);
+    //         pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[s_copOffsets.mapColorsCoplistStart];
+    //         copSetMoveVal(&pCmds[12].sMove, g_Screen.m_map.m_pPalette[12]);
+    //     }
+    // }
 }
 
 void fowUpdate(void) {
@@ -780,6 +802,67 @@ void drawMap(void) {
     drawFog();
 }
 
+void drawCursorBobs(void) {
+    UBYTE cnt = g_Screen.m_cursorBobs.ubCount;
+    if (cnt) {
+        UWORD uwMouseY = s_mouseY - TOP_PANEL_HEIGHT;
+        if (uwMouseY >= MAP_HEIGHT) {
+            return;
+        }
+        // setup tile drawing, all of these should be compiled to immediate operations, they
+        // only use constants
+	    WORD wDstModulo = MAP_BUFFER_WIDTH_BYTES - TILE_SIZE_BYTES; // same as bitmapGetByteWidth(g_Screen.m_map.m_pBuffer->pBack) - TILE_SIZE_BYTES;
+        WORD wSrcModulo = 0;
+        UWORD uwBlitWords = TILE_SIZE_WORDS;
+        UWORD uwHeight = TILE_SIZE * BPP;
+        UWORD uwBltCon0 = USEA|USED|MINTERM_A;
+        UWORD uwBltsize = (uwHeight << 6) | uwBlitWords;
+
+        // Figure out where to actually draw
+        UBYTE ubStartX = (s_mouseX - g_Screen.m_map.m_pBuffer->pCamera->uPos.uwX) >> TILE_SHIFT;
+        UBYTE ubStartY = (s_mouseY - g_Screen.m_map.m_pBuffer->pCamera->uPos.uwY) >> TILE_SHIFT;
+        if (cnt > 1 && (ubStartX >= VISIBLE_TILES_X - 1 || ubStartY >= VISIBLE_TILES_Y - 1)) {
+            return;
+        }
+
+        // Get pointer to start of drawing area
+        UBYTE *pDstPlane = g_Screen.m_map.m_pBuffer->pBack->Planes[0];
+        pDstPlane += ubStartY * TILE_SIZE * MAP_BUFFER_WIDTH_BYTES * BPP;
+        pDstPlane += ubStartX * TILE_SIZE_BYTES;
+
+        // setup blitter registers that won't change
+        systemSetDmaBit(DMAB_BLITHOG, 1);
+        blitWait();
+        g_pCustom->bltcon0 = uwBltCon0;
+        g_pCustom->bltcon1 = 0;
+        g_pCustom->bltafwm = 0xFFFF;
+        g_pCustom->bltalwm = 0xFFFF;
+        g_pCustom->bltamod = wSrcModulo;
+        g_pCustom->bltdmod = wDstModulo;
+
+        UBYTE *pSrc = g_Screen.m_cursorBobs.pFirstTile;
+        if (cnt == 1) {
+            g_pCustom->bltdpt = pDstPlane;
+            g_pCustom->bltapt = (APTR)pSrc;
+            g_pCustom->bltsize = uwBltsize;
+        } else if (cnt == 4) {
+            g_pCustom->bltdpt = pDstPlane;
+            g_pCustom->bltapt = (APTR)pSrc;
+            g_pCustom->bltsize = uwBltsize;
+            blitWait();
+            g_pCustom->bltapt = (APTR)(pSrc + TILE_FRAME_BYTES * 2);
+            g_pCustom->bltsize = uwBltsize;
+            blitWait();
+            g_pCustom->bltdpt = pDstPlane + TILE_SIZE_BYTES;
+            g_pCustom->bltapt = (APTR)(pSrc + TILE_FRAME_BYTES);
+            g_pCustom->bltsize = uwBltsize;
+            blitWait();
+            g_pCustom->bltapt = (APTR)(pSrc + TILE_FRAME_BYTES * 3);
+            g_pCustom->bltsize = uwBltsize;
+        }
+    }
+}
+
 void drawMessages(void) {
 }
 
@@ -825,6 +908,7 @@ void drawStatusLine(void) {
 
 void updateDisplay(void) {
     drawMap();
+    drawCursorBobs();
     drawMessages();
     drawMenuButton();
     drawActionButtons();

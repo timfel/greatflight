@@ -65,6 +65,13 @@ struct Screen {
         tFont *m_pNormalFont;
     } m_fonts;
 
+    // either 1 or 4 tiles can be drawn under the cursor
+    // tiles are expected to be one after the other
+    struct {
+        PLANEPTR pFirstTile;
+        UBYTE ubCount;
+    } m_cursorBobs;
+
     // icons for main panel (actions and selected units)
     tIcon m_pUnitIcons[NUM_UNIT_ICONS];
     tIcon m_pActionIcons[NUM_ACTION_ICONS];

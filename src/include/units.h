@@ -5,7 +5,6 @@
 #include "include/map.h"
 #include "include/icons.h"
 
-#include <ace/managers/bob.h>
 #include <ace/utils/bitmap.h>
 #include <ace/utils/file.h>
 
@@ -93,7 +92,11 @@ typedef struct _unit {
     Action nextAction;
 
     UnitStats stats;
-    tBob bob;
+    struct {
+        tUwCoordYX sPos;
+        PLANEPTR sprite;
+        PLANEPTR mask;
+    } bob;
     UBYTE frame;
     BYTE IX;
     BYTE IY;
@@ -157,25 +160,13 @@ void unitManagerProcessUnits(tUnitManager *pUnitListHead, UBYTE pTileData[PATHMA
 Unit *unitManagerUnitAt(tUnitManager *pUnitListHead, tUbCoordYX tile);
 
 _Static_assert(MAP_SIZE * TILE_SIZE < 0xfff, "map is small enough to fit locations in bytes");
-static inline tUbCoordYX unitGetTilePosition(Unit *self) {
-    return self->loc;
-}
 
-static inline void unitSetTilePosition(Unit *self, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE], tUbCoordYX pos) {
-    self->loc = pos;
-    if (pos.ubX > 1) {
-        markMapTile(map, pos.ubX, pos.ubY);
-    }
-}
+tUbCoordYX unitGetTilePosition(Unit *self);
 
-static inline void unitSetFrame(Unit *self, UBYTE ubFrame) {
-    self->frame = ubFrame;
-    UWORD offset = ubFrame * (UnitTypes[self->type].anim.large ? (24 / 8 * 24 * BPP) : (16 / 8 * 16 * BPP));
-    bobSetFrame(&self->bob, UnitTypes[self->type].spritesheet->Planes[0] + offset, UnitTypes[self->type].mask->Planes[0] + offset);
-}
+void unitSetTilePosition(Unit *self, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE], tUbCoordYX pos);
 
-static inline UBYTE unitGetFrame(Unit *self) {
-    return self->frame;
-}
+void unitSetFrame(Unit *self, UBYTE ubFrame);
+
+UBYTE unitGetFrame(Unit *self);
 
 #endif

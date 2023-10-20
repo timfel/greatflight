@@ -1,6 +1,7 @@
 #include "include/actions.h"
 #include "include/units.h"
 #include "include/player.h"
+#include "game.h"
 #include "ace/types.h"
 #include "ace/macros.h"
 #include "ace/managers/memory.h"
@@ -97,9 +98,38 @@ void unitManagerDestroy(tUnitManager *mgr) {
 }
 
 static inline void unitDraw(Unit *self, tUbCoordYX viewportTopLeft) {
-    self->bob.sPos.uwX = (self->x - (viewportTopLeft.ubX / (TILE_SIZE / PATHMAP_TILE_SIZE) * (TILE_SIZE / PATHMAP_TILE_SIZE))) * PATHMAP_TILE_SIZE + self->IX;
-    self->bob.sPos.uwY = (self->y - (viewportTopLeft.ubY / (TILE_SIZE / PATHMAP_TILE_SIZE) * (TILE_SIZE / PATHMAP_TILE_SIZE))) * PATHMAP_TILE_SIZE + self->IY;
-    bobPush(&self->bob);
+    UnitType *type = &UnitTypes[self->type];
+    UWORD uwX = (self->x - (viewportTopLeft.ubX / (TILE_SIZE / PATHMAP_TILE_SIZE) * (TILE_SIZE / PATHMAP_TILE_SIZE))) * PATHMAP_TILE_SIZE + self->IX;
+    UWORD uwY = (self->y - (viewportTopLeft.ubY / (TILE_SIZE / PATHMAP_TILE_SIZE) * (TILE_SIZE / PATHMAP_TILE_SIZE))) * PATHMAP_TILE_SIZE + self->IY;
+    self->bob.sPos.uwX = uwX;
+    self->bob.sPos.uwX = uwY;
+    UBYTE ubDstOffs = uwX & 0xF;
+    UBYTE ubSize = type->anim.large ? 24 : 16;
+    UBYTE ubBlitWidth = (ubSize + ubDstOffs + 15) & 0xF0;
+    UBYTE ubBlitWords = ubBlitWidth >> 4;
+    UWORD uwBlitSize = ((ubSize * BPP) << HSIZEBITS) | ubBlitWords;
+    WORD wSrcModulo = (ubSize >> 3) - (ubBlitWords << 1);
+    UWORD uwBltCon1 = ubDstOffs << BSHIFTSHIFT;
+    UWORD uwBltCon0 = uwBltCon1 | USEA | USEB | USEC | USED | MINTERM_COOKIE;
+    WORD wDstModulo = MAP_BUFFER_WIDTH_BYTES - (ubBlitWords << 1);
+    UBYTE *pB = self->bob.sprite;
+    ULONG ulSrcOffs = MAP_BUFFER_BYTES_PER_ROW * uwY + uwX / 8;
+    UBYTE *pCD = &g_Screen.m_map.m_pBuffer->pBack->Planes[0][ulSrcOffs];
+    UWORD uwLastMask = 0xFFFF << (ubBlitWidth - ubSize);
+    UBYTE *pA = self->bob.mask;
+    blitWait();
+    g_pCustom->bltcon0 = uwBltCon0;
+    g_pCustom->bltcon1 = uwBltCon1;
+    g_pCustom->bltalwm = uwLastMask;
+    g_pCustom->bltamod = wSrcModulo;
+    g_pCustom->bltapt = (APTR)pA;
+    g_pCustom->bltbmod = wSrcModulo;
+    g_pCustom->bltcmod = wDstModulo;
+    g_pCustom->bltdmod = wDstModulo;
+    g_pCustom->bltbpt = (APTR)pB;
+    g_pCustom->bltcpt = (APTR)pCD;
+    g_pCustom->bltdpt = (APTR)pCD;
+    g_pCustom->bltsize = uwBlitSize;
 }
 
 static inline void unitOffscreen(Unit *self) {
@@ -144,7 +174,8 @@ Unit * unitNew(tUnitManager *mgr, UnitTypeIndex typeIdx) {
     Unit *unit = &mgr->units[mgr->freeUnitsStack[mgr->unitCount]];
     mgr->unitCount++;
 
-    bobInit(&unit->bob, 16, 16, 0, type->spritesheet->Planes[0], type->mask->Planes[0], 0, 0);
+    unit->bob.sprite = type->spritesheet->Planes[0];
+    unit->bob.mask = type->spritesheet->Planes[0];
     unit->type = typeIdx;
     unitSetTilePosition(unit, NULL, UNIT_INIT_TILE_POSITION);
     return unit;
@@ -249,4 +280,27 @@ void unitsLoad(tUnitManager *mgr, tFile *map) {
             loadUnit(mgr, map);
         }
     }
+}
+
+tUbCoordYX unitGetTilePosition(Unit *self) {
+    return self->loc;
+}
+
+void unitSetTilePosition(Unit *self, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE], tUbCoordYX pos) {
+    self->loc = pos;
+    if (pos.ubX > 1) {
+        markMapTile(map, pos.ubX, pos.ubY);
+    }
+}
+
+void unitSetFrame(Unit *self, UBYTE ubFrame) {
+    self->frame = ubFrame;
+    UnitType *type = &UnitTypes[self->type];
+    UWORD offset = ubFrame * (type->anim.large ? (24 / 8 * 24 * BPP) : (16 / 8 * 16 * BPP));
+    self->bob.sprite = type->spritesheet->Planes[0] + offset;
+    self->bob.mask = type->mask->Planes[0] + offset;
+}
+
+UBYTE unitGetFrame(Unit *self) {
+    return self->frame;
 }

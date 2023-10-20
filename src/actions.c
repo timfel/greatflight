@@ -1,6 +1,8 @@
 #include "include/actions.h"
 #include "include/units.h"
 
+#include <ace/utils/custom.h>
+
 void actionMoveTo(Unit *unit, tUbCoordYX goal) {
     unit->nextAction.ubActionDataB = goal.ubY;
     unit->nextAction.ubActionDataA = goal.ubX;
@@ -21,7 +23,7 @@ UBYTE actionStill(Unit *unit) {
         return 1;
     } else if (unit->action.action == ActionStill) {
         if (unit->action.ubActionDataA-- == 0) {
-            unitSetFrame(unit, (unitGetFrame(unit) + (UBYTE)g_pCustom->joy0dat) % DIRECTIONS);
+            unitSetFrame(unit, (unitGetFrame(unit) + (UBYTE)g_pCia[CIA_A]->talo) % DIRECTIONS);
         }
     }
     return 0;

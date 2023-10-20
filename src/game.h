@@ -4,7 +4,6 @@
 #include "include/icons.h"
 
 #include <ace/generic/screen.h>
-#include <ace/managers/bob.h>
 #include <ace/managers/copper.h>
 #include <ace/managers/log.h>
 #include <ace/managers/mouse.h>
@@ -30,6 +29,7 @@
 #define MAP_HEIGHT 160
 #define MAP_BUFFER_WIDTH (MAP_WIDTH + TILE_SIZE)
 #define MAP_BUFFER_WIDTH_BYTES (MAP_BUFFER_WIDTH / 8)
+#define MAP_BUFFER_BYTES_PER_ROW (MAP_BUFFER_WIDTH_BYTES * BPP)
 #define MAP_BUFFER_HEIGHT (MAP_HEIGHT + TILE_SIZE)
 #define TOP_PANEL_HEIGHT 10
 #define BOTTOM_PANEL_HEIGHT 70

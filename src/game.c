@@ -15,7 +15,7 @@
 #define CAMERA_MOVE_DELTA 4
 
 struct Screen g_Screen;
-static tBob s_TileCursor;
+// static tBob s_TileCursor;
 static tUnitManager *s_pUnitManager;
 
 static UWORD s_mouseX;
@@ -125,12 +125,6 @@ void loadMap(const char* name, UWORD mapbufCoplistStart, UWORD mapColorsCoplistS
     g_Screen.m_map.m_pCamera = cameraCreate(g_Screen.m_map.m_pVPort, 0, 0, MAP_SIZE * TILE_SIZE, MAP_SIZE * TILE_SIZE, 0);
 }
 
-void initBobs(void) {
-    bobManagerCreate(g_Screen.m_map.m_pBuffer->pFront, g_Screen.m_map.m_pBuffer->pBack, MAP_BUFFER_HEIGHT);
-    bobInit(&s_TileCursor, TILE_SIZE, TILE_SIZE, 0, g_Screen.m_map.m_pTilemap->Planes[0], 0, 0, 0);
-    bobSetFrame(&s_TileCursor, g_Screen.m_map.m_pTilemap->Planes[0] + (0x10 * TILE_FRAME_BYTES), 0);
-}
-
 void loadUi(UWORD topPanelColorsPos, UWORD panelColorsPos, UWORD simplePosTop, UWORD simplePosBottom) {
     // create panel area
     paletteLoad("resources/palettes/hgui.plt", g_Screen.m_panels.m_pPalette, COLORS);
@@ -222,8 +216,6 @@ void gameGsCreate(void) {
 
     // load map file
     loadMap(g_Map.m_pName, s_copOffsets.mapbufCoplistStart, s_copOffsets.mapColorsCoplistStart);
-
-    initBobs();
 
     loadUi(s_copOffsets.topPanelColorsPos, s_copOffsets.panelColorsPos, s_copOffsets.simplePosTop, s_copOffsets.simplePosBottom);
 
@@ -586,13 +578,13 @@ void handleInput() {
     tUwCoordYX mousePos = {.uwX = s_mouseX, .uwY = s_mouseY};
 
     if (s_Mode == edit) {
-        s_TileCursor.sPos.ulYX = mousePos.ulYX;
+        // s_TileCursor.sPos.ulYX = mousePos.ulYX;
         if (keyCheck(KEY_RBRACKET)) {
             SelectedTile++;
-            bobSetFrame(&s_TileCursor, g_Screen.m_map.m_pTilemap->Planes[0] + (SelectedTile * TILE_FRAME_BYTES), 0);
+            // bobSetFrame(&s_TileCursor, g_Screen.m_map.m_pTilemap->Planes[0] + (SelectedTile * TILE_FRAME_BYTES), 0);
         } else if (keyCheck(KEY_LBRACKET)) {
             SelectedTile--;
-            bobSetFrame(&s_TileCursor, g_Screen.m_map.m_pTilemap->Planes[0] + (SelectedTile * TILE_FRAME_BYTES), 0);
+            // bobSetFrame(&s_TileCursor, g_Screen.m_map.m_pTilemap->Planes[0] + (SelectedTile * TILE_FRAME_BYTES), 0);
         } else if (keyCheck(KEY_RETURN)) {
             const char* mapname = MAPDIR "game.map";
             tFile *map = fileOpen(mapname, "w");
@@ -745,13 +737,8 @@ void drawFog(void) {
 
 void drawMap(void) {
     drawAllTiles();
-    bobBegin(g_Screen.m_map.m_pBuffer->pBack);
     drawUnits();
     drawMissiles();
-    if (s_Mode == edit) {
-        bobPush(&s_TileCursor);
-    }
-    bobEnd();
     drawFog();
 }
 
@@ -840,6 +827,5 @@ void gameGsDestroy(void) {
 
     unitManagerDestroy(s_pUnitManager);
 
-    bobManagerDestroy();
     bitmapDestroy(g_Screen.m_map.m_pTilemap);
 }

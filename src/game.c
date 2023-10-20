@@ -7,12 +7,12 @@
 #include "include/resources.h"
 #include "include/sprites.h"
 
-#include <ace/utils/font.h>
 #include <graphics/sprite.h>
 
 #define VISIBLE_TILES_X (MAP_WIDTH >> TILE_SHIFT)
 #define VISIBLE_TILES_Y (MAP_HEIGHT >> TILE_SHIFT)
 #define CAMERA_MOVE_DELTA 4
+#define RESOURCE_DIGITS 6
 
 struct Screen g_Screen;
 // static tBob s_TileCursor;
@@ -22,8 +22,6 @@ static UWORD s_mouseX;
 static UWORD s_mouseY;
 
 static tUwRect s_selectionRubberBand;
-
-static tFont *font54;
 
 enum mode {
     game,
@@ -51,10 +49,6 @@ static struct copOffsets_t s_copOffsets;
 // game statics
 static Unit *s_pSelectedUnit[NUM_SELECTION];
 static UBYTE s_ubSelectedUnitCount = 0;
-
-void loadFonts() {
-    font54 = fontCreate("resources/ui/uni54.fnt");
-}
 
 void createViewports() {
     g_Screen.m_panels.m_pTopPanel = vPortCreate(0,
@@ -167,7 +161,6 @@ void loadUi(UWORD topPanelColorsPos, UWORD panelColorsPos, UWORD simplePosTop, U
     bitmapLoadFromFile(g_Screen.m_panels.m_pMainPanelBuffer->pFront, "resources/ui/bottompanel.bm", 0, 0);
 
     g_Screen.m_pIcons = bitmapCreateFromFile("resources/ui/icons.bm", 0);
-
     iconInit(&g_Screen.m_pActionIcons[0], 32, 18, g_Screen.m_pIcons, ICON_MOVE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 208, .uwY = 24});
     iconInit(&g_Screen.m_pActionIcons[1], 32, 18, g_Screen.m_pIcons, ICON_STOP, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 241, .uwY = 24});
     iconInit(&g_Screen.m_pActionIcons[2], 32, 18, g_Screen.m_pIcons, ICON_ATTACK, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 274, .uwY = 24});
@@ -180,10 +173,32 @@ void loadUi(UWORD topPanelColorsPos, UWORD panelColorsPos, UWORD simplePosTop, U
     iconSetAction(&g_Screen.m_pActionIcons[2], &iconActionAttack);
 }
 
+void screenInit(void) {
+    memset(&g_Screen, 0, sizeof(struct Screen));
+
+    g_Screen.m_fonts.m_pNormalFont = fontCreate("resources/ui/uni54.fnt");
+    const char text[RESOURCE_DIGITS + 1] = "000000";
+    g_Screen.m_panels.m_pGoldBitmap = fontCreateTextBitMapFromStr(g_Screen.m_fonts.m_pNormalFont, text);
+    g_Screen.m_panels.m_pLumberBitmap = fontCreateTextBitMapFromStr(g_Screen.m_fonts.m_pNormalFont, text);
+}
+
+void screenDestroy(void) {
+    viewDestroy(g_Screen.m_pView); // This will also destroy all associated viewports and viewport managers
+
+    bitmapDestroy(g_Screen.m_panels.m_pMainPanelBackground);
+    bitmapDestroy(g_Screen.m_panels.s_pTopPanelBackground);
+    bitmapDestroy(g_Screen.m_pIcons);
+    bitmapDestroy(g_Screen.m_map.m_pTilemap);
+
+    fontDestroyTextBitMap(g_Screen.m_panels.m_pGoldBitmap);
+    fontDestroyTextBitMap(g_Screen.m_panels.m_pLumberBitmap);
+    fontDestroy(g_Screen.m_fonts.m_pNormalFont);
+}
+
 void gameGsCreate(void) {
     viewLoad(0);
 
-    memset(&g_Screen, 0, sizeof(struct Screen));
+    screenInit();
 
     // Calculate copperlist size
     s_copOffsets.spritePos = 0;
@@ -218,8 +233,6 @@ void gameGsCreate(void) {
     loadMap(g_Map.m_pName, s_copOffsets.mapbufCoplistStart, s_copOffsets.mapColorsCoplistStart);
 
     loadUi(s_copOffsets.topPanelColorsPos, s_copOffsets.panelColorsPos, s_copOffsets.simplePosTop, s_copOffsets.simplePosBottom);
-
-    loadFonts();
 
     viewLoad(g_Screen.m_pView);
 
@@ -693,28 +706,23 @@ void fowUpdate(void) {
 }
 
 void drawResources(void) {
-    return;
-    if ((GameCycle & 63) == 63) {
-        static tTextBitMap *goldBitmap = NULL;
-        static tTextBitMap *lumberBitmap = NULL;
-        static UWORD gold = -1;
-        static UWORD lumber = -1;
-        static char str[7] = {'\0'};
-        if (GameCycle & 64) {
-            if (gold != g_pPlayers[0].gold) {
-                gold = g_pPlayers[0].gold;
-                snprintf(str, 6, "%d", gold);
-                goldBitmap = fontCreateTextBitMapFromStr(font54, str);
-            }
-            fontDrawTextBitMap(g_Screen.m_panels.m_pTopPanelBuffer->pBack, goldBitmap, 128, 0, 1, 0);
-        } else {
-            if (lumber != g_pPlayers[0].lumber) {
-                lumber = g_pPlayers[0].lumber;
-                snprintf(str, 6, "%d", lumber);
-                lumberBitmap = fontCreateTextBitMapFromStr(font54, str);
-            }
-            fontDrawTextBitMap(g_Screen.m_panels.m_pTopPanelBuffer->pBack, lumberBitmap, 232, 0, 1, 0);
-        }
+    if (GameCycle && (GameCycle & 63) != 63) {
+        return;
+    }
+    static UWORD gold = -1;
+    static UWORD lumber = -1;
+    static char str[RESOURCE_DIGITS + 1] = {'\0'};
+    if (!GameCycle || (GameCycle & 64 && gold != g_pPlayers[0].gold)) {
+        gold = g_pPlayers[0].gold;
+        snprintf(str, RESOURCE_DIGITS, "%d", gold);
+        fontFillTextBitMap(g_Screen.m_fonts.m_pNormalFont, g_Screen.m_panels.m_pGoldBitmap, str);
+        fontDrawTextBitMap(g_Screen.m_panels.m_pTopPanelBuffer->pBack, g_Screen.m_panels.m_pGoldBitmap, 128, 0, 1, FONT_RIGHT);
+    }
+    if (!GameCycle || (!(GameCycle & 64) && lumber != g_pPlayers[0].lumber)) {
+        lumber = g_pPlayers[0].lumber;
+        snprintf(str, RESOURCE_DIGITS, "%d", lumber);
+        fontFillTextBitMap(g_Screen.m_fonts.m_pNormalFont, g_Screen.m_panels.m_pLumberBitmap, str);
+        fontDrawTextBitMap(g_Screen.m_panels.m_pTopPanelBuffer->pBack, g_Screen.m_panels.m_pLumberBitmap, 232, 0, 1, FONT_RIGHT);
     }
 }
 
@@ -822,10 +830,6 @@ void gameGsLoop(void) {
 void gameGsDestroy(void) {
     systemUse();
 
-    // This will also destroy all associated viewports and viewport managers
-    viewDestroy(g_Screen.m_pView);
-
+    screenDestroy();
     unitManagerDestroy(s_pUnitManager);
-
-    bitmapDestroy(g_Screen.m_map.m_pTilemap);
 }

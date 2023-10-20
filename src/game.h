@@ -13,6 +13,7 @@
 #include <ace/utils/custom.h>
 #include <ace/utils/extview.h>
 #include <ace/utils/file.h>
+#include <ace/utils/font.h>
 #include <ace/utils/palette.h>
 #include <ace/managers/key.h>
 #include <ace/managers/game.h>
@@ -50,11 +51,19 @@ struct Screen {
         tVPort *m_pTopPanel;
         tSimpleBufferManager *m_pTopPanelBuffer;
         tBitMap *s_pTopPanelBackground;
+        
+        tTextBitMap *m_pGoldBitmap;
+        tTextBitMap *m_pLumberBitmap;
+
         // Viewport for main panel
         tVPort *m_pMainPanel;
         tSimpleBufferManager *m_pMainPanelBuffer;
         tBitMap *m_pMainPanelBackground;
     } m_panels;
+
+    struct {
+        tFont *m_pNormalFont;
+    } m_fonts;
 
     // icons for main panel (actions and selected units)
     tIcon m_pUnitIcons[NUM_UNIT_ICONS];
@@ -73,6 +82,9 @@ struct Screen {
 
     unsigned m_ubBottomPanelDirty:1;
 };
+
+void screenInit(void);
+void screenDestroy(void);
 
 extern struct Screen g_Screen;
 

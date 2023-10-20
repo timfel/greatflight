@@ -76,7 +76,10 @@ void iconActionMoveTo(Unit **unit, UBYTE unitc, tUbCoordYX tilePos) {
     g_Screen.lmbAction = NULL;
 }
 
-void iconActionMove(Unit **, UBYTE ) {
+void iconActionMove(Unit **, UBYTE unitc) {
+    if (!unitc) {
+        iconRectSpritesUpdate(0, 0);
+    }
     g_Screen.lmbAction = &iconActionMoveTo;
 }
 
@@ -87,7 +90,10 @@ void iconActionStop(Unit **unit, UBYTE unitc) {
     }
 }
 
-void iconActionAttack(Unit **, UBYTE ) {
+void iconActionAttack(Unit **, UBYTE unitc) {
+    if (!unitc) {
+        iconRectSpritesUpdate(0, 0);
+    }
     logWrite("Attack");
 }
 

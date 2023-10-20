@@ -149,9 +149,6 @@ void unitManagerProcessUnits(tUnitManager *mgr, UBYTE pPathMap[PATHMAP_SIZE][PAT
         } else {
             unitOffscreen(unit);
         }
-        if(blitIsIdle()) {
-            bobProcessNext();
-        }
     }
 }
 

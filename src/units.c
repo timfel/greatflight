@@ -102,7 +102,7 @@ static inline void unitDraw(Unit *self, tUbCoordYX viewportTopLeft) {
     UWORD uwX = (self->x - (viewportTopLeft.ubX / (TILE_SIZE / PATHMAP_TILE_SIZE) * (TILE_SIZE / PATHMAP_TILE_SIZE))) * PATHMAP_TILE_SIZE + self->IX;
     UWORD uwY = (self->y - (viewportTopLeft.ubY / (TILE_SIZE / PATHMAP_TILE_SIZE) * (TILE_SIZE / PATHMAP_TILE_SIZE))) * PATHMAP_TILE_SIZE + self->IY;
     self->bob.sPos.uwX = uwX;
-    self->bob.sPos.uwX = uwY;
+    self->bob.sPos.uwY = uwY;
     UBYTE ubDstOffs = uwX & 0xF;
     UBYTE ubSize = type->anim.large ? 24 : 16;
     UBYTE ubBlitWidth = (ubSize + ubDstOffs + 15) & 0xF0;

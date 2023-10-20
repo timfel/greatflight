@@ -547,7 +547,8 @@ void handleLeftMouseUp(tUwCoordYX lmbDown, tUwCoordYX mousePos) {
     }
 
     if (g_Screen.lmbAction) {
-        g_Screen.lmbAction(s_pSelectedUnit, s_ubSelectedUnitCount, screenPosToTile(lmbDown));
+        tUbCoordYX tile = screenPosToTile((tUwCoordYX){.ulYX = lmbDown.ulYX + g_Screen.m_map.m_pCamera->uPos.ulYX});
+        g_Screen.lmbAction(s_pSelectedUnit, s_ubSelectedUnitCount, tile);
         return;
     }
 

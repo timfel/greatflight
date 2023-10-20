@@ -40,12 +40,7 @@
     ],
     "units": [
         [
-            [peon, 8, 3, *unit_defaults],
-            [peon, 8, 3, *unit_defaults],
-            [peon, 8, 3, *unit_defaults],
-            [peon, 8, 3, *unit_defaults],
-            [peon, 8, 3, *unit_defaults],
-            [peon, 8, 3, *unit_defaults],
+            *([[peon, 8, 3, *unit_defaults]] * 20),
         ],
         [],
     ]

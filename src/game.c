@@ -245,7 +245,21 @@ void gameGsCreate(void) {
  * Screen coordinates to pathmap coordinates
  */
 static inline tUbCoordYX screenPosToTile(tUwCoordYX pos) {
-    return (tUbCoordYX){.ubX = pos.uwX / PATHMAP_TILE_SIZE, .ubY = (pos.uwY - TOP_PANEL_HEIGHT) / PATHMAP_TILE_SIZE};
+    UWORD uwY = pos.uwY - TOP_PANEL_HEIGHT;
+    UWORD uwX = pos.uwX;
+    // on map?
+    if (uwY < MAP_HEIGHT) {
+        tUwCoordYX mapOffset = g_Screen.m_map.m_pCamera->uPos;
+        uwY += mapOffset.uwY;
+        uwX += mapOffset.uwX;
+        return (tUbCoordYX){.ubX = uwX / PATHMAP_TILE_SIZE, .ubY = uwY / PATHMAP_TILE_SIZE};
+    }
+    // on minimap?
+    uwY -= (MAP_HEIGHT + MINIMAP_OFFSET_Y);
+    if (uwY < PATHMAP_SIZE && ((uwX -= MINIMAP_OFFSET_X) < PATHMAP_SIZE)) {
+        return (tUbCoordYX){.ubX = uwX, .ubY = uwY};
+    }
+    return (tUbCoordYX){.uwYX = -1};
 }
 
 static inline tUbCoordYX mapPosToTile(tUwCoordYX pos) {
@@ -547,14 +561,20 @@ void handleLeftMouseUp(tUwCoordYX lmbDown, tUwCoordYX mousePos) {
     }
 
     if (g_Screen.lmbAction) {
-        tUbCoordYX tile = screenPosToTile((tUwCoordYX){.ulYX = lmbDown.ulYX + g_Screen.m_map.m_pCamera->uPos.ulYX});
+        tUbCoordYX tile = screenPosToTile(lmbDown);
+        if (tile.ubX >= PATHMAP_SIZE) {
+            return;
+        }
         g_Screen.lmbAction(s_pSelectedUnit, s_ubSelectedUnitCount, tile);
         return;
     }
 
     // If we're on the map, select units
-    tUbCoordYX tile1 = screenPosToTile((tUwCoordYX){.ulYX = mousePos.ulYX + g_Screen.m_map.m_pCamera->uPos.ulYX});
-    tUbCoordYX tile2 = screenPosToTile((tUwCoordYX){.ulYX = lmbDown.ulYX + g_Screen.m_map.m_pCamera->uPos.ulYX});
+    tUbCoordYX tile1 = screenPosToTile(mousePos);
+    tUbCoordYX tile2 = screenPosToTile(lmbDown);
+    if (tile1.ubX >= PATHMAP_SIZE || tile2.ubX >= PATHMAP_SIZE) {
+        return;
+    }
     UBYTE x1 = MIN(tile1.ubX, tile2.ubX);
     UBYTE x2 = MAX(tile1.ubX, tile2.ubX);
     UBYTE y1 = MIN(tile1.ubY, tile1.ubY);
@@ -566,7 +586,6 @@ void handleLeftMouseUp(tUwCoordYX lmbDown, tUwCoordYX mousePos) {
     while (y1 <= y2) {
         UBYTE xcur = x1;    
         while (xcur <= x2) {
-            outer:;
             tUbCoordYX tile = (tUbCoordYX){.ubX = xcur, .ubY = y1};
             Unit *unit = unitManagerUnitAt(s_pUnitManager, tile);
             if (unit) {
@@ -577,7 +596,11 @@ void handleLeftMouseUp(tUwCoordYX lmbDown, tUwCoordYX mousePos) {
                 }
                 s_pSelectedUnit[s_ubSelectedUnitCount++] = unit;
                 g_Screen.m_ubBottomPanelDirty = 1;
+                if (s_ubSelectedUnitCount == NUM_SELECTION) {
+                    return;
+                }
             }
+            outer:;
             ++xcur;
         }
         ++y1;
@@ -614,7 +637,10 @@ void handleInput() {
         } else if (keyCheck(KEY_G)) {
             s_Mode = game;
         } else if (mouseCheck(MOUSE_PORT_1, MOUSE_LMB)) {
-            tUbCoordYX tile = screenPosToTile((tUwCoordYX){.ulYX = mousePos.ulYX + g_Screen.m_map.m_pCamera->uPos.ulYX});
+            tUbCoordYX tile = screenPosToTile(mousePos);
+            if (tile.ubX >= PATHMAP_SIZE) {
+                return;
+            }
             g_Map.m_ulTilemapXY[tile.ubX][tile.ubY] = tileIndexToTileBitmapOffset(SelectedTile);
         }
         return;
@@ -668,7 +694,10 @@ void handleInput() {
         lmbDown.ulYX = 0;
         updateSelectionRubberBand(-1, -1, -1, -1);
     } else if (s_ubSelectedUnitCount && mouseCheck(MOUSE_PORT_1, MOUSE_RMB)) {
-        tUbCoordYX tile = screenPosToTile((tUwCoordYX){.ulYX = mousePos.ulYX + g_Screen.m_map.m_pCamera->uPos.ulYX});
+        tUbCoordYX tile = screenPosToTile(mousePos);
+        if (tile.ubX >= PATHMAP_SIZE) {
+            return;
+        }
         for(UBYTE idx = 0; idx < s_ubSelectedUnitCount; ++idx) {
             Unit *unit = s_pSelectedUnit[idx];
             if (unit) {

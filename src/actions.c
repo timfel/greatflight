@@ -44,12 +44,6 @@ UBYTE actionStill(Unit *unit) {
     return 0;
 }
 
-#define moveTargetXMask 0b1111110000000000
-#define moveTargetYMask 0b0000001111110000
-#define moveCounterMask 0b0000000000001111
-#define moveTargetXShift 10
-#define moveTargetYShift 4
-#define moveCounterShift 0
 void actionMove(Unit *unit, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE]) {
     UnitType type = UnitTypes[unit->type];
     UBYTE speed = type.stats.speed;

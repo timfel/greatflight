@@ -63,7 +63,7 @@ tUnitManager * unitManagerCreate(void) {
     mgr->unitCount = 0;
     for (UBYTE i = 0; i < MAX_UNITS; ++i) {
 #ifdef ACE_DEBUG
-        unitSetTilePosition(&mgr->units[i], NULL, UNIT_FREE_TILE_POSITION);
+        mgr->units[i].loc = UNIT_FREE_TILE_POSITION;
 #endif
         mgr->freeUnitsStack[i] = i;
     }
@@ -99,8 +99,8 @@ void unitManagerDestroy(tUnitManager *mgr) {
 
 static inline void unitDraw(Unit *self, tUbCoordYX viewportTopLeft) {
     UnitType *type = &UnitTypes[self->type];
-    UWORD uwX = (self->x - (viewportTopLeft.ubX / (TILE_SIZE / PATHMAP_TILE_SIZE) * (TILE_SIZE / PATHMAP_TILE_SIZE))) * PATHMAP_TILE_SIZE + self->IX;
-    UWORD uwY = (self->y - (viewportTopLeft.ubY / (TILE_SIZE / PATHMAP_TILE_SIZE) * (TILE_SIZE / PATHMAP_TILE_SIZE))) * PATHMAP_TILE_SIZE + self->IY;
+    UWORD uwX = (self->x - (viewportTopLeft.ubX / TILE_SIZE_FACTOR * TILE_SIZE_FACTOR)) * PATHMAP_TILE_SIZE + self->IX;
+    UWORD uwY = (self->y - (viewportTopLeft.ubY / TILE_SIZE_FACTOR * TILE_SIZE_FACTOR)) * PATHMAP_TILE_SIZE + self->IY;
     self->bob.sPos.uwX = uwX;
     self->bob.sPos.uwY = uwY;
     UBYTE ubDstOffs = uwX & 0xF;
@@ -174,7 +174,7 @@ Unit * unitNew(tUnitManager *mgr, UnitTypeIndex typeIdx) {
     unit->bob.sprite = type->spritesheet->Planes[0];
     unit->bob.mask = type->spritesheet->Planes[0];
     unit->type = typeIdx;
-    unitSetTilePosition(unit, NULL, UNIT_INIT_TILE_POSITION);
+    unit->loc = UNIT_INIT_TILE_POSITION;
     return unit;
 }
 
@@ -183,7 +183,7 @@ void unitDelete(tUnitManager *mgr, Unit *unit) {
     if (!unitManagerUnitIsActive(unit)) {
         logWrite("Deleting inactive unit!!!");
     }
-    unitSetTilePosition(unit, NULL, UNIT_FREE_TILE_POSITION);
+    unit->loc = UNIT_FREE_TILE_POSITION;
     ULONG longIdx = (ULONG)unit - (ULONG)mgr->units;
     if (longIdx > 255) {
         logWrite("ALARM! unit idx is whaaat? %ld\n", longIdx);
@@ -283,13 +283,6 @@ tUbCoordYX unitGetTilePosition(Unit *self) {
     return self->loc;
 }
 
-void unitSetTilePosition(Unit *self, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE], tUbCoordYX pos) {
-    self->loc = pos;
-    if (pos.ubX > 1) {
-        markMapTile(map, pos.ubX, pos.ubY);
-    }
-}
-
 void unitSetFrame(Unit *self, UBYTE ubFrame) {
     self->frame = ubFrame;
     UnitType *type = &UnitTypes[self->type];
@@ -300,4 +293,8 @@ void unitSetFrame(Unit *self, UBYTE ubFrame) {
 
 UBYTE unitGetFrame(Unit *self) {
     return self->frame;
+}
+
+void unitSetOffMap(Unit *self) {
+    self->loc = UNIT_FREE_TILE_POSITION;
 }

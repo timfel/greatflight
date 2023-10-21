@@ -1,14 +1,29 @@
 #include "include/actions.h"
 #include "include/units.h"
+#include "game.h"
 
 #include <ace/utils/custom.h>
+#include <ace/managers/log.h>
 
 void actionMoveTo(Unit *unit, tUbCoordYX goal) {
-    unit->nextAction.ubActionDataB = goal.ubY;
-    unit->nextAction.ubActionDataA = goal.ubX;
-    unit->nextAction.ubActionDataC = 0;
-    unit->nextAction.ubActionDataD = 25; // retries
+    unit->nextAction.move.ubTargetY = goal.ubY;
+    unit->nextAction.move.ubTargetX = goal.ubX;
+    unit->nextAction.move.u4Wait = 0;
+    unit->nextAction.move.u4Retries = 15;
     unit->nextAction.action = ActionMove;
+}
+
+enum __attribute__((__packed__)) BuildState {
+    BuildStateMoveToGoal,
+    BuildStateOpenConstructionSite,
+    BuildStateBuilding
+};
+
+void actionBuildAt(Unit *unit, tUbCoordYX goal, BuildingType tileType) {
+    actionMoveTo(unit, goal);
+    unit->nextAction.build.u5BuildingType = tileType;
+    unit->nextAction.build.u2State = BuildStateMoveToGoal;
+    unit->nextAction.action = ActionBuild;
 }
 
 void actionStop(Unit *unit) {
@@ -22,7 +37,7 @@ UBYTE actionStill(Unit *unit) {
         unit->nextAction.action = 0;
         return 1;
     } else if (unit->action.action == ActionStill) {
-        if (unit->action.ubActionDataA-- == 0) {
+        if (unit->action.still.ubWait-- == 0) {
             unitSetFrame(unit, (unitGetFrame(unit) + (UBYTE)g_pCia[CIA_A]->talo) % DIRECTIONS);
         }
     }
@@ -62,8 +77,8 @@ void actionMove(Unit *unit, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE]) {
             return;
         }
         tUbCoordYX tilePos = unitGetTilePosition(unit);
-        vectorX = unit->action.ubActionDataA - unit->loc.ubX;
-        vectorY = unit->action.ubActionDataB - unit->loc.ubY;
+        vectorX = unit->action.move.ubTargetX - unit->loc.ubX;
+        vectorY = unit->action.move.ubTargetY - unit->loc.ubY;
         if (!vectorX && !vectorY) {
             // reached our goal
             unitSetFrame(unit, 0);
@@ -86,9 +101,9 @@ void actionMove(Unit *unit, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE]) {
         }
         if (!vectorX && !vectorY) {
             // unreachable step, wait a little?
-            --unit->action.ubActionDataD;
+            --unit->action.move.u4Retries;
             unitSetFrame(unit, 0);
-            if (unit->action.ubActionDataD == 0) {
+            if (unit->action.move.u4Retries == 0) {
                 // done trying
                 unit->action.action = ActionStill;
             }
@@ -106,11 +121,11 @@ void actionMove(Unit *unit, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE]) {
         tilePos = unitGetTilePosition(unit);
         markMapTile(map, tilePos.ubX, tilePos.ubY);
     }
-    if (unit->action.ubActionDataC) {
-        --unit->action.ubActionDataC;
+    if (unit->action.move.u4Wait) {
+        --unit->action.move.u4Wait;
         return;
     }
-    unit->action.ubActionDataC = (type.anim.wait + 1) * 2;
+    unit->action.move.u4Wait = (type.anim.wait + 1) << 1;
 
     // next walk frame, walk frames start at row 1 (all units have 1 still frame)
     UBYTE nextFrame = ((unitGetFrame(unit) / DIRECTIONS) % type.anim.walk + 1) * DIRECTIONS;
@@ -146,6 +161,94 @@ void actionDie(Unit  __attribute__((__unused__)) *unit) {
     return;
 };
 
+void actionBuild(Unit *unit, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE]) {
+    switch (unit->action.build.u2State) {
+        case BuildStateMoveToGoal:
+            actionMove(unit, map);
+            if (unit->action.action == ActionStill) {
+                if (unit->loc.ubX == unit->action.move.ubTargetX && unit->loc.ubY == unit->action.move.ubTargetY) {
+                    // reached goal
+                    unit->action.action = ActionBuild;
+                    unit->action.build.u2State = BuildStateOpenConstructionSite;
+                } else {
+                    // could not reach goal, abort
+                    logWrite("Could not reach goal");
+                }
+            }
+            return;
+        case BuildStateOpenConstructionSite: {
+            UBYTE ubX = unit->action.move.ubTargetX;
+            UBYTE ubY = unit->action.move.ubTargetY;
+            UBYTE buildingSize = 2; // TODO...
+            // TODO: pull out, and unify with the same in icons.c
+            for (UBYTE x = 0; x < buildingSize; ++x) {
+                for (UBYTE y = 0; y < buildingSize; ++y) {
+                    // x == 0 and y == 0 is where the builder is now
+                    if ((x || y) && map[ubX + x][ubY + y] != MAP_GROUND_FLAG) {
+                        // can no longer build here
+                        unit->action.action = ActionStill;
+                        logWrite("Cannot build here");
+                        return;
+                    }
+                }
+            }
+            // TODO: this should be a function to place the building
+            // TODO: this should also create the building, and give it the action "being built"
+            for (UBYTE x = 0; x < buildingSize; ++x) {
+                for (UBYTE y = 0; y < buildingSize; ++y) {
+                    map[ubX + x][ubY + y] = MAP_UNWALKABLE_FLAG;
+                }
+            }
+            UBYTE ubTileX = ubX / TILE_SIZE_FACTOR;
+            UBYTE ubTileY = ubY / TILE_SIZE_FACTOR;
+            UBYTE buildingTileIdx = buildingSize == 2 ? BUILDING_CONSTRUCTION_SMALL : BUILDING_CONSTRUCTION_LARGE;
+            for (UBYTE y = 0; y < buildingSize / TILE_SIZE_FACTOR; ++y) {
+                for (UBYTE x = 0; x < buildingSize / TILE_SIZE_FACTOR; ++x) {
+                    g_Map.m_ulTilemapXY[ubTileX + x][ubTileY + y] = tileIndexToTileBitmapOffset(buildingTileIdx++);
+                }
+            }
+
+            unitSetOffMap(unit);
+            unit->action.build.u2State = BuildStateBuilding;
+            unit->action.build.ubBuildingID = unit->action.build.u5BuildingType; // TODO: should be the return value from above
+            unit->action.build.u5buildingHPIncrease = 31; // TODO: should be based in the building type
+            return;
+        }
+        case BuildStateBuilding: {
+            if (0) {
+                // TODO: check if building is alive
+                unit->action.action = ActionStill;
+                // TODO: what if no room? unit lost?
+                unitPlace(map, unit, unit->action.move.ubTargetX, unit->action.move.ubTargetY);
+            } else if (0) {
+                // TODO: check if building now has full hp
+                unit->action.action = ActionStill;
+                // TODO: what if no room? unit lost?
+                unitPlace(map, unit, unit->action.move.ubTargetX, unit->action.move.ubTargetY);
+            } else {
+                // TODO: transfer more HP to building
+                // XXX: for now just something completely different to see an effect
+                UBYTE buildingSize = 2;
+                UBYTE ubX = unit->action.move.ubTargetX;
+                UBYTE ubY = unit->action.move.ubTargetY;
+                UBYTE ubTileX = ubX / TILE_SIZE_FACTOR;
+                UBYTE ubTileY = ubY / TILE_SIZE_FACTOR;
+                UBYTE buildingTileIdx = unit->action.build.ubBuildingID;
+                if (!unit->action.build.u5buildingHPIncrease--) {
+                    for (UBYTE y = 0; y < buildingSize / TILE_SIZE_FACTOR; ++y) {
+                        for (UBYTE x = 0; x < buildingSize / TILE_SIZE_FACTOR; ++x) {
+                            g_Map.m_ulTilemapXY[ubTileX + x][ubTileY + y] = tileIndexToTileBitmapOffset(buildingTileIdx++);
+                        }
+                    }
+                    unit->action.action = ActionStill;
+                    // TODO: what if no room? unit lost?
+                    unitPlace(map, unit, ubX, ubY);
+                }
+            }
+        }
+    }
+}
+
 void actionDo(Unit *unit, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE]) {
     switch (unit->action.action) {
         case ActionStill:
@@ -156,6 +259,9 @@ void actionDo(Unit *unit, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE]) {
             return;
         case ActionStop:
             unit->action.action = ActionStill;
+            return;
+        case ActionBuild:
+            actionBuild(unit, map);
             return;
         default:
             return;

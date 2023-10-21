@@ -39,7 +39,7 @@ typedef struct {
         unsigned walk:2; // 0,1,2,3 walking frames
         unsigned attack:2; // 0,1,2,3 attack frames
         unsigned fall:1; // 0,1 falling frames
-        unsigned wait:2; // 2,4,6,8 wait frames between animations frames
+    unsigned wait:2; // 2,4,6,8 wait frames between animations frames
     } anim;
 } UnitType;
 
@@ -163,7 +163,9 @@ _Static_assert(MAP_SIZE * TILE_SIZE < 0xfff, "map is small enough to fit locatio
 
 tUbCoordYX unitGetTilePosition(Unit *self);
 
-void unitSetTilePosition(Unit *self, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE], tUbCoordYX pos);
+UBYTE unitPlace(UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE], Unit *unit, UBYTE x, UBYTE y);
+
+void unitSetOffMap(Unit *self);
 
 void unitSetFrame(Unit *self, UBYTE ubFrame);
 

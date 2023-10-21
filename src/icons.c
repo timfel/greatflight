@@ -102,21 +102,37 @@ void iconActionHarvest(Unit **, UBYTE ) {
     logWrite("Harvest");
 }
 
+void cannotBuild(void) {
+    logWrite("Cannot build here");
+}
+
+static UBYTE *s_previousIcons[NUM_ACTION_ICONS];
+static tIconAction s_previousActions[NUM_ACTION_ICONS];
+
+void iconCancel(Unit **, UBYTE ) {
+    for (UBYTE i = 0; i < NUM_ACTION_ICONS; ++i) {
+        g_Screen.m_pActionIcons[i].iconSrcPtr = s_previousIcons[i];
+        g_Screen.m_pActionIcons[i].action = s_previousActions[i];
+        iconDraw(&g_Screen.m_pActionIcons[i], i);
+    }
+    iconRectSpritesUpdate(0, 0);
+}
+
 void iconActionBuildHumanFarmAt(Unit **unit, UBYTE unitc, tUbCoordYX tilePos) {
-    UBYTE flags = 0;
+    tUbCoordYX buildPos = {.ubX = tilePos.ubX / TILE_SIZE_FACTOR * TILE_SIZE_FACTOR, .ubY = tilePos.ubY / TILE_SIZE_FACTOR * TILE_SIZE_FACTOR};
     for (UBYTE x = 0; x < 2; ++x) {
         for (UBYTE y = 0; y < 2; ++y) {
-            flags |= g_Map.m_ubPathmapXY[tilePos.ubX + x][tilePos.ubY + y];
+            if (g_Map.m_ubPathmapXY[buildPos.ubX + x][buildPos.ubY + y] != MAP_GROUND_FLAG) {
+                cannotBuild();
+                iconCancel(unit, unitc);
+                return;
+            }
         }
     }
-    if ((flags | MAP_GROUND_FLAG | MAP_COAST_FLAG) == (MAP_GROUND_FLAG | MAP_COAST_FLAG)) {
-        iconRectSpritesUpdate(0, 0);
-        g_Screen.lmbAction = NULL;
-        g_Screen.m_cursorBobs.ubCount = 0;
-        // todo: build
-    } else {
-        // todo: log message cannot build here    
-    }
+    iconCancel(unit, unitc);
+    g_Screen.lmbAction = NULL;
+    g_Screen.m_cursorBobs.ubCount = 0;
+    actionBuildAt(*unit, buildPos, BUILDING_HUMAN_FARM);
 }
 
 void iconBuildHumanFarm(Unit **, UBYTE unitc) {
@@ -124,7 +140,7 @@ void iconBuildHumanFarm(Unit **, UBYTE unitc) {
         iconRectSpritesUpdate(0, 0);
     }
     g_Screen.lmbAction = &iconActionBuildHumanFarmAt;
-    g_Screen.m_cursorBobs.pFirstTile = (PLANEPTR)tileIndexToTileBitmapOffset(TILEINDEX_HUMAN_FARM);
+    g_Screen.m_cursorBobs.pFirstTile = (PLANEPTR)tileIndexToTileBitmapOffset(BUILDING_HUMAN_FARM);
     g_Screen.m_cursorBobs.ubCount = 1;
 }
 
@@ -142,18 +158,6 @@ void iconBuildHumanSmithy(Unit **, UBYTE ) {
 
 void iconBuildHumanHall(Unit **, UBYTE ) {
     logWrite("Build human hall");
-}
-
-static UBYTE *s_previousIcons[NUM_ACTION_ICONS];
-static tIconAction s_previousActions[NUM_ACTION_ICONS];
-
-void iconCancel(Unit **, UBYTE ) {
-    for (UBYTE i = 0; i < NUM_ACTION_ICONS; ++i) {
-        g_Screen.m_pActionIcons[i].iconSrcPtr = s_previousIcons[i];
-        g_Screen.m_pActionIcons[i].action = s_previousActions[i];
-        iconDraw(&g_Screen.m_pActionIcons[i], i);
-    }
-    iconRectSpritesUpdate(0, 0);
 }
 
 void iconActionBuildBasic(Unit **, UBYTE) {

@@ -645,8 +645,8 @@ void handleInput() {
             if (tile.ubX >= PATHMAP_SIZE) {
                 return;
             }
-            UBYTE ubX = tile.ubX / (TILE_SIZE / PATHMAP_TILE_SIZE);
-            UBYTE ubY = tile.ubY / (TILE_SIZE / PATHMAP_TILE_SIZE);
+            UBYTE ubX = tile.ubX / TILE_SIZE_FACTOR;
+            UBYTE ubY = tile.ubY / TILE_SIZE_FACTOR;
             g_Map.m_ulTilemapXY[ubX][ubY] = (ULONG)g_Screen.m_cursorBobs.pFirstTile;
             // XXX: 4-tile buildings
             if (SelectedTile >= 24 && SelectedTile < 48) {

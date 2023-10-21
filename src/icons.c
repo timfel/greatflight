@@ -1,5 +1,6 @@
 #include "include/icons.h"
 #include "include/sprites.h"
+#include "include/map.h"
 #include "game.h"
 
 #include <ace/utils/custom.h>
@@ -101,8 +102,30 @@ void iconActionHarvest(Unit **, UBYTE ) {
     logWrite("Harvest");
 }
 
-void iconBuildHumanFarm(Unit **, UBYTE ) {
-    logWrite("Build human farm");
+void iconActionBuildHumanFarmAt(Unit **unit, UBYTE unitc, tUbCoordYX tilePos) {
+    UBYTE flags = 0;
+    for (UBYTE x = 0; x < 2; ++x) {
+        for (UBYTE y = 0; y < 2; ++y) {
+            flags |= g_Map.m_ubPathmapXY[tilePos.ubX + x][tilePos.ubY + y];
+        }
+    }
+    if ((flags | MAP_GROUND_FLAG | MAP_COAST_FLAG) == (MAP_GROUND_FLAG | MAP_COAST_FLAG)) {
+        iconRectSpritesUpdate(0, 0);
+        g_Screen.lmbAction = NULL;
+        g_Screen.m_cursorBobs.ubCount = 0;
+        // todo: build
+    } else {
+        // todo: log message cannot build here    
+    }
+}
+
+void iconBuildHumanFarm(Unit **, UBYTE unitc) {
+    if (!unitc) {
+        iconRectSpritesUpdate(0, 0);
+    }
+    g_Screen.lmbAction = &iconActionBuildHumanFarmAt;
+    g_Screen.m_cursorBobs.pFirstTile = (PLANEPTR)tileIndexToTileBitmapOffset(TILEINDEX_HUMAN_FARM);
+    g_Screen.m_cursorBobs.ubCount = 1;
 }
 
 void iconBuildHumanBarracks(Unit **, UBYTE ) {

@@ -819,8 +819,8 @@ void drawCursorBobs(void) {
         UWORD uwBltsize = (uwHeight << 6) | uwBlitWords;
 
         // Figure out where to actually draw
-        UBYTE ubStartX = (s_mouseX - g_Screen.m_map.m_pBuffer->pCamera->uPos.uwX) >> TILE_SHIFT;
-        UBYTE ubStartY = (s_mouseY - g_Screen.m_map.m_pBuffer->pCamera->uPos.uwY) >> TILE_SHIFT;
+        UBYTE ubStartX = (s_mouseX + g_Screen.m_map.m_pBuffer->pCamera->uPos.uwX) >> TILE_SHIFT;
+        UBYTE ubStartY = (uwMouseY + g_Screen.m_map.m_pBuffer->pCamera->uPos.uwY) >> TILE_SHIFT;
         if (cnt > 1 && (ubStartX >= VISIBLE_TILES_X - 1 || ubStartY >= VISIBLE_TILES_Y - 1)) {
             return;
         }

@@ -1,5 +1,6 @@
 #include "include/actions.h"
 #include "include/units.h"
+#include "include/buildings.h"
 #include "game.h"
 
 #include <ace/utils/custom.h>
@@ -19,9 +20,9 @@ enum __attribute__((__packed__)) BuildState {
     BuildStateBuilding
 };
 
-void actionBuildAt(Unit *unit, tUbCoordYX goal, BuildingType tileType) {
+void actionBuildAt(Unit *unit, tUbCoordYX goal, UBYTE tileType) {
     actionMoveTo(unit, goal);
-    unit->nextAction.build.u5BuildingType = tileType;
+    unit->nextAction.build.u6BuildingType = tileType;
     unit->nextAction.build.u2State = BuildStateMoveToGoal;
     unit->nextAction.action = ActionBuild;
 }
@@ -44,7 +45,7 @@ UBYTE actionStill(Unit *unit) {
     return 0;
 }
 
-void actionMove(Unit *unit, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE]) {
+void actionMove(Unit *unit) {
     UnitType type = UnitTypes[unit->type];
     UBYTE speed = type.stats.speed;
     BYTE vectorX = 0;
@@ -81,14 +82,14 @@ void actionMove(Unit *unit, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE]) {
         }
         if (vectorX) {
             vectorX = vectorX > 0 ? 1 : -1;
-            if (!mapIsWalkable(map, tilePos.ubX + vectorX, tilePos.ubY)) {
+            if (!mapIsWalkable(tilePos.ubX + vectorX, tilePos.ubY)) {
                 // unwalkable tile horizontal
                 vectorX = 0;
             }
         }
         if (vectorY) {
             vectorY = vectorY > 0 ? 1 : -1;
-            if (!mapIsWalkable(map, tilePos.ubX + vectorX, tilePos.ubY + vectorY)) {
+            if (!mapIsWalkable(tilePos.ubX + vectorX, tilePos.ubY + vectorY)) {
                 // unwalkable tile vertical
                 vectorY = 0;
             }
@@ -103,7 +104,7 @@ void actionMove(Unit *unit, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE]) {
             }
             return;
         }
-        unmarkMapTile(map, tilePos.ubX, tilePos.ubY);
+        unmarkMapTile(tilePos.ubX, tilePos.ubY);
         if (vectorX) {
             unit->loc.ubX += vectorX;
             unit->IX = -vectorX * (PATHMAP_TILE_SIZE - speed);
@@ -113,7 +114,7 @@ void actionMove(Unit *unit, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE]) {
             unit->IY = -vectorY * (PATHMAP_TILE_SIZE - speed);
         }
         tilePos = unitGetTilePosition(unit);
-        markMapTile(map, tilePos.ubX, tilePos.ubY);
+        markMapTile(tilePos.ubX, tilePos.ubY);
     }
     if (unit->action.move.u4Wait) {
         --unit->action.move.u4Wait;
@@ -155,10 +156,10 @@ void actionDie(Unit  __attribute__((__unused__)) *unit) {
     return;
 };
 
-void actionBuild(Unit *unit, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE]) {
+void actionBuild(Unit *unit) {
     switch (unit->action.build.u2State) {
         case BuildStateMoveToGoal:
-            actionMove(unit, map);
+            actionMove(unit);
             if (unit->action.action == ActionStill) {
                 if (unit->loc.ubX == unit->action.move.ubTargetX && unit->loc.ubY == unit->action.move.ubTargetY) {
                     // reached goal
@@ -171,91 +172,83 @@ void actionBuild(Unit *unit, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE]) {
             }
             return;
         case BuildStateOpenConstructionSite: {
-            UBYTE ubX = unit->action.move.ubTargetX;
-            UBYTE ubY = unit->action.move.ubTargetY;
-            UBYTE buildingSize = 2; // TODO...
-            // TODO: pull out, and unify with the same in icons.c
-            for (UBYTE x = 0; x < buildingSize; ++x) {
-                for (UBYTE y = 0; y < buildingSize; ++y) {
-                    // x == 0 and y == 0 is where the builder is now
-                    if ((x || y) && map[ubX + x][ubY + y] != MAP_GROUND_FLAG) {
-                        // can no longer build here
-                        unit->action.action = ActionStill;
-                        logWrite("Cannot build here");
-                        return;
-                    }
-                }
+            UBYTE typeIdx = unit->action.build.u6BuildingType;
+            if (!buildingCanBeAt(typeIdx, unit->action.move.target, 1)) {
+                unit->action.action = ActionStill;
+                logWrite("Cannot build here");
+                return;
             }
-            // TODO: this should be a function to place the building
-            // TODO: this should also create the building, and give it the action "being built"
-            for (UBYTE x = 0; x < buildingSize; ++x) {
-                for (UBYTE y = 0; y < buildingSize; ++y) {
-                    map[ubX + x][ubY + y] = MAP_UNWALKABLE_FLAG;
-                }
-            }
-            UBYTE ubTileX = ubX / TILE_SIZE_FACTOR;
-            UBYTE ubTileY = ubY / TILE_SIZE_FACTOR;
-            UBYTE buildingTileIdx = buildingSize == 2 ? BUILDING_CONSTRUCTION_SMALL : BUILDING_CONSTRUCTION_LARGE;
-            for (UBYTE y = 0; y < buildingSize / TILE_SIZE_FACTOR; ++y) {
-                for (UBYTE x = 0; x < buildingSize / TILE_SIZE_FACTOR; ++x) {
-                    g_Map.m_ulTilemapXY[ubTileX + x][ubTileY + y] = tileIndexToTileBitmapOffset(buildingTileIdx++);
-                }
-            }
-
+            UBYTE newBuildingId = buildingNew(typeIdx, unit->action.move.target);
             unitSetOffMap(unit);
             unit->action.build.u2State = BuildStateBuilding;
-            unit->action.build.ubBuildingID = unit->action.build.u5BuildingType; // TODO: should be the return value from above
-            unit->action.build.u5buildingHPIncrease = 31; // TODO: should be based in the building type
+            unit->action.build.ubBuildingID = newBuildingId;
+            unit->action.build.u6buildingHPWait = -1;
+            unit->action.build.u6buildingHPIncrease = BuildingTypes[typeIdx].costs.hpIncrease;
             return;
         }
         case BuildStateBuilding: {
-            if (0) {
-                // TODO: check if building is alive
+            Building *building = &g_BuildingManager.building[unit->action.build.ubBuildingID];
+            if (!building->hp) {
+                // building was destroyed while building
                 unit->action.action = ActionStill;
                 // TODO: what if no room? unit lost?
-                unitPlace(map, unit, unit->action.move.ubTargetX, unit->action.move.ubTargetY);
-            } else if (0) {
-                // TODO: check if building now has full hp
+                unitPlace(unit, unit->action.move.ubTargetX, unit->action.move.ubTargetY);
+            } else if (building->hp >= BuildingTypes[building->type].stats.maxHP) {
                 unit->action.action = ActionStill;
                 // TODO: what if no room? unit lost?
-                unitPlace(map, unit, unit->action.move.ubTargetX, unit->action.move.ubTargetY);
+                unitPlace(unit, unit->action.move.ubTargetX, unit->action.move.ubTargetY);
             } else {
-                // TODO: transfer more HP to building
-                // XXX: for now just something completely different to see an effect
-                UBYTE buildingSize = 2;
-                UBYTE ubX = unit->action.move.ubTargetX;
-                UBYTE ubY = unit->action.move.ubTargetY;
-                UBYTE ubTileX = ubX / TILE_SIZE_FACTOR;
-                UBYTE ubTileY = ubY / TILE_SIZE_FACTOR;
-                UBYTE buildingTileIdx = unit->action.build.ubBuildingID;
-                if (!unit->action.build.u5buildingHPIncrease--) {
-                    for (UBYTE y = 0; y < buildingSize / TILE_SIZE_FACTOR; ++y) {
-                        for (UBYTE x = 0; x < buildingSize / TILE_SIZE_FACTOR; ++x) {
-                            g_Map.m_ulTilemapXY[ubTileX + x][ubTileY + y] = tileIndexToTileBitmapOffset(buildingTileIdx++);
-                        }
-                    }
-                    unit->action.action = ActionStill;
-                    // TODO: what if no room? unit lost?
-                    unitPlace(map, unit, ubX, ubY);
+                if (--unit->action.build.u6buildingHPWait) {
+                    return;
                 }
+                building->hp += unit->action.build.u6buildingHPIncrease + 4;
             }
         }
     }
 }
 
-void actionDo(Unit *unit, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE]) {
+void actionDo(Unit *unit) {
     switch (unit->action.action) {
         case ActionStill:
             actionStill(unit);
             return;
         case ActionMove:
-            actionMove(unit, map);
+            actionMove(unit);
             return;
         case ActionStop:
             unit->action.action = ActionStill;
             return;
         case ActionBuild:
-            actionBuild(unit, map);
+            actionBuild(unit);
+            return;
+        default:
+            return;
+    }
+}
+
+void actionBeingBuilt(Building *building) {
+    BuildingType *type = &BuildingTypes[building->type];
+    if (building->hp >= type->stats.maxHP) {
+        building->hp = type->stats.maxHP;
+        building->action.action = ActionStill;
+        tUbCoordYX loc = building->loc;
+        loc.uwYX = loc.uwYX / TILE_SIZE_FACTOR;
+        UBYTE buildingTileIdx = type->tileIdx;
+        UBYTE buildingSize = type->size / TILE_SIZE_FACTOR;
+        for (UBYTE y = 0; y < buildingSize; ++y) {
+            for (UBYTE x = 0; x < buildingSize; ++x) {
+                g_Map.m_ulTilemapXY[loc.ubX + x][loc.ubY + y] = tileIndexToTileBitmapOffset(buildingTileIdx++);
+            }
+        }
+    }
+}
+
+void buildingDo(Building *building) {
+    switch (building->action.action) {
+        case ActionStill:
+            return;
+        case ActionBeingBuilt:
+            actionBeingBuilt(building);
             return;
         default:
             return;

@@ -1,4 +1,5 @@
 #include "include/icons.h"
+#include "include/buildings.h"
 #include "include/sprites.h"
 #include "include/map.h"
 #include "game.h"
@@ -120,14 +121,10 @@ void iconCancel(Unit **, UBYTE ) {
 
 void iconActionBuildHumanFarmAt(Unit **unit, UBYTE unitc, tUbCoordYX tilePos) {
     tUbCoordYX buildPos = {.ubX = tilePos.ubX / TILE_SIZE_FACTOR * TILE_SIZE_FACTOR, .ubY = tilePos.ubY / TILE_SIZE_FACTOR * TILE_SIZE_FACTOR};
-    for (UBYTE x = 0; x < 2; ++x) {
-        for (UBYTE y = 0; y < 2; ++y) {
-            if (g_Map.m_ubPathmapXY[buildPos.ubX + x][buildPos.ubY + y] != MAP_GROUND_FLAG) {
-                cannotBuild();
-                iconCancel(unit, unitc);
-                return;
-            }
-        }
+    if (!buildingCanBeAt(BUILDING_HUMAN_FARM, buildPos, 0)) {
+        cannotBuild();
+        iconCancel(unit, unitc);
+        return;
     }
     iconCancel(unit, unitc);
     g_Screen.lmbAction = NULL;
@@ -140,7 +137,7 @@ void iconBuildHumanFarm(Unit **, UBYTE unitc) {
         iconRectSpritesUpdate(0, 0);
     }
     g_Screen.lmbAction = &iconActionBuildHumanFarmAt;
-    g_Screen.m_cursorBobs.pFirstTile = (PLANEPTR)tileIndexToTileBitmapOffset(BUILDING_HUMAN_FARM);
+    g_Screen.m_cursorBobs.pFirstTile = (PLANEPTR)tileIndexToTileBitmapOffset(BuildingTypes[BUILDING_HUMAN_FARM].tileIdx);
     g_Screen.m_cursorBobs.ubCount = 1;
 }
 

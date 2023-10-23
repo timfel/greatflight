@@ -6,6 +6,8 @@
 #include "ace/macros.h"
 #include "ace/managers/memory.h"
 
+tUnitManager g_UnitManager;
+
 UnitType UnitTypes[] = {
     [dead] = {},
     [peasant] = {},
@@ -58,14 +60,13 @@ static inline UBYTE unitManagerUnitIsActive(Unit *unit) {
 }
 #endif
 
-tUnitManager * unitManagerCreate(void) {
-    tUnitManager *mgr = (tUnitManager *)memAllocFastClear(sizeof(tUnitManager));
-    mgr->unitCount = 0;
+void unitManagerInitialize(void) {
+    g_UnitManager.unitCount = 0;
     for (UBYTE i = 0; i < MAX_UNITS; ++i) {
 #ifdef ACE_DEBUG
-        mgr->units[i].loc = UNIT_FREE_TILE_POSITION;
+        g_UnitManager.units[i].loc = UNIT_FREE_TILE_POSITION;
 #endif
-        mgr->freeUnitsStack[i] = i;
+        g_UnitManager.freeUnitsStack[i] = i;
     }
 
     // TODO: lazy loading of spritesheets
@@ -77,24 +78,21 @@ tUnitManager * unitManagerCreate(void) {
             UnitTypes[i].mask = mask;
         }
     }
-
-    return mgr;
 }
 
-void unitManagerDestroy(tUnitManager *mgr) {
+void unitManagerDestroy(void) {
     for (UWORD i = 0; i < sizeof(UnitTypes) / sizeof(UnitType); i++) {
         if (UnitTypes[i].spritesheet) {
             bitmapDestroy(UnitTypes[i].spritesheet);
             bitmapDestroy(UnitTypes[i].mask);
         }
     }
-    for (UBYTE i = 0; i < mgr->unitCount; ++i) {
+    for (UBYTE i = 0; i < g_UnitManager.unitCount; ++i) {
 #ifdef ACE_DEBUG
-        if (unitManagerUnitIsActive(&mgr->units[i]))
+        if (unitManagerUnitIsActive(&g_UnitManager.units[i]))
 #endif
-        unitDelete(mgr, &mgr->units[i]);
+        unitDelete(&g_UnitManager.units[i]);
     }
-    memFree(mgr, sizeof(tUnitManager));
 }
 
 static inline void unitDraw(Unit *self, tUbCoordYX viewportTopLeft) {
@@ -136,10 +134,10 @@ static inline void unitOffscreen(Unit *self) {
     self->bob.sPos.uwX = UWORD_MAX;
 }
 
-void unitManagerProcessUnits(tUnitManager *mgr, UBYTE pPathMap[PATHMAP_SIZE][PATHMAP_SIZE], tUbCoordYX viewportTopLeft, tUbCoordYX viewportBottomRight) {
-    for (UBYTE i = 0; i < mgr->unitCount; ++i) {
-        Unit *unit = &mgr->units[i];
-        actionDo(unit, pPathMap);
+void unitManagerProcessUnits(tUbCoordYX viewportTopLeft, tUbCoordYX viewportBottomRight) {
+    for (UBYTE i = 0; i < g_UnitManager.unitCount; ++i) {
+        Unit *unit = &g_UnitManager.units[i];
+        actionDo(unit);
         tUbCoordYX loc = unitGetTilePosition(unit);
         if (loc.ubX >= viewportTopLeft.ubX
                 && loc.ubY >= viewportTopLeft.ubY
@@ -152,9 +150,9 @@ void unitManagerProcessUnits(tUnitManager *mgr, UBYTE pPathMap[PATHMAP_SIZE][PAT
     }
 }
 
-Unit *unitManagerUnitAt(tUnitManager *mgr, tUbCoordYX tile) {
-    for (UBYTE i = 0; i < mgr->unitCount; ++i) {
-        Unit *unit = &mgr->units[i];
+Unit *unitManagerUnitAt(tUbCoordYX tile) {
+    for (UBYTE i = 0; i < g_UnitManager.unitCount; ++i) {
+        Unit *unit = &g_UnitManager.units[i];
         tUbCoordYX loc = unitGetTilePosition(unit);
         if (loc.uwYX == tile.uwYX) {
             return unit;
@@ -163,13 +161,13 @@ Unit *unitManagerUnitAt(tUnitManager *mgr, tUbCoordYX tile) {
     return NULL;
 }
 
-Unit * unitNew(tUnitManager *mgr, UnitTypeIndex typeIdx) {
-    if (mgr->unitCount >= MAX_UNITS) {
+Unit * unitNew(UnitTypeIndex typeIdx) {
+    if (g_UnitManager.unitCount >= MAX_UNITS) {
         return NULL;
     }
     UnitType *type = &UnitTypes[typeIdx];
-    Unit *unit = &mgr->units[mgr->freeUnitsStack[mgr->unitCount]];
-    mgr->unitCount++;
+    Unit *unit = &g_UnitManager.units[g_UnitManager.freeUnitsStack[g_UnitManager.unitCount]];
+    g_UnitManager.unitCount++;
 
     unit->bob.sprite = type->spritesheet->Planes[0];
     unit->bob.mask = type->spritesheet->Planes[0];
@@ -178,28 +176,28 @@ Unit * unitNew(tUnitManager *mgr, UnitTypeIndex typeIdx) {
     return unit;
 }
 
-void unitDelete(tUnitManager *mgr, Unit *unit) {
+void unitDelete(Unit *unit) {
 #ifdef ACE_DEBUG
     if (!unitManagerUnitIsActive(unit)) {
         logWrite("Deleting inactive unit!!!");
     }
     unit->loc = UNIT_FREE_TILE_POSITION;
-    ULONG longIdx = (ULONG)unit - (ULONG)mgr->units;
+    ULONG longIdx = (ULONG)unit - (ULONG)g_UnitManager.units;
     if (longIdx > 255) {
         logWrite("ALARM! unit idx is whaaat? %ld\n", longIdx);
     }
 #endif
-    UBYTE idx = (ULONG)unit - (ULONG)mgr->units;
-    mgr->unitCount--;
-    mgr->freeUnitsStack[mgr->unitCount] = idx;
+    UBYTE idx = (ULONG)unit - (ULONG)g_UnitManager.units;
+    g_UnitManager.unitCount--;
+    g_UnitManager.freeUnitsStack[g_UnitManager.unitCount] = idx;
 }
 
-UBYTE unitCanBeAt(UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE], Unit __attribute__((__unused__)) *unit, UBYTE x, UBYTE y) {
+UBYTE unitCanBeAt(Unit *, UBYTE x, UBYTE y) {
     // TODO: when we have units larger than 1 tile, check that here
-    return mapIsWalkable(map, x, y);
+    return mapIsWalkable(x, y);
 }
 
-UBYTE unitPlace(UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE], Unit *unit, UBYTE x, UBYTE y) {
+UBYTE unitPlace(Unit *unit, UBYTE x, UBYTE y) {
     UBYTE actualX, actualY;
     // drop out no further than 5 tiles away
     for (UBYTE range = 0; range < 5; ++range) {
@@ -207,34 +205,34 @@ UBYTE unitPlace(UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE], Unit *unit, UBYTE x, UBYT
             actualX = x + xoff;
             for (UBYTE yoff = 0; yoff < range * 2; ++yoff) {
                 actualY = y + yoff;
-                if (unitCanBeAt(map, unit, actualX, actualY)) {
+                if (unitCanBeAt(unit, actualX, actualY)) {
                     unit->x = actualX;
                     unit->y = actualY;
-                    markMapTile(map, actualX, actualY);
+                    markMapTile(actualX, actualY);
                     return 1;
                 }
                 actualY = y - yoff;
-                if (unitCanBeAt(map, unit, actualX, actualY)) {
+                if (unitCanBeAt(unit, actualX, actualY)) {
                     unit->x = actualX;
                     unit->y = actualY;
-                    markMapTile(map, actualX, actualY);
+                    markMapTile(actualX, actualY);
                     return 1;
                 }
             }
             actualX = x - xoff;
             for (UBYTE yoff = 0; yoff < range * 2; ++yoff) {
                 actualY = y + yoff;
-                if (unitCanBeAt(map, unit, actualX, actualY)) {
+                if (unitCanBeAt(unit, actualX, actualY)) {
                     unit->x = actualX;
                     unit->y = actualY;
-                    markMapTile(map, actualX, actualY);
+                    markMapTile(actualX, actualY);
                     return 1;
                 }
                 actualY = y - yoff;
-                if (unitCanBeAt(map, unit, actualX, actualY)) {
+                if (unitCanBeAt(unit, actualX, actualY)) {
                     unit->x = actualX;
                     unit->y = actualY;
-                    markMapTile(map, actualX, actualY);
+                    markMapTile(actualX, actualY);
                     return 1;
                 }
             }
@@ -243,15 +241,15 @@ UBYTE unitPlace(UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE], Unit *unit, UBYTE x, UBYT
     return 0;
 }
 
-void loadUnit(tUnitManager *mgr, tFile *map) {
+void loadUnit(tFile *map) {
     UBYTE type, x, y;
     fileRead(map, &type, 1);
-    Unit *unit = unitNew(mgr, type);
+    Unit *unit = unitNew(type);
     fileRead(map, &x, 1);
     fileRead(map, &y, 1);
-    if (!unitPlace(g_Map.m_ubPathmapXY, unit, x, y)) {
+    if (!unitPlace(unit, x, y)) {
         logWrite("DANGER WILL ROBINSON! Could not place unit at %d:%d", x, y);
-        unitDelete(mgr, unit);
+        unitDelete(unit);
         return;
     }
     fileRead(map, &unit->action, 1);
@@ -269,12 +267,12 @@ void loadUnit(tUnitManager *mgr, tFile *map) {
     }
 }
 
-void unitsLoad(tUnitManager *mgr, tFile *map) {
+void unitsLoad(tFile *map) {
     for (UBYTE i = 0; i < sizeof(g_pPlayers) / sizeof(struct Player); ++i) {
         UBYTE count;
         fileRead(map, &count, 1);
         for (UBYTE unit = 0; unit < count; ++unit) {
-            loadUnit(mgr, map);
+            loadUnit(map);
         }
     }
 }

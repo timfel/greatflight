@@ -30,6 +30,8 @@ enum __attribute__((__packed__)) TileIndices {
     TILEINDEX_WOOD_SMALL = 6,
     TILEINDEX_WOOD_MEDIUM = 7,
     TILEINDEX_WOOD_LARGE = 8,
+    TILEINDEX_CONSTRUCTION_SMALL = 22,
+    TILEINDEX_CONSTRUCTION_LARGE = 40,
 };
 
 /**
@@ -45,20 +47,20 @@ extern void mapLoad(tFile *file, void(*loadTileBitmap)());
 #define MAP_WATER_FLAG   0b1001
 #define MAP_COAST_FLAG  0b10000
 
-static inline UBYTE mapIsWalkable(UBYTE pathMap[PATHMAP_SIZE][PATHMAP_SIZE], UBYTE x, UBYTE y) {
-    return x < PATHMAP_SIZE && y < PATHMAP_SIZE && !(pathMap[x][y] & MAP_UNWALKABLE_FLAG);
+static inline UBYTE mapIsWalkable(UBYTE x, UBYTE y) {
+    return x < PATHMAP_SIZE && y < PATHMAP_SIZE && !(g_Map.m_ubPathmapXY[x][y] & MAP_UNWALKABLE_FLAG);
 }
 
-static inline UBYTE mapIsHarvestable(UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE], UBYTE x, UBYTE y) {
-    return map[x][y] & MAP_FOREST_FLAG;
+static inline UBYTE mapIsHarvestable(UBYTE x, UBYTE y) {
+    return g_Map.m_ubPathmapXY[x][y] & MAP_FOREST_FLAG;
 }
 
-static inline void markMapTile(UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE], UBYTE x, UBYTE y) {
-    map[x][y] |= MAP_UNWALKABLE_FLAG;
+static inline void markMapTile(UBYTE x, UBYTE y) {
+    g_Map.m_ubPathmapXY[x][y] |= MAP_UNWALKABLE_FLAG;
 }
 
-static inline void unmarkMapTile(UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE], UBYTE x, UBYTE y) {
-    map[x][y] ^= MAP_UNWALKABLE_FLAG;
+static inline void unmarkMapTile(UBYTE x, UBYTE y) {
+    g_Map.m_ubPathmapXY[x][y] ^= MAP_UNWALKABLE_FLAG;
 }
 
 /*

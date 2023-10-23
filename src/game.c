@@ -4,6 +4,7 @@
 #include "include/map.h"
 #include "include/player.h"
 #include "include/units.h"
+#include "include/buildings.h"
 #include "include/resources.h"
 #include "include/sprites.h"
 
@@ -15,11 +16,9 @@
 #define RESOURCE_DIGITS 6
 
 struct Screen g_Screen;
-static tUnitManager *s_pUnitManager;
 
 static UWORD s_mouseX;
 static UWORD s_mouseY;
-
 static tUwRect s_selectionRubberBand;
 
 enum mode {
@@ -91,7 +90,7 @@ void loadMap(const char* name, UWORD mapbufCoplistStart, UWORD mapColorsCoplistS
 
     mapLoad(map, &loadTileBitmap);
     playersLoad(map);
-    unitsLoad(s_pUnitManager, map);
+    unitsLoad(map);
     fileClose(map);
 
     // now setup map viewport
@@ -226,7 +225,8 @@ void gameGsCreate(void) {
 
     createViewports();
 
-    s_pUnitManager = unitManagerCreate();
+    unitManagerInitialize();
+    buildingManagerInitialize();
 
     // load map file
     loadMap(g_Map.m_pName, s_copOffsets.mapbufCoplistStart, s_copOffsets.mapColorsCoplistStart);
@@ -586,7 +586,7 @@ void handleLeftMouseUp(tUwCoordYX lmbDown, tUwCoordYX mousePos) {
         UBYTE xcur = x1;    
         while (xcur <= x2) {
             tUbCoordYX tile = (tUbCoordYX){.ubX = xcur, .ubY = y1};
-            Unit *unit = unitManagerUnitAt(s_pUnitManager, tile);
+            Unit *unit = unitManagerUnitAt(tile);
             if (unit) {
                 for(UBYTE idx = 0; idx < s_ubSelectedUnitCount; ++idx) {
                     if (s_pSelectedUnit[idx] == unit) {
@@ -785,11 +785,10 @@ void drawUnits(void) {
     // process all units
     tUbCoordYX tileTopLeft = mapPosToTile(g_Screen.m_map.m_pCamera->uPos);
     unitManagerProcessUnits(
-        s_pUnitManager,
-        g_Map.m_ubPathmapXY,
         tileTopLeft,
         (tUbCoordYX){.ubX = (tileTopLeft.ubX + VISIBLE_TILES_X * 2), .ubY = (tileTopLeft.ubY + VISIBLE_TILES_Y * 2)}
     );
+    buildingManagerProcess();
 }
 
 void drawFog(void) {
@@ -945,5 +944,6 @@ void gameGsDestroy(void) {
     systemUse();
 
     screenDestroy();
-    unitManagerDestroy(s_pUnitManager);
+    unitManagerDestroy();
+    buildingManagerDestroy();
 }

@@ -2,7 +2,6 @@
 #define ACTIONS_H
 
 #include "include/map.h"
-#include "include/buildings.h"
 #include "ace/types.h"
 
 typedef enum __attribute__ ((__packed__)) {
@@ -40,8 +39,13 @@ typedef struct __attribute__((__packed__)) {
             UBYTE ubWait;
         } still;
         struct __attribute__((__packed__)) {
-            UBYTE ubTargetX;
-            UBYTE ubTargetY;
+            union {
+                struct __attribute__((__packed__)) {
+                    UBYTE ubTargetY;
+                    UBYTE ubTargetX;
+                };
+                tUbCoordYX target;
+            };
             unsigned u4Wait:4;
             unsigned u4Retries:4;
             UBYTE unused;
@@ -55,12 +59,13 @@ typedef struct __attribute__((__packed__)) {
             };
             union {
                 struct __attribute__((__packed__)) {
-                    unsigned u5BuildingType:5; // 20 buildings, at most 32
-                    unsigned u2State:3; // going to goal, groundwork, waiting
+                    unsigned u6BuildingType:6; // 20 buildings, at most 64
+                    unsigned u2State:2; // going to goal, groundwork, waiting
                 };
                 struct __attribute__((__packed__)) {
-                    unsigned u5buildingHPIncrease:5;
-                    unsigned __u2State:3; // going to goal, groundwork, waiting
+                    unsigned u6buildingHPIncrease:2;
+                    unsigned u6buildingHPWait:4;
+                    unsigned __u2State:2;
                 };
             };
         } build;
@@ -69,10 +74,13 @@ typedef struct __attribute__((__packed__)) {
 _Static_assert(sizeof(Action) == sizeof(UBYTE) * 5, "action is too big");
 
 typedef struct _unit Unit;
+typedef struct _building Building;
 
-void actionDo(Unit *unit, UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE]);
+void actionDo(Unit *unit);
 void actionMoveTo(Unit *unit, tUbCoordYX goal);
 void actionStop(Unit *unit);
-void actionBuildAt(Unit *unit, tUbCoordYX goal, BuildingType tileType);
+void actionBuildAt(Unit *unit, tUbCoordYX goal, UBYTE tileType);
+
+void buildingDo(Building *building);
 
 #endif

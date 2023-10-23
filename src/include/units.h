@@ -102,7 +102,7 @@ typedef struct _unit {
     BYTE IY;
 } Unit;
 
-extern void unitsLoad(tUnitManager *mgr, tFile *map);
+extern void unitsLoad(tFile *map);
 
 /* The global list of unit types */
 extern UnitType UnitTypes[];
@@ -111,59 +111,56 @@ extern UnitType UnitTypes[];
 #define MAX_UNITS 200
 
 /**
- * @brief Create the unit manager.
- * 
- * @return a pointer to the unit list.
+ * @brief Initialize the unit manager.
  */
-tUnitManager *unitManagerCreate(void);
+void unitManagerInitialize(void);
 
 /**
  * @brief Deallocate resources used by the unit manager
- * @param pUnitListHead unit list pointer created from unitManagerCreate()
  */
-void unitManagerDestroy(tUnitManager *pUnitListHead);
-
-/**
- * @brief Initialized a new unit of a specific type.
- * 
- * @param pUnitListHead unit list pointer created from unitManagerCreate()
- * @param type of unit to initialize
- * @return new unit pointer
- */
-Unit * unitNew(tUnitManager *pUnitListHead, UnitTypeIndex type);
-
-/**
- * @brief Free the selected unit.
- * 
- * @param pUnitListHead unit list pointer created from unitManagerCreate()
- * @param unit to free
- */
-void unitDelete(tUnitManager *pUnitListHead, Unit *unit);
+void unitManagerDestroy(void);
 
 /**
  * @brief Process all units' drawing and actions. Must be called after bobBegin() and before bobEnd()!
  * 
- * @param pUnitListHead unit list pointer created from unitManagerCreate()
+ * @param pUnitListHead unit list pointer created from unitManagerInitialize()
  * @param pTileData 2d tile grid of map
  * @param viewportTopLeft top left visible tile
  * @param viewportBottomRight bottom right visible tile
  */
-void unitManagerProcessUnits(tUnitManager *pUnitListHead, UBYTE pTileData[PATHMAP_SIZE][PATHMAP_SIZE], tUbCoordYX viewportTopLeft, tUbCoordYX viewportBottomRight);
+void unitManagerProcessUnits(tUbCoordYX viewportTopLeft, tUbCoordYX viewportBottomRight);
+
+/**
+ * @brief Initialized a new unit of a specific type.
+ * 
+ * @param pUnitListHead unit list pointer created from unitManagerInitialize()
+ * @param type of unit to initialize
+ * @return new unit pointer
+ */
+Unit * unitNew(UnitTypeIndex type);
+
+/**
+ * @brief Free the selected unit.
+ * 
+ * @param pUnitListHead unit list pointer created from unitManagerInitialize()
+ * @param unit to free
+ */
+void unitDelete(Unit *unit);
 
 /**
  * @brief Return unit on tile, if any
  * 
- * @param pUnitListHead unit list pointer created from unitManagerCreate()
+ * @param pUnitListHead unit list pointer created from unitManagerInitialize()
  * @param tile position where to look for unit
  * @return Unit* or NULL, if no unit is at the position
  */
-Unit *unitManagerUnitAt(tUnitManager *pUnitListHead, tUbCoordYX tile);
+Unit *unitManagerUnitAt(tUbCoordYX tile);
 
 _Static_assert(MAP_SIZE * TILE_SIZE < 0xfff, "map is small enough to fit locations in bytes");
 
 tUbCoordYX unitGetTilePosition(Unit *self);
 
-UBYTE unitPlace(UBYTE map[PATHMAP_SIZE][PATHMAP_SIZE], Unit *unit, UBYTE x, UBYTE y);
+UBYTE unitPlace(Unit *unit, UBYTE x, UBYTE y);
 
 void unitSetOffMap(Unit *self);
 

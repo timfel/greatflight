@@ -6,7 +6,7 @@
 
 typedef enum  __attribute__ ((__packed__)) {
     ICON_NONE = 0,
-    ICON_ATTACK,
+    ICON_FRAME,
     ICON_STOP,
     ICON_HFARM,
     ICON_HBARRACKS,
@@ -18,7 +18,7 @@ typedef enum  __attribute__ ((__packed__)) {
     ICON_SHIELD1,
     ICON_PEASANT,
     ICON_MOVE,
-    ICON_UNUSED,
+    ICON_ATTACK,
     ICON_UNUSED2,
     ICON_BUILD_BASIC,
     //
@@ -36,7 +36,7 @@ typedef struct {
     UWORD dstModulo;
     UWORD bltsize;
     union {
-        tIconActionUnit action;
+        tIconActionUnit unitAction;
         tIconActionBuilding buildingAction;
     };
 #ifdef ACE_DEBUG
@@ -46,7 +46,10 @@ typedef struct {
 
 typedef struct {
     IconIdx icons[3];
-    tIconActionUnit actions[3];
+    union {
+        tIconActionUnit unitActions[3];
+        tIconActionBuilding buildingActions[3];
+    };
 } IconDefinitions;
 
 extern IconDefinitions g_UnitIconDefinitions[];
@@ -58,10 +61,11 @@ void iconInit(tIcon *icon,
     tBitMap *iconBuffer, tUwCoordYX iconPosition);
 
 void iconSetSource(tIcon *icon, tBitMap *iconTileMap, IconIdx iconIdx);
-void iconSetAction(tIcon *icon, tIconActionUnit action);
+void iconSetUnitAction(tIcon *icon, tIconActionUnit action);
+void iconSetBuildingAction(tIcon *icon, tIconActionBuilding action);
 void iconDraw(tIcon *icon, UBYTE drawAfterOtherIcon);
 
-// Now all the actual action handling
+// Now all the actual unitAction handling
 void iconActionMove(Unit **unit, UBYTE unitc);
 void iconActionStop(Unit **unit, UBYTE unitc);
 void iconActionAttack(Unit **unit, UBYTE unitc);

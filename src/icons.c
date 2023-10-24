@@ -66,8 +66,12 @@ void iconDraw(tIcon *icon, UBYTE drawAfterOtherIcon) {
     g_pCustom->bltsize = icon->bltsize;
 }
 
-void iconSetAction(tIcon *icon, tIconActionUnit action) {
-    icon->action = action;
+void iconSetUnitAction(tIcon *icon, tIconActionUnit action) {
+    icon->unitAction = action;
+}
+
+void iconSetBuildingAction(tIcon *icon, tIconActionBuilding action) {
+    icon->buildingAction = action;
 }
 
 void iconActionMoveTo(Unit **unit, UBYTE unitc, tUbCoordYX tilePos) {
@@ -113,72 +117,44 @@ static tIconActionUnit s_previousActions[NUM_ACTION_ICONS];
 void iconCancel(Unit **, UBYTE ) {
     for (UBYTE i = 0; i < NUM_ACTION_ICONS; ++i) {
         g_Screen.m_pActionIcons[i].iconSrcPtr = s_previousIcons[i];
-        g_Screen.m_pActionIcons[i].action = s_previousActions[i];
+        g_Screen.m_pActionIcons[i].unitAction = s_previousActions[i];
         iconDraw(&g_Screen.m_pActionIcons[i], i);
     }
     iconRectSpritesUpdate(0, 0);
 }
 
-void iconActionBuildHumanFarmAt(Unit **unit, UBYTE unitc, tUbCoordYX tilePos) {
-    tUbCoordYX buildPos = {.ubX = tilePos.ubX / TILE_SIZE_FACTOR * TILE_SIZE_FACTOR, .ubY = tilePos.ubY / TILE_SIZE_FACTOR * TILE_SIZE_FACTOR};
-    if (!buildingCanBeAt(BUILDING_HUMAN_FARM, buildPos, 0)) {
-        cannotBuild();
-        iconCancel(unit, unitc);
-        return;
+#define BUILD_ACTION(name, buildingType, sz) \
+    void iconActionBuild ## name ## At(Unit **unit, UBYTE unitc, tUbCoordYX tilePos) { \
+        tUbCoordYX buildPos = {.ubX = tilePos.ubX / TILE_SIZE_FACTOR * TILE_SIZE_FACTOR, .ubY = tilePos.ubY / TILE_SIZE_FACTOR * TILE_SIZE_FACTOR}; \
+        if (!buildingCanBeAt(buildingType, buildPos, 0)) { \
+            cannotBuild(); \
+            iconCancel(unit, unitc); \
+            return; \
+        } \
+        iconCancel(unit, unitc); \
+        g_Screen.lmbAction = NULL; \
+        g_Screen.m_cursorBobs.ubCount = 0; \
+        actionBuildAt(*unit, buildPos, buildingType); \
+    } \
+    void iconBuild ## name(Unit **, UBYTE unitc) { \
+        if (!unitc) { \
+            iconRectSpritesUpdate(0, 0); \
+        } \
+        g_Screen.lmbAction = &iconActionBuild ## name ## At; \
+        g_Screen.m_cursorBobs.pFirstTile = (PLANEPTR)tileIndexToTileBitmapOffset(BuildingTypes[buildingType].tileIdx); \
+        g_Screen.m_cursorBobs.ubCount = sz; \
     }
-    iconCancel(unit, unitc);
-    g_Screen.lmbAction = NULL;
-    g_Screen.m_cursorBobs.ubCount = 0;
-    actionBuildAt(*unit, buildPos, BUILDING_HUMAN_FARM);
-}
 
-void iconBuildHumanFarm(Unit **, UBYTE unitc) {
-    if (!unitc) {
-        iconRectSpritesUpdate(0, 0);
-    }
-    g_Screen.lmbAction = &iconActionBuildHumanFarmAt;
-    g_Screen.m_cursorBobs.pFirstTile = (PLANEPTR)tileIndexToTileBitmapOffset(BuildingTypes[BUILDING_HUMAN_FARM].tileIdx);
-    g_Screen.m_cursorBobs.ubCount = 1;
-}
-
-void iconBuildHumanBarracks(Unit **, UBYTE ) {
-    logWrite("Build human barracks");
-}
-
-void iconBuildHumanLumbermill(Unit **, UBYTE ) {
-    logWrite("Build human lumbermill");
-}
-
-void iconBuildHumanSmithy(Unit **, UBYTE ) {
-    logWrite("Build human smithy");
-}
-
-void iconActionBuildHumanHallAt(Unit **unit, UBYTE unitc, tUbCoordYX tilePos) {
-    tUbCoordYX buildPos = {.ubX = tilePos.ubX / TILE_SIZE_FACTOR * TILE_SIZE_FACTOR, .ubY = tilePos.ubY / TILE_SIZE_FACTOR * TILE_SIZE_FACTOR};
-    if (!buildingCanBeAt(BUILDING_HUMAN_TOWNHALL, buildPos, 0)) {
-        cannotBuild();
-        iconCancel(unit, unitc);
-        return;
-    }
-    iconCancel(unit, unitc);
-    g_Screen.lmbAction = NULL;
-    g_Screen.m_cursorBobs.ubCount = 0;
-    actionBuildAt(*unit, buildPos, BUILDING_HUMAN_TOWNHALL);
-}
-
-void iconBuildHumanHall(Unit **, UBYTE unitc) {
-    if (!unitc) {
-        iconRectSpritesUpdate(0, 0);
-    }
-    g_Screen.lmbAction = &iconActionBuildHumanHallAt;
-    g_Screen.m_cursorBobs.pFirstTile = (PLANEPTR)tileIndexToTileBitmapOffset(BuildingTypes[BUILDING_HUMAN_TOWNHALL].tileIdx);
-    g_Screen.m_cursorBobs.ubCount = 4;
-}
+BUILD_ACTION(HumanFarm, BUILDING_HUMAN_FARM, 1);
+BUILD_ACTION(HumanBarracks, BUILDING_HUMAN_BARRACKS, 4);
+BUILD_ACTION(HumanLumbermill, BUILDING_HUMAN_LUMBERMILL, 4);
+BUILD_ACTION(HumanSmithy, BUILDING_HUMAN_SMITHY, 1);
+BUILD_ACTION(HumanHall, BUILDING_HUMAN_TOWNHALL, 4);
 
 void iconActionBuildBasic(Unit **, UBYTE) {
     for (UBYTE i = 0; i < NUM_ACTION_ICONS; ++i) {
         s_previousIcons[i] = g_Screen.m_pActionIcons[i].iconSrcPtr;
-        s_previousActions[i] = g_Screen.m_pActionIcons[i].action;
+        s_previousActions[i] = g_Screen.m_pActionIcons[i].unitAction;
     }
     iconSetSource(&g_Screen.m_pActionIcons[0], g_Screen.m_pIcons, ICON_HFARM);
     iconSetSource(&g_Screen.m_pActionIcons[1], g_Screen.m_pIcons, ICON_HBARRACKS);
@@ -187,12 +163,12 @@ void iconActionBuildBasic(Unit **, UBYTE) {
     iconSetSource(&g_Screen.m_pActionIcons[4], g_Screen.m_pIcons, ICON_HHALL);
     iconSetSource(&g_Screen.m_pActionIcons[5], g_Screen.m_pIcons, ICON_CANCEL);
 
-    iconSetAction(&g_Screen.m_pActionIcons[0], &iconBuildHumanFarm);
-    iconSetAction(&g_Screen.m_pActionIcons[1], &iconBuildHumanBarracks);
-    iconSetAction(&g_Screen.m_pActionIcons[2], &iconBuildHumanLumbermill);
-    iconSetAction(&g_Screen.m_pActionIcons[3], &iconBuildHumanSmithy);
-    iconSetAction(&g_Screen.m_pActionIcons[4], &iconBuildHumanHall);
-    iconSetAction(&g_Screen.m_pActionIcons[5], &iconCancel);
+    iconSetUnitAction(&g_Screen.m_pActionIcons[0], &iconBuildHumanFarm);
+    iconSetUnitAction(&g_Screen.m_pActionIcons[1], &iconBuildHumanBarracks);
+    iconSetUnitAction(&g_Screen.m_pActionIcons[2], &iconBuildHumanLumbermill);
+    iconSetUnitAction(&g_Screen.m_pActionIcons[3], &iconBuildHumanSmithy);
+    iconSetUnitAction(&g_Screen.m_pActionIcons[4], &iconBuildHumanHall);
+    iconSetUnitAction(&g_Screen.m_pActionIcons[5], &iconCancel);
 
     iconDraw(&g_Screen.m_pActionIcons[0], 0);
     iconDraw(&g_Screen.m_pActionIcons[1], 1);
@@ -206,11 +182,27 @@ void iconActionBuildBasic(Unit **, UBYTE) {
 
 IconDefinitions g_UnitIconDefinitions[unitTypeCount] = {
     [dead] = {},
-    [peasant] = {.icons = {ICON_HARVEST, ICON_BUILD_BASIC}, .actions = {&iconActionHarvest, &iconActionBuildBasic}},
-    [peon] = {.icons = {ICON_HARVEST, ICON_BUILD_BASIC}, .actions = {&iconActionHarvest, &iconActionBuildBasic}},
+    [peasant] = {.icons = {ICON_HARVEST, ICON_BUILD_BASIC}, .unitActions = {&iconActionHarvest, &iconActionBuildBasic}},
+    [peon] = {.icons = {ICON_HARVEST, ICON_BUILD_BASIC}, .unitActions = {&iconActionHarvest, &iconActionBuildBasic}},
 };
+
+void iconBuildPeasant(Building *building) {
+    if (building->action.action == ActionTrain) {
+        if (!building->action.train.u5UnitType2) {
+            building->action.train.u5UnitType2 = peasant;
+        } else if (!building->action.train.u5UnitType3) {
+            building->action.train.u5UnitType3 = peasant;
+        } else {
+            logWrite("Training queue full\n");
+            return;
+        }
+    }
+    building->action.action = ActionTrain;
+    building->action.train.u5UnitType1 = peasant;
+    building->action.train.ubTimeLeft = UnitTypes[peasant].costs.time;
+}
 
 IconDefinitions g_BuildingIconDefinitions[BUILDING_TYPE_COUNT] = {
     [BUILDING_HUMAN_FARM] = {},
-    [BUILDING_HUMAN_TOWNHALL] = {.icons = {ICON_PEASANT}},
+    [BUILDING_HUMAN_TOWNHALL] = {.icons = {ICON_PEASANT}, .buildingActions = {&iconBuildPeasant}},
 };

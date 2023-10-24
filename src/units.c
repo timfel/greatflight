@@ -19,6 +19,11 @@ UnitType UnitTypes[] = {
             .speed = 2,
         },
         .iconIdx = ICON_PEASANT,
+        .costs = {
+            .gold = 400,
+            .lumber = 0,
+            .time = 250,
+        },
         .anim = {
             .large = 0,
             .walk = 3,

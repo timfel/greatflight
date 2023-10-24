@@ -69,6 +69,12 @@ typedef struct __attribute__((__packed__)) {
                 };
             };
         } build;
+        struct __attribute__((__packed__)) {    
+            unsigned u5UnitType1:5;
+            unsigned u5UnitType2:5;
+            unsigned u5UnitType3:5;
+            UWORD ubTimeLeft;
+        } train;
     };
 } Action;
 _Static_assert(sizeof(Action) == sizeof(UBYTE) * 5, "action is too big");

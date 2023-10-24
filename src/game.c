@@ -163,13 +163,13 @@ void loadUi(UWORD topPanelColorsPos, UWORD panelColorsPos, UWORD simplePosTop, U
     iconInit(&g_Screen.m_pActionIcons[0], 32, 18, g_Screen.m_pIcons, ICON_MOVE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 208, .uwY = 24});
     iconInit(&g_Screen.m_pActionIcons[1], 32, 18, g_Screen.m_pIcons, ICON_STOP, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 241, .uwY = 24});
     iconInit(&g_Screen.m_pActionIcons[2], 32, 18, g_Screen.m_pIcons, ICON_ATTACK, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 274, .uwY = 24});
-    iconInit(&g_Screen.m_pActionIcons[3], 32, 18, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 208, .uwY = 46});
-    iconInit(&g_Screen.m_pActionIcons[4], 32, 18, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 241, .uwY = 46});
-    iconInit(&g_Screen.m_pActionIcons[5], 32, 18, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 274, .uwY = 46});
+    iconInit(&g_Screen.m_pActionIcons[3], 32, 18, g_Screen.m_pIcons, ICON_FRAME, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 208, .uwY = 46});
+    iconInit(&g_Screen.m_pActionIcons[4], 32, 18, g_Screen.m_pIcons, ICON_FRAME, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 241, .uwY = 46});
+    iconInit(&g_Screen.m_pActionIcons[5], 32, 18, g_Screen.m_pIcons, ICON_FRAME, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 274, .uwY = 46});
     // default actions that never change
-    iconInit(&g_Screen.m_pSelectionIcons[0], 32, 18, g_Screen.m_pIcons, ICON_MOVE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 80, .uwY = 24});
-    iconInit(&g_Screen.m_pSelectionIcons[1], 32, 18, g_Screen.m_pIcons, ICON_STOP, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 113, .uwY = 24});
-    iconInit(&g_Screen.m_pSelectionIcons[2], 32, 18, g_Screen.m_pIcons, ICON_ATTACK, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 146, .uwY = 24});
+    iconInit(&g_Screen.m_pSelectionIcons[0], 32, 18, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 80, .uwY = 24});
+    iconInit(&g_Screen.m_pSelectionIcons[1], 32, 18, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 113, .uwY = 24});
+    iconInit(&g_Screen.m_pSelectionIcons[2], 32, 18, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 146, .uwY = 24});
     iconInit(&g_Screen.m_pSelectionIcons[3], 32, 18, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 80, .uwY = 46});
     iconInit(&g_Screen.m_pSelectionIcons[4], 32, 18, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 113, .uwY = 46});
     iconInit(&g_Screen.m_pSelectionIcons[5], 32, 18, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 146, .uwY = 46});
@@ -285,9 +285,9 @@ void drawInfoPanel(void) {
     if (g_Screen.m_ubBottomPanelDirty) {
         // TODO: only store and redraw the dirty part?
         g_Screen.m_ubBottomPanelDirty = 0;
+        UBYTE idx = 0;
         if (s_ubSelectedUnitCount) {
             UnitTypeIndex type;
-            UBYTE idx = 0;
             for(; idx < s_ubSelectedUnitCount; ++idx) {
                 type = s_pSelectedUnit[idx]->type;
                 drawSelectionIcon(UnitTypes[type].iconIdx, idx);
@@ -295,37 +295,41 @@ void drawInfoPanel(void) {
             iconSetSource(&g_Screen.m_pActionIcons[0], g_Screen.m_pIcons, ICON_MOVE);
             iconSetSource(&g_Screen.m_pActionIcons[1], g_Screen.m_pIcons, ICON_STOP);
             iconSetSource(&g_Screen.m_pActionIcons[2], g_Screen.m_pIcons, ICON_ATTACK);
-            iconSetAction(&g_Screen.m_pActionIcons[0], &iconActionMove);
-            iconSetAction(&g_Screen.m_pActionIcons[1], &iconActionStop);
-            iconSetAction(&g_Screen.m_pActionIcons[2], &iconActionAttack);
+            iconSetUnitAction(&g_Screen.m_pActionIcons[0], &iconActionMove);
+            iconSetUnitAction(&g_Screen.m_pActionIcons[1], &iconActionStop);
+            iconSetUnitAction(&g_Screen.m_pActionIcons[2], &iconActionAttack);
             if (idx == 1) {
                 IconDefinitions *def = &g_UnitIconDefinitions[type];
                 drawUnitInfo(s_pSelectedUnit[0]);
                 for (UBYTE i = 0; i < 3; ++i) {
                     iconSetSource(&g_Screen.m_pActionIcons[3 + i], g_Screen.m_pIcons, def->icons[i]);
-                    iconSetAction(&g_Screen.m_pActionIcons[3 + i], def->actions[i]);
+                    iconSetUnitAction(&g_Screen.m_pActionIcons[3 + i], def->unitActions[i]);
                 }
             } else {
-                iconSetSource(&g_Screen.m_pActionIcons[3], g_Screen.m_pIcons, ICON_NONE);
-                iconSetSource(&g_Screen.m_pActionIcons[4], g_Screen.m_pIcons, ICON_NONE);
-                iconSetSource(&g_Screen.m_pActionIcons[5], g_Screen.m_pIcons, ICON_NONE);
+                iconSetSource(&g_Screen.m_pActionIcons[3], g_Screen.m_pIcons, ICON_FRAME);
+                iconSetSource(&g_Screen.m_pActionIcons[4], g_Screen.m_pIcons, ICON_FRAME);
+                iconSetSource(&g_Screen.m_pActionIcons[5], g_Screen.m_pIcons, ICON_FRAME);
             }
         } else if (s_pSelectedBuilding) {
+            idx = 1;
             drawSelectionIcon(BuildingTypes[s_pSelectedBuilding->type].iconIdx, 0);
             drawBuildingInfo(s_pSelectedBuilding);
             IconDefinitions *def = &g_BuildingIconDefinitions[s_pSelectedBuilding->type];
             for (UBYTE i = 0; i < NUM_ACTION_ICONS; ++i) {
                 iconSetSource(&g_Screen.m_pActionIcons[i], g_Screen.m_pIcons, def->icons[i]);
-                iconSetAction(&g_Screen.m_pActionIcons[i], def->actions[i]);
+                iconSetUnitAction(&g_Screen.m_pActionIcons[i], def->unitActions[i]);
             }
         } else {
             for (UBYTE icon = 0; icon < NUM_ACTION_ICONS; ++icon) {
-                iconSetSource(&g_Screen.m_pActionIcons[icon], g_Screen.m_pIcons, ICON_NONE);
+                iconSetSource(&g_Screen.m_pActionIcons[icon], g_Screen.m_pIcons, ICON_FRAME);
             }
         }
 
         for (UBYTE icon = 0; icon < NUM_ACTION_ICONS; ++icon) {
             iconDraw(&g_Screen.m_pActionIcons[icon], icon);
+        }
+        for (UBYTE icon = idx; icon < NUM_SELECTION; ++icon) {
+            drawSelectionIcon(ICON_NONE, icon);
         }
     }
 }
@@ -389,16 +393,7 @@ void drawSelectionRectangles(void) {
                 }
             }
         }
-        if (idx == 0 && s_pSelectedBuilding) {
-            tUbCoordYX loc = s_pSelectedBuilding->loc;
-            selectionSpritesUpdate(
-                idx,
-                (loc.ubX << TILE_SHIFT) - g_Screen.m_map.m_pBuffer->pCamera->uPos.uwX,
-                (loc.ubY << TILE_SHIFT) - g_Screen.m_map.m_pBuffer->pCamera->uPos.uwY + TOP_PANEL_HEIGHT + 1
-            );
-        } else {
-            selectionSpritesUpdate(idx, -1, -1);
-        }
+        selectionSpritesUpdate(idx, -1, -1);
     }
 }
 
@@ -558,12 +553,12 @@ void handleLeftMouseUp(tUwCoordYX lmbDown, tUwCoordYX mousePos) {
             } else {
                 return;
             }
-            tIconActionUnit action = g_Screen.m_pActionIcons[column + line * 3].action;
+            tIconActionUnit action = g_Screen.m_pActionIcons[column + line * 3].unitAction;
             if (action) {
                 iconRectSpritesUpdate(
                     211 + column * 33,
                     TOP_PANEL_HEIGHT + MAP_HEIGHT + 24 + line * 22);
-                g_Screen.m_pActionIcons[column + line * 3].action(s_pSelectedUnit, s_ubSelectedUnitCount);
+                action(s_pSelectedUnit, s_ubSelectedUnitCount);
             }
         } else if (lmbDown.uwX <= MINIMAP_OFFSET_X + 64) {
             UWORD y = lmbDown.uwY - (TOP_PANEL_HEIGHT + MAP_HEIGHT + MINIMAP_OFFSET_Y);
@@ -609,6 +604,7 @@ void handleLeftMouseUp(tUwCoordYX lmbDown, tUwCoordYX mousePos) {
     UBYTE y2 = MAX(tile1.ubY, tile2.ubY);
     if (!(keyCheck(KEY_LSHIFT) || keyCheck(KEY_RSHIFT))) {
         s_ubSelectedUnitCount = 0;
+        s_pSelectedBuilding = NULL;
         g_Screen.m_ubBottomPanelDirty = 1;
     }
     while (y1 <= y2) {

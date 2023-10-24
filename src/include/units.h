@@ -35,6 +35,11 @@ typedef struct {
         UBYTE maxMana;
     } stats;
     struct {
+        UWORD gold;
+        UWORD lumber;
+        UWORD time;
+    } costs;
+    struct {
         unsigned large:1; // 16x16 or 24x24 pixels
         unsigned walk:2; // 0,1,2,3 walking frames
         unsigned attack:2; // 0,1,2,3 attack frames

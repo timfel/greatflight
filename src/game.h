@@ -73,10 +73,10 @@ struct Screen {
     } m_cursorBobs;
 
     // icons for main panel (actions and selected units)
-    tIcon m_pUnitIcons[NUM_UNIT_ICONS];
+    tIcon m_pSelectionIcons[NUM_UNIT_ICONS];
     tIcon m_pActionIcons[NUM_ACTION_ICONS];
     tBitMap *m_pIcons;
-    tIconActionWithTarget lmbAction;
+    tIconActionUnitTarget lmbAction;
 
     struct {
         // map viewport

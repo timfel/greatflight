@@ -185,3 +185,16 @@ void buildingManagerProcess(void) {
         building++;
     }
 }
+
+Building *buildingManagerBuildingAt(tUbCoordYX tile) {
+    for (UBYTE i = 0; i < g_BuildingManager.count; ++i) {
+        Building *building = &g_BuildingManager.building[i];
+        UBYTE sz = BuildingTypes[building->type].size;
+        tUbCoordYX loc = building->loc;
+        if (tile.ubX >= loc.ubX && tile.ubX <= loc.ubX + sz &&
+	            tile.ubY >= loc.ubY && tile.ubY <= loc.ubY + sz) {
+            return building;
+        }
+    }
+    return NULL;
+}

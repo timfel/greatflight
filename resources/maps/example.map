@@ -40,7 +40,7 @@
     ],
     "units": [
         [
-            *([[peon, 8, 3, *unit_defaults]] * 20),
+            *([[peasant, 8, 3, *unit_defaults]] * 20),
         ],
         [],
     ]

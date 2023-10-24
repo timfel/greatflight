@@ -2,8 +2,9 @@ import os
 import sys
 from typing import Any
 
-# convenience globals, to be kept in sync with the unit definitions
+# convenience globals, to be kept in sync with the loadUnit function
 mapglobals = dict(
+    peasant=1,
     peon=2,
     unit_defaults=[
         0, # action

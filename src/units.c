@@ -10,16 +10,15 @@ tUnitManager g_UnitManager;
 
 UnitType UnitTypes[] = {
     [dead] = {},
-    [peasant] = {},
-    [peon] = {
-        .spritesheetPath = "resources/units/peon.bm",
-        .maskPath = "resources/units/peon.msk",
+    [peasant] = {
+        .spritesheetPath = "resources/units/peasant.bm",
+        .maskPath = "resources/units/peasant.msk",
         .stats = {
             .maxHP = 30,
             .maxMana = 0,
             .speed = 2,
         },
-        .iconIdx = 54,
+        .iconIdx = ICON_PEASANT,
         .anim = {
             .large = 0,
             .walk = 3,
@@ -28,6 +27,7 @@ UnitType UnitTypes[] = {
             .wait = 2,
         },
     },
+    [peon] = {},
     [footman] = {},
     [grunt] = {},
     [archer] = {},

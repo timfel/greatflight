@@ -28,7 +28,7 @@ enum mode {
 static UWORD GameCycle = 0;
 static UBYTE s_Mode = game;
 
-// editor statics
+// editor statics   
 static UBYTE SelectedTile = 0x10;
 
 struct copOffsets_t {
@@ -45,6 +45,7 @@ struct copOffsets_t {
 static struct copOffsets_t s_copOffsets;
 
 // game statics
+static Building *s_pSelectedBuilding = NULL;
 static Unit *s_pSelectedUnit[NUM_SELECTION];
 static UBYTE s_ubSelectedUnitCount = 0;
 
@@ -166,9 +167,12 @@ void loadUi(UWORD topPanelColorsPos, UWORD panelColorsPos, UWORD simplePosTop, U
     iconInit(&g_Screen.m_pActionIcons[4], 32, 18, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 241, .uwY = 46});
     iconInit(&g_Screen.m_pActionIcons[5], 32, 18, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 274, .uwY = 46});
     // default actions that never change
-    iconSetAction(&g_Screen.m_pActionIcons[0], &iconActionMove);
-    iconSetAction(&g_Screen.m_pActionIcons[1], &iconActionStop);
-    iconSetAction(&g_Screen.m_pActionIcons[2], &iconActionAttack);
+    iconInit(&g_Screen.m_pSelectionIcons[0], 32, 18, g_Screen.m_pIcons, ICON_MOVE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 80, .uwY = 24});
+    iconInit(&g_Screen.m_pSelectionIcons[1], 32, 18, g_Screen.m_pIcons, ICON_STOP, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 113, .uwY = 24});
+    iconInit(&g_Screen.m_pSelectionIcons[2], 32, 18, g_Screen.m_pIcons, ICON_ATTACK, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 146, .uwY = 24});
+    iconInit(&g_Screen.m_pSelectionIcons[3], 32, 18, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 80, .uwY = 46});
+    iconInit(&g_Screen.m_pSelectionIcons[4], 32, 18, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 113, .uwY = 46});
+    iconInit(&g_Screen.m_pSelectionIcons[5], 32, 18, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 146, .uwY = 46});
 }
 
 void screenInit(void) {
@@ -265,34 +269,38 @@ static inline tUbCoordYX mapPosToTile(tUwCoordYX pos) {
     return (tUbCoordYX){.ubX = pos.uwX / PATHMAP_TILE_SIZE, .ubY = pos.uwY / PATHMAP_TILE_SIZE};
 }
 
-void drawUnitIcon(UnitType *, UBYTE) {
-    // tIcon *icon = &g_Screen.m_pUnitIcons[idx];
-    // IconIdx iconIdx = type->iconIdx;
-    // iconSetSource(icon, g_Screen.m_pIcons, type->iconIdx);
-    // iconDraw(icon, idx);
+void drawSelectionIcon(IconIdx unitIcon, UBYTE idx) {
+    tIcon *icon = &g_Screen.m_pSelectionIcons[idx];
+    iconSetSource(icon, g_Screen.m_pIcons, unitIcon);
+    iconDraw(icon, idx);
+}
+
+void drawUnitInfo(Unit *) {
+}
+
+void drawBuildingInfo(Building *) {
 }
 
 void drawInfoPanel(void) {
     if (g_Screen.m_ubBottomPanelDirty) {
         // TODO: only store and redraw the dirty part?
         g_Screen.m_ubBottomPanelDirty = 0;
-        UnitTypeIndex type;
-        UBYTE idx = 0;
-        for(; idx < s_ubSelectedUnitCount; ++idx) {
-            type = s_pSelectedUnit[idx]->type;
-            drawUnitIcon(&UnitTypes[type], idx);
-        }
-
-        if (idx == 0) {
-            for (UBYTE icon = 0; icon < NUM_ACTION_ICONS; ++icon) {
-                iconSetSource(&g_Screen.m_pActionIcons[icon], g_Screen.m_pIcons, 0);
+        if (s_ubSelectedUnitCount) {
+            UnitTypeIndex type;
+            UBYTE idx = 0;
+            for(; idx < s_ubSelectedUnitCount; ++idx) {
+                type = s_pSelectedUnit[idx]->type;
+                drawSelectionIcon(UnitTypes[type].iconIdx, idx);
             }
-        } else {
             iconSetSource(&g_Screen.m_pActionIcons[0], g_Screen.m_pIcons, ICON_MOVE);
             iconSetSource(&g_Screen.m_pActionIcons[1], g_Screen.m_pIcons, ICON_STOP);
             iconSetSource(&g_Screen.m_pActionIcons[2], g_Screen.m_pIcons, ICON_ATTACK);
+            iconSetAction(&g_Screen.m_pActionIcons[0], &iconActionMove);
+            iconSetAction(&g_Screen.m_pActionIcons[1], &iconActionStop);
+            iconSetAction(&g_Screen.m_pActionIcons[2], &iconActionAttack);
             if (idx == 1) {
                 IconDefinitions *def = &g_UnitIconDefinitions[type];
+                drawUnitInfo(s_pSelectedUnit[0]);
                 for (UBYTE i = 0; i < 3; ++i) {
                     iconSetSource(&g_Screen.m_pActionIcons[3 + i], g_Screen.m_pIcons, def->icons[i]);
                     iconSetAction(&g_Screen.m_pActionIcons[3 + i], def->actions[i]);
@@ -301,6 +309,18 @@ void drawInfoPanel(void) {
                 iconSetSource(&g_Screen.m_pActionIcons[3], g_Screen.m_pIcons, ICON_NONE);
                 iconSetSource(&g_Screen.m_pActionIcons[4], g_Screen.m_pIcons, ICON_NONE);
                 iconSetSource(&g_Screen.m_pActionIcons[5], g_Screen.m_pIcons, ICON_NONE);
+            }
+        } else if (s_pSelectedBuilding) {
+            drawSelectionIcon(BuildingTypes[s_pSelectedBuilding->type].iconIdx, 0);
+            drawBuildingInfo(s_pSelectedBuilding);
+            IconDefinitions *def = &g_BuildingIconDefinitions[s_pSelectedBuilding->type];
+            for (UBYTE i = 0; i < NUM_ACTION_ICONS; ++i) {
+                iconSetSource(&g_Screen.m_pActionIcons[i], g_Screen.m_pIcons, def->icons[i]);
+                iconSetAction(&g_Screen.m_pActionIcons[i], def->actions[i]);
+            }
+        } else {
+            for (UBYTE icon = 0; icon < NUM_ACTION_ICONS; ++icon) {
+                iconSetSource(&g_Screen.m_pActionIcons[icon], g_Screen.m_pIcons, ICON_NONE);
             }
         }
 
@@ -369,7 +389,16 @@ void drawSelectionRectangles(void) {
                 }
             }
         }
-        selectionSpritesUpdate(idx, -1, -1);
+        if (idx == 0 && s_pSelectedBuilding) {
+            tUbCoordYX loc = s_pSelectedBuilding->loc;
+            selectionSpritesUpdate(
+                idx,
+                (loc.ubX << TILE_SHIFT) - g_Screen.m_map.m_pBuffer->pCamera->uPos.uwX,
+                (loc.ubY << TILE_SHIFT) - g_Screen.m_map.m_pBuffer->pCamera->uPos.uwY + TOP_PANEL_HEIGHT + 1
+            );
+        } else {
+            selectionSpritesUpdate(idx, -1, -1);
+        }
     }
 }
 
@@ -529,7 +558,7 @@ void handleLeftMouseUp(tUwCoordYX lmbDown, tUwCoordYX mousePos) {
             } else {
                 return;
             }
-            tIconAction action = g_Screen.m_pActionIcons[column + line * 3].action;
+            tIconActionUnit action = g_Screen.m_pActionIcons[column + line * 3].action;
             if (action) {
                 iconRectSpritesUpdate(
                     211 + column * 33,
@@ -603,6 +632,14 @@ void handleLeftMouseUp(tUwCoordYX lmbDown, tUwCoordYX mousePos) {
             ++xcur;
         }
         ++y1;
+    }
+    if (!s_ubSelectedUnitCount) {
+        // try selecting a building
+        Building *building = buildingManagerBuildingAt(tile1);
+        if (building) {
+            s_pSelectedBuilding = building;
+            g_Screen.m_ubBottomPanelDirty = 1;
+        }
     }
 }
 

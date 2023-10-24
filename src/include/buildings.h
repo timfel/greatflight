@@ -63,5 +63,6 @@ void buildingManagerInitialize(void);
 void buildingManagerProcess(void);
 void buildingManagerDestroy(void);
 
+Building *buildingManagerBuildingAt(tUbCoordYX tile);
 
 #endif

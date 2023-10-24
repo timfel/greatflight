@@ -66,7 +66,7 @@ void iconDraw(tIcon *icon, UBYTE drawAfterOtherIcon) {
     g_pCustom->bltsize = icon->bltsize;
 }
 
-void iconSetAction(tIcon *icon, tIconAction action) {
+void iconSetAction(tIcon *icon, tIconActionUnit action) {
     icon->action = action;
 }
 
@@ -108,7 +108,7 @@ void cannotBuild(void) {
 }
 
 static UBYTE *s_previousIcons[NUM_ACTION_ICONS];
-static tIconAction s_previousActions[NUM_ACTION_ICONS];
+static tIconActionUnit s_previousActions[NUM_ACTION_ICONS];
 
 void iconCancel(Unit **, UBYTE ) {
     for (UBYTE i = 0; i < NUM_ACTION_ICONS; ++i) {
@@ -153,8 +153,26 @@ void iconBuildHumanSmithy(Unit **, UBYTE ) {
     logWrite("Build human smithy");
 }
 
-void iconBuildHumanHall(Unit **, UBYTE ) {
-    logWrite("Build human hall");
+void iconActionBuildHumanHallAt(Unit **unit, UBYTE unitc, tUbCoordYX tilePos) {
+    tUbCoordYX buildPos = {.ubX = tilePos.ubX / TILE_SIZE_FACTOR * TILE_SIZE_FACTOR, .ubY = tilePos.ubY / TILE_SIZE_FACTOR * TILE_SIZE_FACTOR};
+    if (!buildingCanBeAt(BUILDING_HUMAN_TOWNHALL, buildPos, 0)) {
+        cannotBuild();
+        iconCancel(unit, unitc);
+        return;
+    }
+    iconCancel(unit, unitc);
+    g_Screen.lmbAction = NULL;
+    g_Screen.m_cursorBobs.ubCount = 0;
+    actionBuildAt(*unit, buildPos, BUILDING_HUMAN_TOWNHALL);
+}
+
+void iconBuildHumanHall(Unit **, UBYTE unitc) {
+    if (!unitc) {
+        iconRectSpritesUpdate(0, 0);
+    }
+    g_Screen.lmbAction = &iconActionBuildHumanHallAt;
+    g_Screen.m_cursorBobs.pFirstTile = (PLANEPTR)tileIndexToTileBitmapOffset(BuildingTypes[BUILDING_HUMAN_TOWNHALL].tileIdx);
+    g_Screen.m_cursorBobs.ubCount = 4;
 }
 
 void iconActionBuildBasic(Unit **, UBYTE) {
@@ -186,12 +204,13 @@ void iconActionBuildBasic(Unit **, UBYTE) {
     iconRectSpritesUpdate(0, 0);
 }
 
-#define PAIR0(n) {.icons = {ICON_NONE, ICON_NONE, ICON_NONE}, .actions = {NULL, NULL, NULL}}
-#define PAIR1(n, i, a) {.icons = {i, ICON_NONE, ICON_NONE}, .actions = {a, NULL, NULL}}
-#define PAIR2(n, i, a, i2, a2) {.icons = {i, i2, ICON_NONE}, .actions = {a, a2, NULL}}
-#define PAIR3(n, i, a, i2, a2, i3, a3) {.icons = {i, i2, i3}, .actions = {a, a2, a3}}
 IconDefinitions g_UnitIconDefinitions[unitTypeCount] = {
-    PAIR0(dead),
-    PAIR2(peasant, ICON_HARVEST, &iconActionHarvest, ICON_BUILD_BASIC, &iconActionBuildBasic),
-    PAIR2(peon, ICON_HARVEST, &iconActionHarvest, ICON_BUILD_BASIC, &iconActionBuildBasic),
+    [dead] = {},
+    [peasant] = {.icons = {ICON_HARVEST, ICON_BUILD_BASIC}, .actions = {&iconActionHarvest, &iconActionBuildBasic}},
+    [peon] = {.icons = {ICON_HARVEST, ICON_BUILD_BASIC}, .actions = {&iconActionHarvest, &iconActionBuildBasic}},
+};
+
+IconDefinitions g_BuildingIconDefinitions[BUILDING_TYPE_COUNT] = {
+    [BUILDING_HUMAN_FARM] = {},
+    [BUILDING_HUMAN_TOWNHALL] = {.icons = {ICON_PEASANT}},
 };

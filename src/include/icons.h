@@ -16,9 +16,9 @@ typedef enum  __attribute__ ((__packed__)) {
     ICON_HARVEST,
     ICON_CANCEL,
     ICON_SHIELD1,
-    ICON_UNUSED,
+    ICON_PEASANT,
     ICON_MOVE,
-    ICON_UNUSED1,
+    ICON_UNUSED,
     ICON_UNUSED2,
     ICON_BUILD_BASIC,
     //
@@ -26,15 +26,19 @@ typedef enum  __attribute__ ((__packed__)) {
 } IconIdx;
 _Static_assert(sizeof(IconIdx) == sizeof(UBYTE), "IconIdx too big");
 
-typedef void (*tIconAction)(Unit **unit, UBYTE unitc);
-typedef void (*tIconActionWithTarget)(Unit **unit, UBYTE unitc, tUbCoordYX tilePos);
+typedef void (*tIconActionUnit)(Unit **unit, UBYTE unitc);
+typedef void (*tIconActionUnitTarget)(Unit **unit, UBYTE unitc, tUbCoordYX tilePos);
+typedef void (*tIconActionBuilding)(Building *unit);
 
 typedef struct {
     UBYTE *iconSrcPtr;
     UBYTE *iconDstPtr;
     UWORD dstModulo;
     UWORD bltsize;
-    tIconAction action;
+    union {
+        tIconActionUnit action;
+        tIconActionBuilding buildingAction;
+    };
 #ifdef ACE_DEBUG
     UBYTE bpp;
 #endif
@@ -42,10 +46,11 @@ typedef struct {
 
 typedef struct {
     IconIdx icons[3];
-    tIconAction actions[3];
+    tIconActionUnit actions[3];
 } IconDefinitions;
 
 extern IconDefinitions g_UnitIconDefinitions[];
+extern IconDefinitions g_BuildingIconDefinitions[];
 
 void iconInit(tIcon *icon,
     UBYTE width, UBYTE height,
@@ -53,7 +58,7 @@ void iconInit(tIcon *icon,
     tBitMap *iconBuffer, tUwCoordYX iconPosition);
 
 void iconSetSource(tIcon *icon, tBitMap *iconTileMap, IconIdx iconIdx);
-void iconSetAction(tIcon *icon, tIconAction action);
+void iconSetAction(tIcon *icon, tIconActionUnit action);
 void iconDraw(tIcon *icon, UBYTE drawAfterOtherIcon);
 
 // Now all the actual action handling

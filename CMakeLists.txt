@@ -146,9 +146,9 @@ convertTileset(
 convertTileset(
        INTERLEAVED
        TARGET ${GAME_LINKED}
-       SOURCE ${PROJECT_SOURCE_DIR}/resources/Units/peon.png
-       TILE_PATHS ${PROJECT_SOURCE_DIR}/resources/Units/peon.png
-       DESTINATION ${PROJECT_BINARY_DIR}/tmp/Units/peon.tileset.png
+       SOURCE ${PROJECT_SOURCE_DIR}/resources/Units/peasant.png
+       TILE_PATHS ${PROJECT_SOURCE_DIR}/resources/Units/peasant.png
+       DESTINATION ${PROJECT_BINARY_DIR}/tmp/Units/peasant.tileset.png
        SIZE 16
        PALETTE ${PROJECT_BINARY_DIR}/resources/palettes/for.plt
 )
@@ -158,9 +158,9 @@ convertBitmaps(
        TARGET ${GAME_LINKED}
        PALETTE ${PROJECT_BINARY_DIR}/resources/palettes/for.plt
        MASK_COLOR "#000000"
-       SOURCES ${PROJECT_BINARY_DIR}/tmp/Units/peon.tileset.png
-       DESTINATIONS ${PROJECT_BINARY_DIR}/resources/units/peon.bm
-       MASKS ${PROJECT_BINARY_DIR}/resources/units/peon.msk
+       SOURCES ${PROJECT_BINARY_DIR}/tmp/Units/peasant.tileset.png
+       DESTINATIONS ${PROJECT_BINARY_DIR}/resources/units/peasant.bm
+       MASKS ${PROJECT_BINARY_DIR}/resources/units/peasant.msk
 )
 
 convertFont(

@@ -73,7 +73,7 @@ typedef struct __attribute__((__packed__)) {
             unsigned u5UnitType1:5;
             unsigned u5UnitType2:5;
             unsigned u5UnitType3:5;
-            UWORD ubTimeLeft;
+            UWORD uwTimeLeft;
         } train;
     };
 } Action;

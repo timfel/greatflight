@@ -20,6 +20,7 @@
 #define DIRECTIONS 4
 
 typedef struct {
+    const char* name;
     union {
         const char *spritesheetPath;
         tBitMap *spritesheet;
@@ -84,6 +85,7 @@ typedef struct _unitmanager tUnitManager;
 
 typedef struct _unit {
     UBYTE type;
+    UBYTE owner;
     union {
         struct {
              // tile Y
@@ -142,7 +144,7 @@ void unitManagerProcessUnits(tUbCoordYX viewportTopLeft, tUbCoordYX viewportBott
  * @param type of unit to initialize
  * @return new unit pointer
  */
-Unit * unitNew(UnitTypeIndex type);
+Unit * unitNew(UnitTypeIndex type, UBYTE owner);
 
 /**
  * @brief Free the selected unit.

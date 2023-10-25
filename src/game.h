@@ -52,8 +52,9 @@ struct Screen {
         tSimpleBufferManager *m_pTopPanelBuffer;
         tBitMap *s_pTopPanelBackground;
         
-        tTextBitMap *m_pGoldBitmap;
-        tTextBitMap *m_pLumberBitmap;
+        tTextBitMap *m_pGoldTextBitmap;
+        tTextBitMap *m_pLumberTextBitmap;
+        tTextBitMap *m_pUnitNameBitmap;
 
         // Viewport for main panel
         tVPort *m_pMainPanel;

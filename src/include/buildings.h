@@ -19,6 +19,7 @@ typedef enum __attribute__((__packed__)) {
 _Static_assert(sizeof(BuildingTypeIndex) == sizeof(UBYTE), "not 1 byte");
 
 typedef struct {
+    const char *name;
     UBYTE iconIdx;
     UBYTE tileIdx;
     UBYTE size;
@@ -38,6 +39,7 @@ typedef struct _building {
     Action action;
     UWORD hp;
     tUbCoordYX rallyPoint;
+    UBYTE owner;
 } Building;
 
 extern BuildingType BuildingTypes[];
@@ -57,7 +59,7 @@ extern tBuildingManager g_BuildingManager;
 UBYTE buildingCanBeAt(BuildingTypeIndex type, tUbCoordYX loc, UBYTE ignoreOrigin);
 
 /* Create a new building construction at location, return the new building id */
-UBYTE buildingNew(BuildingTypeIndex type, tUbCoordYX loc);
+UBYTE buildingNew(BuildingTypeIndex type, tUbCoordYX loc, UBYTE owner);
 
 void buildingManagerInitialize(void);
 void buildingManagerProcess(void);

@@ -4,13 +4,13 @@
 #include "ace/types.h"
 #include <ace/utils/file.h>
 
-struct Player {
+typedef struct _player {
     UWORD gold;
     UWORD lumber;
     UBYTE aiscript;
-};
+} Player;
 
-extern struct Player g_pPlayers[2];
+extern Player g_pPlayers[2];
 
 void playersLoad(tFile *map);
 void savePlayerInfo(tFile *map);

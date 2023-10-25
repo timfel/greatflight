@@ -11,6 +11,7 @@ tUnitManager g_UnitManager;
 UnitType UnitTypes[] = {
     [dead] = {},
     [peasant] = {
+        .name = "Peasant",
         .spritesheetPath = "resources/units/peasant.bm",
         .maskPath = "resources/units/peasant.msk",
         .stats = {
@@ -166,7 +167,7 @@ Unit *unitManagerUnitAt(tUbCoordYX tile) {
     return NULL;
 }
 
-Unit * unitNew(UnitTypeIndex typeIdx) {
+Unit * unitNew(UnitTypeIndex typeIdx, UBYTE owner) {
     if (g_UnitManager.unitCount >= MAX_UNITS) {
         return NULL;
     }
@@ -178,6 +179,7 @@ Unit * unitNew(UnitTypeIndex typeIdx) {
     unit->bob.mask = type->spritesheet->Planes[0];
     unit->type = typeIdx;
     unit->loc = UNIT_INIT_TILE_POSITION;
+    unit->owner = owner;
     return unit;
 }
 
@@ -246,10 +248,10 @@ UBYTE unitPlace(Unit *unit, UBYTE x, UBYTE y) {
     return 0;
 }
 
-void loadUnit(tFile *map) {
+void loadUnit(tFile *map, UBYTE owner) {
     UBYTE type, x, y;
     fileRead(map, &type, 1);
-    Unit *unit = unitNew(type);
+    Unit *unit = unitNew(type, owner);
     fileRead(map, &x, 1);
     fileRead(map, &y, 1);
     if (!unitPlace(unit, x, y)) {
@@ -273,11 +275,11 @@ void loadUnit(tFile *map) {
 }
 
 void unitsLoad(tFile *map) {
-    for (UBYTE i = 0; i < sizeof(g_pPlayers) / sizeof(struct Player); ++i) {
+    for (UBYTE i = 0; i < sizeof(g_pPlayers) / sizeof(Player); ++i) {
         UBYTE count;
         fileRead(map, &count, 1);
         for (UBYTE unit = 0; unit < count; ++unit) {
-            loadUnit(map);
+            loadUnit(map, i);
         }
     }
 }

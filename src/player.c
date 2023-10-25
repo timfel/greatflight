@@ -1,6 +1,6 @@
 #include "include/player.h"
 
-struct Player g_pPlayers[2] = {0};
+Player g_pPlayers[2] = {0};
 
 void playersLoad(tFile *map) {
     UBYTE playerinfo;

@@ -199,7 +199,9 @@ void iconBuildPeasant(Building *building) {
     }
     building->action.action = ActionTrain;
     building->action.train.u5UnitType1 = peasant;
-    building->action.train.ubTimeLeft = UnitTypes[peasant].costs.time;
+    building->action.train.uwTimeLeft = 0;
+    iconRectSpritesUpdate(0, 0);
+    g_Screen.m_ubBottomPanelDirty = 1;
 }
 
 IconDefinitions g_BuildingIconDefinitions[BUILDING_TYPE_COUNT] = {

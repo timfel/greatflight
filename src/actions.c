@@ -1,6 +1,7 @@
 #include "include/actions.h"
 #include "include/units.h"
 #include "include/buildings.h"
+#include "include/player.h"
 #include "game.h"
 
 #include <ace/utils/custom.h>
@@ -178,7 +179,7 @@ void actionBuild(Unit *unit) {
                 logWrite("Cannot build here");
                 return;
             }
-            UBYTE newBuildingId = buildingNew(typeIdx, unit->action.move.target);
+            UBYTE newBuildingId = buildingNew(typeIdx, unit->action.move.target, unit->owner);
             unitSetOffMap(unit);
             unit->action.build.u2State = BuildStateBuilding;
             unit->action.build.ubBuildingID = newBuildingId;
@@ -202,6 +203,9 @@ void actionBuild(Unit *unit) {
                     return;
                 }
                 building->hp += unit->action.build.u6buildingHPIncrease + 4;
+#ifdef ACE_DEBUG
+                building->hp <<= 1;
+#endif
             }
         }
     }
@@ -243,12 +247,51 @@ void actionBeingBuilt(Building *building) {
     }
 }
 
+void actionTrain(Building *building) {
+    if (!building->action.train.uwTimeLeft) {
+        // first time
+        UnitType *type = &UnitTypes[building->action.train.u5UnitType1];
+        UWORD gold = type->costs.gold;
+        UWORD lumber = type->costs.lumber;
+        UWORD time = type->costs.time;
+        Player *owner = &g_pPlayers[building->owner];
+        if (owner->gold >= gold) {
+            owner->gold -= gold;
+        } else {
+            return;
+        }
+        if (owner->lumber >= lumber) {
+            owner->lumber -= lumber;
+        } else {
+            return;
+        }
+        building->action.train.uwTimeLeft = time;
+    }
+    if (--building->action.train.uwTimeLeft > 1) {
+        return;
+    }
+    g_Screen.m_ubBottomPanelDirty = 1; // TODO: only when this is selected?
+    Unit *unit = unitNew(building->action.train.u5UnitType1, building->owner);
+    unitPlace(unit, building->loc.ubX, building->loc.ubY);
+    if (building->action.train.u5UnitType2) {
+        building->action.train.u5UnitType1 = building->action.train.u5UnitType2;
+        building->action.train.u5UnitType2 = building->action.train.u5UnitType3;
+        building->action.train.u5UnitType3 = 0;
+        building->action.train.uwTimeLeft = 0;
+    } else {
+        building->action.action = ActionStill;
+    }
+}
+
 void buildingDo(Building *building) {
     switch (building->action.action) {
         case ActionStill:
             return;
         case ActionBeingBuilt:
             actionBeingBuilt(building);
+            return;
+        case ActionTrain:
+            actionTrain(building);
             return;
         default:
             return;

@@ -180,8 +180,9 @@ void screenInit(void) {
 
     g_Screen.m_fonts.m_pNormalFont = fontCreate("resources/ui/uni54.fnt");
     const char text[RESOURCE_DIGITS + 1] = "000000";
-    g_Screen.m_panels.m_pGoldBitmap = fontCreateTextBitMapFromStr(g_Screen.m_fonts.m_pNormalFont, text);
-    g_Screen.m_panels.m_pLumberBitmap = fontCreateTextBitMapFromStr(g_Screen.m_fonts.m_pNormalFont, text);
+    g_Screen.m_panels.m_pGoldTextBitmap = fontCreateTextBitMapFromStr(g_Screen.m_fonts.m_pNormalFont, text);
+    g_Screen.m_panels.m_pLumberTextBitmap = fontCreateTextBitMapFromStr(g_Screen.m_fonts.m_pNormalFont, text);
+    g_Screen.m_panels.m_pUnitNameBitmap = fontCreateTextBitMapFromStr(g_Screen.m_fonts.m_pNormalFont, "          ");
 }
 
 void screenDestroy(void) {
@@ -192,8 +193,9 @@ void screenDestroy(void) {
     bitmapDestroy(g_Screen.m_pIcons);
     bitmapDestroy(g_Screen.m_map.m_pTilemap);
 
-    fontDestroyTextBitMap(g_Screen.m_panels.m_pGoldBitmap);
-    fontDestroyTextBitMap(g_Screen.m_panels.m_pLumberBitmap);
+    fontDestroyTextBitMap(g_Screen.m_panels.m_pGoldTextBitmap);
+    fontDestroyTextBitMap(g_Screen.m_panels.m_pLumberTextBitmap);
+    fontDestroyTextBitMap(g_Screen.m_panels.m_pUnitNameBitmap);
     fontDestroy(g_Screen.m_fonts.m_pNormalFont);
 }
 
@@ -275,10 +277,21 @@ void drawSelectionIcon(IconIdx unitIcon, UBYTE idx) {
     iconDraw(icon, idx);
 }
 
-void drawUnitInfo(Unit *) {
+void drawUnitInfo(Unit *unit) {
+    fontFillTextBitMap(g_Screen.m_fonts.m_pNormalFont, g_Screen.m_panels.m_pUnitNameBitmap, UnitTypes[unit->type].name);
+    fontDrawTextBitMap(g_Screen.m_panels.m_pMainPanelBuffer->pBack, g_Screen.m_panels.m_pUnitNameBitmap, 113, 24, 1, 0);
 }
 
-void drawBuildingInfo(Building *) {
+void drawBuildingInfo(Building *building) {
+    if (building->action.action == ActionTrain) {
+        // this must come first, since we want to re-use the blitter register values
+        // from drawing the building icon
+        drawSelectionIcon(UnitTypes[building->action.train.u5UnitType1].iconIdx, 3);
+        drawSelectionIcon(UnitTypes[building->action.train.u5UnitType2].iconIdx, 4);
+        drawSelectionIcon(UnitTypes[building->action.train.u5UnitType3].iconIdx, 5);
+    }
+    fontFillTextBitMap(g_Screen.m_fonts.m_pNormalFont, g_Screen.m_panels.m_pUnitNameBitmap, BuildingTypes[building->type].name);
+    fontDrawTextBitMap(g_Screen.m_panels.m_pMainPanelBuffer->pBack, g_Screen.m_panels.m_pUnitNameBitmap, 113, 24, 1, 0);
 }
 
 void drawInfoPanel(void) {
@@ -292,6 +305,9 @@ void drawInfoPanel(void) {
                 type = s_pSelectedUnit[idx]->type;
                 drawSelectionIcon(UnitTypes[type].iconIdx, idx);
             }
+            for (UBYTE icon = idx; icon < NUM_SELECTION; ++icon) {
+                drawSelectionIcon(ICON_NONE, icon);
+            }
             iconSetSource(&g_Screen.m_pActionIcons[0], g_Screen.m_pIcons, ICON_MOVE);
             iconSetSource(&g_Screen.m_pActionIcons[1], g_Screen.m_pIcons, ICON_STOP);
             iconSetSource(&g_Screen.m_pActionIcons[2], g_Screen.m_pIcons, ICON_ATTACK);
@@ -302,8 +318,13 @@ void drawInfoPanel(void) {
                 IconDefinitions *def = &g_UnitIconDefinitions[type];
                 drawUnitInfo(s_pSelectedUnit[0]);
                 for (UBYTE i = 0; i < 3; ++i) {
-                    iconSetSource(&g_Screen.m_pActionIcons[3 + i], g_Screen.m_pIcons, def->icons[i]);
-                    iconSetUnitAction(&g_Screen.m_pActionIcons[3 + i], def->unitActions[i]);
+                    IconIdx idx = def->icons[i];
+                    if (idx) {
+                        iconSetSource(&g_Screen.m_pActionIcons[3 + i], g_Screen.m_pIcons, idx);
+                        iconSetUnitAction(&g_Screen.m_pActionIcons[3 + i], def->unitActions[i]);
+                    } else {
+                        iconSetSource(&g_Screen.m_pActionIcons[3 + i], g_Screen.m_pIcons, ICON_FRAME);
+                    }
                 }
             } else {
                 iconSetSource(&g_Screen.m_pActionIcons[3], g_Screen.m_pIcons, ICON_FRAME);
@@ -311,25 +332,32 @@ void drawInfoPanel(void) {
                 iconSetSource(&g_Screen.m_pActionIcons[5], g_Screen.m_pIcons, ICON_FRAME);
             }
         } else if (s_pSelectedBuilding) {
-            idx = 1;
-            drawSelectionIcon(BuildingTypes[s_pSelectedBuilding->type].iconIdx, 0);
+            drawSelectionIcon(BuildingTypes[s_pSelectedBuilding->type].iconIdx, 0);    
+            for (UBYTE icon = 1; icon < NUM_SELECTION; ++icon) {
+                drawSelectionIcon(ICON_NONE, icon);
+            }
             drawBuildingInfo(s_pSelectedBuilding);
             IconDefinitions *def = &g_BuildingIconDefinitions[s_pSelectedBuilding->type];
             for (UBYTE i = 0; i < NUM_ACTION_ICONS; ++i) {
-                iconSetSource(&g_Screen.m_pActionIcons[i], g_Screen.m_pIcons, def->icons[i]);
-                iconSetUnitAction(&g_Screen.m_pActionIcons[i], def->unitActions[i]);
+                IconIdx idx = def->icons[i];
+                if (idx) {
+                    iconSetSource(&g_Screen.m_pActionIcons[i], g_Screen.m_pIcons, idx);
+                    iconSetBuildingAction(&g_Screen.m_pActionIcons[i], def->buildingActions[i]);
+                } else {
+                    iconSetSource(&g_Screen.m_pActionIcons[i], g_Screen.m_pIcons, ICON_FRAME);
+                }
             }
         } else {
             for (UBYTE icon = 0; icon < NUM_ACTION_ICONS; ++icon) {
                 iconSetSource(&g_Screen.m_pActionIcons[icon], g_Screen.m_pIcons, ICON_FRAME);
             }
+            for (UBYTE icon = 0; icon < NUM_SELECTION; ++icon) {
+                drawSelectionIcon(ICON_NONE, icon);
+            }
         }
 
         for (UBYTE icon = 0; icon < NUM_ACTION_ICONS; ++icon) {
             iconDraw(&g_Screen.m_pActionIcons[icon], icon);
-        }
-        for (UBYTE icon = idx; icon < NUM_SELECTION; ++icon) {
-            drawSelectionIcon(ICON_NONE, icon);
         }
     }
 }
@@ -553,12 +581,22 @@ void handleLeftMouseUp(tUwCoordYX lmbDown, tUwCoordYX mousePos) {
             } else {
                 return;
             }
-            tIconActionUnit action = g_Screen.m_pActionIcons[column + line * 3].unitAction;
-            if (action) {
-                iconRectSpritesUpdate(
-                    211 + column * 33,
-                    TOP_PANEL_HEIGHT + MAP_HEIGHT + 24 + line * 22);
-                action(s_pSelectedUnit, s_ubSelectedUnitCount);
+            if (s_ubSelectedUnitCount) {
+                tIconActionUnit action = g_Screen.m_pActionIcons[column + line * 3].unitAction;
+                if (action) {
+                    iconRectSpritesUpdate(
+                        211 + column * 33,
+                        TOP_PANEL_HEIGHT + MAP_HEIGHT + 24 + line * 22);
+                    action(s_pSelectedUnit, s_ubSelectedUnitCount);
+                }
+            } else if (s_pSelectedBuilding) {
+                tIconActionBuilding action = g_Screen.m_pActionIcons[column + line * 3].buildingAction;
+                if (action) {
+                    iconRectSpritesUpdate(
+                        211 + column * 33,
+                        TOP_PANEL_HEIGHT + MAP_HEIGHT + 24 + line * 22);
+                    action(s_pSelectedBuilding);
+                }
             }
         } else if (lmbDown.uwX <= MINIMAP_OFFSET_X + 64) {
             UWORD y = lmbDown.uwY - (TOP_PANEL_HEIGHT + MAP_HEIGHT + MINIMAP_OFFSET_Y);
@@ -800,14 +838,14 @@ void drawResources(void) {
     if (!GameCycle || (GameCycle & 64 && gold != g_pPlayers[0].gold)) {
         gold = g_pPlayers[0].gold;
         snprintf(str, RESOURCE_DIGITS, "%d", gold);
-        fontFillTextBitMap(g_Screen.m_fonts.m_pNormalFont, g_Screen.m_panels.m_pGoldBitmap, str);
-        fontDrawTextBitMap(g_Screen.m_panels.m_pTopPanelBuffer->pBack, g_Screen.m_panels.m_pGoldBitmap, 128, 0, 1, FONT_RIGHT);
+        fontFillTextBitMap(g_Screen.m_fonts.m_pNormalFont, g_Screen.m_panels.m_pGoldTextBitmap, str);
+        fontDrawTextBitMap(g_Screen.m_panels.m_pTopPanelBuffer->pBack, g_Screen.m_panels.m_pGoldTextBitmap, 128, 0, 1, FONT_RIGHT);
     }
     if (!GameCycle || (!(GameCycle & 64) && lumber != g_pPlayers[0].lumber)) {
         lumber = g_pPlayers[0].lumber;
         snprintf(str, RESOURCE_DIGITS, "%d", lumber);
-        fontFillTextBitMap(g_Screen.m_fonts.m_pNormalFont, g_Screen.m_panels.m_pLumberBitmap, str);
-        fontDrawTextBitMap(g_Screen.m_panels.m_pTopPanelBuffer->pBack, g_Screen.m_panels.m_pLumberBitmap, 232, 0, 1, FONT_RIGHT);
+        fontFillTextBitMap(g_Screen.m_fonts.m_pNormalFont, g_Screen.m_panels.m_pLumberTextBitmap, str);
+        fontDrawTextBitMap(g_Screen.m_panels.m_pTopPanelBuffer->pBack, g_Screen.m_panels.m_pLumberTextBitmap, 232, 0, 1, FONT_RIGHT);
     }
 }
 

@@ -7,6 +7,7 @@ tBuildingManager g_BuildingManager;
 
 BuildingType BuildingTypes[] = {
     [BUILDING_HUMAN_TOWNHALL] = {
+        .name = "Townhall",
         .iconIdx = ICON_HHALL,
         .tileIdx = 44,
         .size = 4,
@@ -20,6 +21,7 @@ BuildingType BuildingTypes[] = {
         },
     },
     [BUILDING_HUMAN_FARM] = {
+        .name = "Farm",
         .iconIdx = ICON_HFARM,
         .tileIdx = 23,
         .size = 2,
@@ -33,6 +35,7 @@ BuildingType BuildingTypes[] = {
         },
     },
     [BUILDING_HUMAN_BARRACKS] = {
+        .name = "Barracks",
         .iconIdx = ICON_HBARRACKS,
         .tileIdx = 24,
         .size = 4,
@@ -46,6 +49,7 @@ BuildingType BuildingTypes[] = {
         },
     },
     [BUILDING_HUMAN_LUMBERMILL] = {
+        .name = "Lumbermill",
         .iconIdx = ICON_HLUMBERMILL,
         .tileIdx = 28,
         .size = 4,
@@ -59,6 +63,7 @@ BuildingType BuildingTypes[] = {
         },
     },
     [BUILDING_HUMAN_SMITHY] = {
+        .name = "Smithy",
         .iconIdx = ICON_HSMITHY,
         .tileIdx = 21,
         .size = 2,
@@ -72,6 +77,7 @@ BuildingType BuildingTypes[] = {
         },
     },
     [BUILDING_HUMAN_STABLES] = {
+        .name = "Stables",
         .iconIdx = 0,
         .tileIdx = 36,
         .size = 4,
@@ -85,6 +91,7 @@ BuildingType BuildingTypes[] = {
         },
     },
     [BUILDING_HUMAN_CHURCH] = {
+        .name = "Church",
         .iconIdx = 0,
         .tileIdx = 32,
         .size = 4,
@@ -98,6 +105,7 @@ BuildingType BuildingTypes[] = {
         },
     },
     [BUILDING_HUMAN_TOWER] = {
+        .name = "Tower",
         .iconIdx = 0,
         .tileIdx = 48,
         .size = 2,
@@ -127,7 +135,7 @@ UBYTE buildingCanBeAt(BuildingTypeIndex type, tUbCoordYX loc, UBYTE ignoreOrigin
     return 1;
 }
 
-UBYTE buildingNew(BuildingTypeIndex typeIdx, tUbCoordYX loc) {
+UBYTE buildingNew(BuildingTypeIndex typeIdx, tUbCoordYX loc, UBYTE owner) {
     if (g_BuildingManager.count >= MAX_BUILDINGS) {
         return -1;
     }
@@ -139,6 +147,7 @@ UBYTE buildingNew(BuildingTypeIndex typeIdx, tUbCoordYX loc) {
     building->loc = loc;
     building->rallyPoint = loc;
     building->type = typeIdx;
+    building->owner = owner;
 
     // place it on the pathmap
     UBYTE sz = type->size;

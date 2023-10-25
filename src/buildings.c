@@ -153,7 +153,7 @@ UBYTE buildingNew(BuildingTypeIndex typeIdx, tUbCoordYX loc, UBYTE owner) {
     UBYTE sz = type->size;
     for (UBYTE x = 0; x < sz; ++x) {
         for (UBYTE y = 0; y < sz; ++y) {
-            g_Map.m_ubPathmapXY[loc.ubX + x][loc.ubY + y] = MAP_UNWALKABLE_FLAG;
+            markMapTile(loc.ubX + x, loc.ubY + y);
         }
     }
 
@@ -169,8 +169,29 @@ UBYTE buildingNew(BuildingTypeIndex typeIdx, tUbCoordYX loc, UBYTE owner) {
     return id;
 }
 
-void buildingDestroy(Building *) {
-    // TODO
+void buildingDestroy(Building *building) {
+    BuildingType *type = &BuildingTypes[building->type];
+    tUbCoordYX loc = building->loc;
+    UBYTE idx = (ULONG)building - (ULONG)g_BuildingManager.building;
+    g_BuildingManager.count--;
+    g_BuildingManager.freeStack[g_BuildingManager.count] = idx;
+
+    // remove from the pathmap
+    UBYTE sz = type->size;
+    for (UBYTE x = 0; x < sz; ++x) {
+        for (UBYTE y = 0; y < sz; ++y) {
+            unmarkMapTile(loc.ubX + x, loc.ubY + y);
+        }
+    }
+
+    // replace grass tiles
+    UBYTE ubTileX = loc.ubX / TILE_SIZE_FACTOR;
+    UBYTE ubTileY = loc.ubY / TILE_SIZE_FACTOR;
+    for (UBYTE y = 0; y < sz / TILE_SIZE_FACTOR; ++y) {
+        for (UBYTE x = 0; x < sz / TILE_SIZE_FACTOR; ++x) {
+            g_Map.m_ulTilemapXY[ubTileX + x][ubTileY + y] = tileIndexToTileBitmapOffset(TILEINDEX_GRASS);
+        }
+    }
 }
 
 void buildingManagerInitialize(void) {

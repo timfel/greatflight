@@ -44,11 +44,6 @@ struct copOffsets_t {
 };
 static struct copOffsets_t s_copOffsets;
 
-// game statics
-static Building *s_pSelectedBuilding = NULL;
-static Unit *s_pSelectedUnit[NUM_SELECTION];
-static UBYTE s_ubSelectedUnitCount = 0;
-
 void createViewports() {
     g_Screen.m_panels.m_pTopPanel = vPortCreate(0,
                              TAG_VPORT_VIEW, g_Screen.m_pView,
@@ -178,6 +173,9 @@ void loadUi(UWORD topPanelColorsPos, UWORD panelColorsPos, UWORD simplePosTop, U
 void screenInit(void) {
     memset(&g_Screen, 0, sizeof(struct Screen));
 
+    g_Screen.m_ubTopPanelDirty = 1;
+    g_Screen.m_ubBottomPanelDirty = 1;
+
     g_Screen.m_fonts.m_pNormalFont = fontCreate("resources/ui/uni54.fnt");
     const char text[RESOURCE_DIGITS + 1] = "000000";
     g_Screen.m_panels.m_pGoldTextBitmap = fontCreateTextBitMapFromStr(g_Screen.m_fonts.m_pNormalFont, text);
@@ -299,10 +297,10 @@ void drawInfoPanel(void) {
         // TODO: only store and redraw the dirty part?
         g_Screen.m_ubBottomPanelDirty = 0;
         UBYTE idx = 0;
-        if (s_ubSelectedUnitCount) {
+        if (g_Screen.m_ubSelectedUnitCount) {
             UnitTypeIndex type;
-            for(; idx < s_ubSelectedUnitCount; ++idx) {
-                type = s_pSelectedUnit[idx]->type;
+            for(; idx < g_Screen.m_ubSelectedUnitCount; ++idx) {
+                type = g_Screen.m_pSelectedUnit[idx]->type;
                 drawSelectionIcon(UnitTypes[type].iconIdx, idx);
             }
             for (UBYTE icon = idx; icon < NUM_SELECTION; ++icon) {
@@ -316,7 +314,7 @@ void drawInfoPanel(void) {
             iconSetUnitAction(&g_Screen.m_pActionIcons[2], &iconActionAttack);
             if (idx == 1) {
                 IconDefinitions *def = &g_UnitIconDefinitions[type];
-                drawUnitInfo(s_pSelectedUnit[0]);
+                drawUnitInfo(g_Screen.m_pSelectedUnit[0]);
                 for (UBYTE i = 0; i < 3; ++i) {
                     IconIdx idx = def->icons[i];
                     if (idx) {
@@ -331,20 +329,28 @@ void drawInfoPanel(void) {
                 iconSetSource(&g_Screen.m_pActionIcons[4], g_Screen.m_pIcons, ICON_FRAME);
                 iconSetSource(&g_Screen.m_pActionIcons[5], g_Screen.m_pIcons, ICON_FRAME);
             }
-        } else if (s_pSelectedBuilding) {
-            drawSelectionIcon(BuildingTypes[s_pSelectedBuilding->type].iconIdx, 0);    
+        } else if (g_Screen.m_pSelectedBuilding) {
+            drawSelectionIcon(BuildingTypes[g_Screen.m_pSelectedBuilding->type].iconIdx, 0);    
             for (UBYTE icon = 1; icon < NUM_SELECTION; ++icon) {
                 drawSelectionIcon(ICON_NONE, icon);
             }
-            drawBuildingInfo(s_pSelectedBuilding);
-            IconDefinitions *def = &g_BuildingIconDefinitions[s_pSelectedBuilding->type];
-            for (UBYTE i = 0; i < NUM_ACTION_ICONS; ++i) {
-                IconIdx idx = def->icons[i];
-                if (idx) {
-                    iconSetSource(&g_Screen.m_pActionIcons[i], g_Screen.m_pIcons, idx);
-                    iconSetBuildingAction(&g_Screen.m_pActionIcons[i], def->buildingActions[i]);
-                } else {
-                    iconSetSource(&g_Screen.m_pActionIcons[i], g_Screen.m_pIcons, ICON_FRAME);
+            drawBuildingInfo(g_Screen.m_pSelectedBuilding);
+            if (g_Screen.m_pSelectedBuilding->action.action == ActionBeingBuilt) {
+                for (UBYTE icon = 0; icon < NUM_ACTION_ICONS - 1; ++icon) {
+                    iconSetSource(&g_Screen.m_pActionIcons[icon], g_Screen.m_pIcons, ICON_FRAME);
+                }
+                iconSetSource(&g_Screen.m_pActionIcons[NUM_ACTION_ICONS - 1], g_Screen.m_pIcons, ICON_CANCEL);
+                iconSetBuildingAction(&g_Screen.m_pActionIcons[NUM_ACTION_ICONS - 1], &iconActionCancelBuild);
+            } else {
+                IconDefinitions *def = &g_BuildingIconDefinitions[g_Screen.m_pSelectedBuilding->type];
+                for (UBYTE i = 0; i < NUM_ACTION_ICONS; ++i) {
+                    IconIdx idx = def->icons[i];
+                    if (idx) {
+                        iconSetSource(&g_Screen.m_pActionIcons[i], g_Screen.m_pIcons, idx);
+                        iconSetBuildingAction(&g_Screen.m_pActionIcons[i], def->buildingActions[i]);
+                    } else {
+                        iconSetSource(&g_Screen.m_pActionIcons[i], g_Screen.m_pIcons, ICON_FRAME);
+                    }
                 }
             }
         } else {
@@ -409,8 +415,8 @@ void updateSelectionRubberBand(WORD x1, WORD y1, WORD x2, WORD y2) {
 
 void drawSelectionRectangles(void) {
     for(UBYTE idx = 0; idx < NUM_SELECTION; ++idx) {
-        Unit *unit = s_pSelectedUnit[idx];
-        if (unit && idx < s_ubSelectedUnitCount) {
+        Unit *unit = g_Screen.m_pSelectedUnit[idx];
+        if (unit && idx < g_Screen.m_ubSelectedUnitCount) {
             WORD bobPosOnScreenX = unit->bob.sPos.uwX - g_Screen.m_map.m_pBuffer->pCamera->uPos.uwX;
             BYTE offset = UnitTypes[unit->type].anim.large ? 8 : 0;
             if (bobPosOnScreenX >= -offset && bobPosOnScreenX <= MAP_WIDTH + offset) {
@@ -581,21 +587,21 @@ void handleLeftMouseUp(tUwCoordYX lmbDown, tUwCoordYX mousePos) {
             } else {
                 return;
             }
-            if (s_ubSelectedUnitCount) {
+            if (g_Screen.m_ubSelectedUnitCount) {
                 tIconActionUnit action = g_Screen.m_pActionIcons[column + line * 3].unitAction;
                 if (action) {
                     iconRectSpritesUpdate(
                         211 + column * 33,
                         TOP_PANEL_HEIGHT + MAP_HEIGHT + 24 + line * 22);
-                    action(s_pSelectedUnit, s_ubSelectedUnitCount);
+                    action(g_Screen.m_pSelectedUnit, g_Screen.m_ubSelectedUnitCount);
                 }
-            } else if (s_pSelectedBuilding) {
+            } else if (g_Screen.m_pSelectedBuilding) {
                 tIconActionBuilding action = g_Screen.m_pActionIcons[column + line * 3].buildingAction;
                 if (action) {
                     iconRectSpritesUpdate(
                         211 + column * 33,
                         TOP_PANEL_HEIGHT + MAP_HEIGHT + 24 + line * 22);
-                    action(s_pSelectedBuilding);
+                    action(g_Screen.m_pSelectedBuilding);
                 }
             }
         } else if (lmbDown.uwX <= MINIMAP_OFFSET_X + 64) {
@@ -626,7 +632,7 @@ void handleLeftMouseUp(tUwCoordYX lmbDown, tUwCoordYX mousePos) {
         if (tile.ubX >= PATHMAP_SIZE) {
             return;
         }
-        g_Screen.lmbAction(s_pSelectedUnit, s_ubSelectedUnitCount, tile);
+        g_Screen.lmbAction(g_Screen.m_pSelectedUnit, g_Screen.m_ubSelectedUnitCount, tile);
         return;
     }
 
@@ -641,8 +647,8 @@ void handleLeftMouseUp(tUwCoordYX lmbDown, tUwCoordYX mousePos) {
     UBYTE y1 = MIN(tile1.ubY, tile1.ubY);
     UBYTE y2 = MAX(tile1.ubY, tile2.ubY);
     if (!(keyCheck(KEY_LSHIFT) || keyCheck(KEY_RSHIFT))) {
-        s_ubSelectedUnitCount = 0;
-        s_pSelectedBuilding = NULL;
+        g_Screen.m_ubSelectedUnitCount = 0;
+        g_Screen.m_pSelectedBuilding = NULL;
         g_Screen.m_ubBottomPanelDirty = 1;
     }
     while (y1 <= y2) {
@@ -651,14 +657,14 @@ void handleLeftMouseUp(tUwCoordYX lmbDown, tUwCoordYX mousePos) {
             tUbCoordYX tile = (tUbCoordYX){.ubX = xcur, .ubY = y1};
             Unit *unit = unitManagerUnitAt(tile);
             if (unit) {
-                for(UBYTE idx = 0; idx < s_ubSelectedUnitCount; ++idx) {
-                    if (s_pSelectedUnit[idx] == unit) {
+                for(UBYTE idx = 0; idx < g_Screen.m_ubSelectedUnitCount; ++idx) {
+                    if (g_Screen.m_pSelectedUnit[idx] == unit) {
                         goto outer;
                     }
                 }
-                s_pSelectedUnit[s_ubSelectedUnitCount++] = unit;
+                g_Screen.m_pSelectedUnit[g_Screen.m_ubSelectedUnitCount++] = unit;
                 g_Screen.m_ubBottomPanelDirty = 1;
-                if (s_ubSelectedUnitCount == NUM_SELECTION) {
+                if (g_Screen.m_ubSelectedUnitCount == NUM_SELECTION) {
                     return;
                 }
             }
@@ -667,11 +673,11 @@ void handleLeftMouseUp(tUwCoordYX lmbDown, tUwCoordYX mousePos) {
         }
         ++y1;
     }
-    if (!s_ubSelectedUnitCount) {
+    if (!g_Screen.m_ubSelectedUnitCount) {
         // try selecting a building
         Building *building = buildingManagerBuildingAt(tile1);
         if (building) {
-            s_pSelectedBuilding = building;
+            g_Screen.m_pSelectedBuilding = building;
             g_Screen.m_ubBottomPanelDirty = 1;
         }
     }
@@ -786,13 +792,13 @@ void handleInput() {
         handleLeftMouseUp(mousePos, lmbDown);
         lmbDown.ulYX = 0;
         updateSelectionRubberBand(-1, -1, -1, -1);
-    } else if (s_ubSelectedUnitCount && mouseCheck(MOUSE_PORT_1, MOUSE_RMB)) {
+    } else if (g_Screen.m_ubSelectedUnitCount && mouseCheck(MOUSE_PORT_1, MOUSE_RMB)) {
         tUbCoordYX tile = screenPosToTile(mousePos);
         if (tile.ubX >= PATHMAP_SIZE) {
             return;
         }
-        for(UBYTE idx = 0; idx < s_ubSelectedUnitCount; ++idx) {
-            Unit *unit = s_pSelectedUnit[idx];
+        for(UBYTE idx = 0; idx < g_Screen.m_ubSelectedUnitCount; ++idx) {
+            Unit *unit = g_Screen.m_pSelectedUnit[idx];
             if (unit) {
                 actionMoveTo(unit, tile);
             } else {
@@ -829,7 +835,7 @@ void fowUpdate(void) {
 }
 
 void drawResources(void) {
-    if (GameCycle && (GameCycle & 63) != 63) {
+    if (!g_Screen.m_ubTopPanelDirty && (GameCycle & 63) != 63) {
         return;
     }
     static UWORD gold = -1;

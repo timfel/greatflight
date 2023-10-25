@@ -75,6 +75,9 @@ typedef struct __attribute__((__packed__)) {
             unsigned u5UnitType3:5;
             UWORD uwTimeLeft;
         } train;
+        struct __attribute__((__packed__)) {
+            UBYTE ubTimeout;
+        } die;
     };
 } Action;
 _Static_assert(sizeof(Action) == sizeof(UBYTE) * 5, "action is too big");

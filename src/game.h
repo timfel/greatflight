@@ -2,6 +2,7 @@
 #define _GAME_H_
 
 #include "include/icons.h"
+#include "include/sprites.h"
 
 #include <ace/generic/screen.h>
 #include <ace/managers/copper.h>
@@ -73,6 +74,12 @@ struct Screen {
         UBYTE ubCount;
     } m_cursorBobs;
 
+    struct {
+        Building *m_pSelectedBuilding;
+        Unit *m_pSelectedUnit[NUM_SELECTION];
+        UBYTE m_ubSelectedUnitCount;
+    };
+
     // icons for main panel (actions and selected units)
     tIcon m_pSelectionIcons[NUM_UNIT_ICONS];
     tIcon m_pActionIcons[NUM_ACTION_ICONS];
@@ -89,6 +96,7 @@ struct Screen {
     } m_map;
 
     unsigned m_ubBottomPanelDirty:1;
+    unsigned m_ubTopPanelDirty:1;
 };
 
 void screenInit(void);

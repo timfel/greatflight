@@ -71,4 +71,6 @@ void iconActionStop(Unit **unit, UBYTE unitc);
 void iconActionAttack(Unit **unit, UBYTE unitc);
 void iconActionHarvest(Unit **unit, UBYTE unitc);
 
+void iconActionCancelBuild(Building *building);
+
 #endif

@@ -61,6 +61,8 @@ UBYTE buildingCanBeAt(BuildingTypeIndex type, tUbCoordYX loc, UBYTE ignoreOrigin
 /* Create a new building construction at location, return the new building id */
 UBYTE buildingNew(BuildingTypeIndex type, tUbCoordYX loc, UBYTE owner);
 
+void buildingDestroy(Building *building);
+
 void buildingManagerInitialize(void);
 void buildingManagerProcess(void);
 void buildingManagerDestroy(void);

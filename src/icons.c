@@ -186,6 +186,18 @@ IconDefinitions g_UnitIconDefinitions[unitTypeCount] = {
     [peon] = {.icons = {ICON_HARVEST, ICON_BUILD_BASIC}, .unitActions = {&iconActionHarvest, &iconActionBuildBasic}},
 };
 
+void iconActionCancelBuild(Building *building) {
+    building->action.action = ActionDie;
+    building->action.die.ubTimeout = 10; // TODO: extract constant
+    building->hp = 0;
+    iconRectSpritesUpdate(0, 0);
+    // TODO: resources back?
+    if (g_Screen.m_pSelectedBuilding == building) {
+        g_Screen.m_pSelectedBuilding = NULL;
+        g_Screen.m_ubBottomPanelDirty = 1;
+    }
+}
+
 void iconBuildPeasant(Building *building) {
     if (building->action.action == ActionTrain) {
         if (!building->action.train.u5UnitType2) {
@@ -196,12 +208,15 @@ void iconBuildPeasant(Building *building) {
             logWrite("Training queue full\n");
             return;
         }
+    } else {
+        building->action.action = ActionTrain;
+        building->action.train.u5UnitType1 = peasant;
+        building->action.train.uwTimeLeft = 0;
     }
-    building->action.action = ActionTrain;
-    building->action.train.u5UnitType1 = peasant;
-    building->action.train.uwTimeLeft = 0;
     iconRectSpritesUpdate(0, 0);
-    g_Screen.m_ubBottomPanelDirty = 1;
+    if (g_Screen.m_pSelectedBuilding == building) {
+        g_Screen.m_ubBottomPanelDirty = 1;
+    }
 }
 
 IconDefinitions g_BuildingIconDefinitions[BUILDING_TYPE_COUNT] = {

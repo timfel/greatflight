@@ -179,12 +179,30 @@ void actionBuild(Unit *unit) {
                 logWrite("Cannot build here");
                 return;
             }
+            BuildingType *type = &BuildingTypes[typeIdx];
+            UWORD gold = type->costs.gold;
+            UWORD lumber = type->costs.wood;
+            Player *owner = &g_pPlayers[unit->owner];
+            if (owner->gold >= gold && owner->lumber >= lumber) {
+                owner->gold -= gold;
+                owner->lumber -= lumber;
+            } else {
+                logWrite("Not enough resources\n");
+                return;
+            }
             UBYTE newBuildingId = buildingNew(typeIdx, unit->action.move.target, unit->owner);
             unitSetOffMap(unit);
+            for (UBYTE unitIdx = 0; unitIdx < g_Screen.m_ubSelectedUnitCount; ++unitIdx) {
+                if (g_Screen.m_pSelectedUnit[unitIdx] == unit) {
+                    g_Screen.m_ubSelectedUnitCount = 0;
+                    g_Screen.m_ubBottomPanelDirty = 1;
+                    break;
+                }
+            }
             unit->action.build.u2State = BuildStateBuilding;
             unit->action.build.ubBuildingID = newBuildingId;
             unit->action.build.u6buildingHPWait = -1;
-            unit->action.build.u6buildingHPIncrease = BuildingTypes[typeIdx].costs.hpIncrease;
+            unit->action.build.u6buildingHPIncrease = type->costs.hpIncrease;
             return;
         }
         case BuildStateBuilding: {
@@ -235,6 +253,9 @@ void actionBeingBuilt(Building *building) {
     if (building->hp >= type->stats.maxHP) {
         building->hp = type->stats.maxHP;
         building->action.action = ActionStill;
+        if (g_Screen.m_pSelectedBuilding == building) {
+            g_Screen.m_ubBottomPanelDirty = 1;
+        }
         tUbCoordYX loc = building->loc;
         loc.uwYX = loc.uwYX / TILE_SIZE_FACTOR;
         UBYTE buildingTileIdx = type->tileIdx;
@@ -255,22 +276,19 @@ void actionTrain(Building *building) {
         UWORD lumber = type->costs.lumber;
         UWORD time = type->costs.time;
         Player *owner = &g_pPlayers[building->owner];
-        if (owner->gold >= gold) {
+        if (owner->gold >= gold && owner->lumber >= lumber) {
             owner->gold -= gold;
-        } else {
-            return;
-        }
-        if (owner->lumber >= lumber) {
             owner->lumber -= lumber;
         } else {
+            logWrite("Not enough resources\n");
             return;
         }
+        g_Screen.m_ubTopPanelDirty = 1;
         building->action.train.uwTimeLeft = time;
     }
     if (--building->action.train.uwTimeLeft > 1) {
         return;
     }
-    g_Screen.m_ubBottomPanelDirty = 1; // TODO: only when this is selected?
     Unit *unit = unitNew(building->action.train.u5UnitType1, building->owner);
     unitPlace(unit, building->loc.ubX, building->loc.ubY);
     if (building->action.train.u5UnitType2) {
@@ -280,6 +298,15 @@ void actionTrain(Building *building) {
         building->action.train.uwTimeLeft = 0;
     } else {
         building->action.action = ActionStill;
+    }
+    if (g_Screen.m_pSelectedBuilding == building) {
+        g_Screen.m_ubBottomPanelDirty = 1;
+    }
+}
+
+void actionRemoveBuilding(Building *building) {
+    if (!--building->action.die.ubTimeout) {
+        buildingDestroy(building);
     }
 }
 
@@ -292,6 +319,9 @@ void buildingDo(Building *building) {
             return;
         case ActionTrain:
             actionTrain(building);
+            return;
+        case ActionDie:
+            actionRemoveBuilding(building);
             return;
         default:
             return;

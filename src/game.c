@@ -155,19 +155,18 @@ void loadUi(UWORD topPanelColorsPos, UWORD panelColorsPos, UWORD simplePosTop, U
     bitmapLoadFromFile(g_Screen.m_panels.m_pMainPanelBuffer->pFront, "resources/ui/bottompanel.bm", 0, 0);
 
     g_Screen.m_pIcons = bitmapCreateFromFile("resources/ui/icons.bm", 0);
-    iconInit(&g_Screen.m_pActionIcons[0], 32, 18, g_Screen.m_pIcons, ICON_MOVE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 208, .uwY = 24});
-    iconInit(&g_Screen.m_pActionIcons[1], 32, 18, g_Screen.m_pIcons, ICON_STOP, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 241, .uwY = 24});
-    iconInit(&g_Screen.m_pActionIcons[2], 32, 18, g_Screen.m_pIcons, ICON_ATTACK, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 274, .uwY = 24});
-    iconInit(&g_Screen.m_pActionIcons[3], 32, 18, g_Screen.m_pIcons, ICON_FRAME, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 208, .uwY = 46});
-    iconInit(&g_Screen.m_pActionIcons[4], 32, 18, g_Screen.m_pIcons, ICON_FRAME, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 241, .uwY = 46});
-    iconInit(&g_Screen.m_pActionIcons[5], 32, 18, g_Screen.m_pIcons, ICON_FRAME, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 274, .uwY = 46});
-    // default actions that never change
-    iconInit(&g_Screen.m_pSelectionIcons[0], 32, 18, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 80, .uwY = 24});
-    iconInit(&g_Screen.m_pSelectionIcons[1], 32, 18, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 113, .uwY = 24});
-    iconInit(&g_Screen.m_pSelectionIcons[2], 32, 18, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 146, .uwY = 24});
-    iconInit(&g_Screen.m_pSelectionIcons[3], 32, 18, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 80, .uwY = 46});
-    iconInit(&g_Screen.m_pSelectionIcons[4], 32, 18, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 113, .uwY = 46});
-    iconInit(&g_Screen.m_pSelectionIcons[5], 32, 18, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 146, .uwY = 46});
+    iconInit(&g_Screen.m_pActionIcons[0], 32, 18, 0xffff, 0xffff, g_Screen.m_pIcons, ICON_MOVE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 208, .uwY = 24});
+    iconInit(&g_Screen.m_pActionIcons[1], 32, 18, 0xffff, 0xffff, g_Screen.m_pIcons, ICON_STOP, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 241, .uwY = 24});
+    iconInit(&g_Screen.m_pActionIcons[2], 32, 18, 0xffff, 0xffff, g_Screen.m_pIcons, ICON_ATTACK, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 274, .uwY = 24});
+    iconInit(&g_Screen.m_pActionIcons[3], 32, 18, 0xffff, 0xffff, g_Screen.m_pIcons, ICON_FRAME, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 208, .uwY = 46});
+    iconInit(&g_Screen.m_pActionIcons[4], 32, 18, 0xffff, 0xffff, g_Screen.m_pIcons, ICON_FRAME, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 241, .uwY = 46});
+    iconInit(&g_Screen.m_pActionIcons[5], 32, 18, 0xffff, 0xffff, g_Screen.m_pIcons, ICON_FRAME, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 274, .uwY = 46});
+    iconInit(&g_Screen.m_pSelectionIcons[0], 32, 18, 0x1fff, 0xfffc, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 80, .uwY = 24});
+    iconInit(&g_Screen.m_pSelectionIcons[1], 32, 18, 0x1fff, 0xfffc, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 113, .uwY = 24});
+    iconInit(&g_Screen.m_pSelectionIcons[2], 32, 18, 0x1fff, 0xfffc, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 146, .uwY = 24});
+    iconInit(&g_Screen.m_pSelectionIcons[3], 32, 18, 0x1fff, 0xfffc, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 80, .uwY = 46});
+    iconInit(&g_Screen.m_pSelectionIcons[4], 32, 18, 0x1fff, 0xfffc, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 113, .uwY = 46});
+    iconInit(&g_Screen.m_pSelectionIcons[5], 32, 18, 0x1fff, 0xfffc, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 146, .uwY = 46});
 }
 
 void screenInit(void) {
@@ -516,36 +515,32 @@ void minimapUpdate(void) {
                 minimapStatePixels3 <<= 1;
                 UWORD tile = g_Map.m_ubPathmapXY[x][y];
                 switch (tile) {
-                    case MAP_GROUND_FLAG:
+                    case MAP_GROUND_FLAG: // 0b0010 -> light green
                         minimapStatePixels  |= 0b0;
-                        minimapStatePixels2 |= 0b0;
+                        minimapStatePixels2 |= 0b1;
                         minimapStatePixels3 |= 0b0;
                         break;
-                    case MAP_GROUND_FLAG | MAP_COAST_FLAG:
-                        minimapStatePixels  |= 0b1;
+                    case MAP_GROUND_FLAG | MAP_COAST_FLAG: // 0b0100 -> lightBrown
+                        minimapStatePixels  |= 0b0;
                         minimapStatePixels2 |= 0b0;
+                        minimapStatePixels3 |= 0b1;
+                        break;
+                    case MAP_FOREST_FLAG: // 0b0011 -> dark green
+                        minimapStatePixels  |= 0b1;
+                        minimapStatePixels2 |= 0b1;
                         minimapStatePixels3 |= 0b0;
+                        break;
+                    case MAP_WATER_FLAG: // 0b0111 -> lightBlue
+                        minimapStatePixels  |= 0b1;
+                        minimapStatePixels2 |= 0b1;
+                        minimapStatePixels3 |= 0b1;
                         break;
                     case MAP_GROUND_FLAG | MAP_UNWALKABLE_FLAG:
                     case MAP_GROUND_FLAG | MAP_COAST_FLAG | MAP_UNWALKABLE_FLAG:
-                        minimapStatePixels  |= 0b0;
-                        minimapStatePixels2 |= 0b1;
-                        minimapStatePixels3 |= 0b0;
-                        break;
-                    case MAP_FOREST_FLAG:
-                        minimapStatePixels  |= 0b0;
-                        minimapStatePixels2 |= 0b1;
-                        minimapStatePixels3 |= 0b1;
-                        break;
-                    case MAP_WATER_FLAG:
+                    case MAP_UNWALKABLE_FLAG: // 0b0001 -> white
                         minimapStatePixels  |= 0b1;
                         minimapStatePixels2 |= 0b0;
                         minimapStatePixels3 |= 0b0;
-                        break;
-                    case MAP_UNWALKABLE_FLAG:
-                        minimapStatePixels  |= 0b1;
-                        minimapStatePixels2 |= 0b0;
-                        minimapStatePixels3 |= 0b1;
                     
                 }
                 x++;
@@ -947,9 +942,9 @@ void drawActionButtons(void) {
 
 void drawMenuButton(void) {
     static UWORD topHighlight = 0;
-    static UBYTE blue1 = 13; static UWORD red1 = 0x724;
-    static UBYTE blue2 = 14; static UWORD red2 = 0xa44;
-    static UBYTE blue3 = 15; static UWORD red3 = 0xd45;
+    static UBYTE blue1 = 7; static UWORD red1 = 0x724;
+    static UBYTE blue2 = 8; static UWORD red2 = 0xa44;
+    static UBYTE blue3 = 9; static UWORD red3 = 0xd45;
     if (s_mouseY < TOP_PANEL_HEIGHT && s_mouseX <= 60) {
         topHighlight = 1;
         tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[s_copOffsets.topPanelColorsPos];

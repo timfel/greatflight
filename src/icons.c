@@ -9,6 +9,7 @@
 
 void iconInit(tIcon *icon,
     UBYTE width, UBYTE height,
+    UWORD maskLeft, UWORD maskRight,
     tBitMap *iconTileMap, IconIdx iconIdx,
     tBitMap *iconBuffer, tUwCoordYX iconPosition)
 {
@@ -30,6 +31,8 @@ void iconInit(tIcon *icon,
     UWORD blitWords = width >> 4;
     UWORD dstOffs = iconBuffer->BytesPerRow * iconPosition.uwY + (iconPosition.uwX >> 3);
 
+    icon->maskLeft = maskLeft;
+    icon->maskRight = maskRight;
     icon->dstModulo = bitmapGetByteWidth(iconBuffer) - (blitWords << 1);
     icon->iconDstPtr = iconBuffer->Planes[0] + dstOffs;
     icon->bltsize = ((height * iconTileMap->Depth) << 6) | (width >> 4);
@@ -56,8 +59,8 @@ void iconDraw(tIcon *icon, UBYTE drawAfterOtherIcon) {
     if (!drawAfterOtherIcon) {
         g_pCustom->bltcon0 = USEA|USED|MINTERM_A;
         g_pCustom->bltcon1 = 0;
-        g_pCustom->bltafwm = 0xffff;
-        g_pCustom->bltalwm = 0xffff;
+        g_pCustom->bltafwm = icon->maskLeft;
+        g_pCustom->bltalwm = icon->maskRight;
         g_pCustom->bltamod = 0;
         g_pCustom->bltdmod = icon->dstModulo;
     }
@@ -128,7 +131,6 @@ void iconCancel(Unit **, UBYTE ) {
         tUbCoordYX buildPos = {.ubX = tilePos.ubX / TILE_SIZE_FACTOR * TILE_SIZE_FACTOR, .ubY = tilePos.ubY / TILE_SIZE_FACTOR * TILE_SIZE_FACTOR}; \
         if (!buildingCanBeAt(buildingType, buildPos, 0)) { \
             cannotBuild(); \
-            iconCancel(unit, unitc); \
             return; \
         } \
         iconCancel(unit, unitc); \

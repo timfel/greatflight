@@ -35,6 +35,8 @@ typedef struct {
     UBYTE *iconDstPtr;
     UWORD dstModulo;
     UWORD bltsize;
+    UWORD maskLeft;
+    UWORD maskRight;
     union {
         tIconActionUnit unitAction;
         tIconActionBuilding buildingAction;
@@ -57,6 +59,7 @@ extern IconDefinitions g_BuildingIconDefinitions[];
 
 void iconInit(tIcon *icon,
     UBYTE width, UBYTE height,
+    UWORD maskLeft, UWORD maskRight,
     tBitMap *iconTileMap, IconIdx iconIdx,
     tBitMap *iconBuffer, tUwCoordYX iconPosition);
 

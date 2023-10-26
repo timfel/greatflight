@@ -50,7 +50,7 @@ typedef struct {
     IconIdx icons[3];
     union {
         tIconActionUnit unitActions[3];
-        tIconActionBuilding buildingActions[3];
+        tIconActionBuilding buildingActions[6];
     };
 } IconDefinitions;
 

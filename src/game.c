@@ -274,6 +274,24 @@ void drawSelectionIcon(IconIdx unitIcon, UBYTE idx) {
     iconDraw(icon, idx);
 }
 
+void drawSelectionHealth(UBYTE idx) {
+    tIcon *icon = &g_Screen.m_pSelectionIcons[idx];
+    // TODO: move into icons.c
+    if (icon->healthVal) {
+        // XXX: all hardcoded, using last pixel row in icon for health
+        UBYTE *pHpBar = icon->iconDstPtr +
+            17 * 320 / 8 * BPP + // 17 pixels down
+            1 * 320 / 8; // 1 palette bit down, so we draw on 0b00X0 (light green)
+        // TODO: optimize!
+        UBYTE pixels = *icon->healthVal * 32 / *icon->healthMax;
+        ULONG value = 0;
+        for (UBYTE p = 0; p < pixels; ++p) {
+            value = (value << 1) | 1;
+        }
+        *((ULONG*) pHpBar) = value;
+    }
+}
+
 void drawUnitInfo(Unit *unit) {
     fontFillTextBitMap(g_Screen.m_fonts.m_pNormalFont, g_Screen.m_panels.m_pUnitNameBitmap, UnitTypes[unit->type].name);
     fontDrawTextBitMap(g_Screen.m_panels.m_pMainPanelBuffer->pBack, g_Screen.m_panels.m_pUnitNameBitmap, 113, 24, 1, 0);
@@ -301,6 +319,7 @@ void drawInfoPanel(void) {
             for(; idx < g_Screen.m_ubSelectedUnitCount; ++idx) {
                 type = g_Screen.m_pSelectedUnit[idx]->type;
                 drawSelectionIcon(UnitTypes[type].iconIdx, idx);
+                iconSetHealth(&g_Screen.m_pSelectionIcons[idx], (UWORD *)&g_Screen.m_pSelectedUnit[idx]->stats.hp, (UWORD *)&UnitTypes[type].stats.maxHP);
             }
             for (UBYTE icon = idx; icon < NUM_SELECTION; ++icon) {
                 drawSelectionIcon(ICON_NONE, icon);
@@ -329,7 +348,9 @@ void drawInfoPanel(void) {
                 iconSetSource(&g_Screen.m_pActionIcons[5], g_Screen.m_pIcons, ICON_FRAME);
             }
         } else if (g_Screen.m_pSelectedBuilding) {
-            drawSelectionIcon(BuildingTypes[g_Screen.m_pSelectedBuilding->type].iconIdx, 0);    
+            BuildingType *type = &BuildingTypes[g_Screen.m_pSelectedBuilding->type];
+            drawSelectionIcon(type->iconIdx, 0);    
+            iconSetHealth(&g_Screen.m_pSelectionIcons[idx], &g_Screen.m_pSelectedBuilding->hp, &type->stats.maxHP);
             for (UBYTE icon = 1; icon < NUM_SELECTION; ++icon) {
                 drawSelectionIcon(ICON_NONE, icon);
             }
@@ -364,6 +385,12 @@ void drawInfoPanel(void) {
         for (UBYTE icon = 0; icon < NUM_ACTION_ICONS; ++icon) {
             iconDraw(&g_Screen.m_pActionIcons[icon], icon);
         }
+    } else if ((GameCycle & 16) != 16) {
+        return;
+    }
+    // redraw health bars
+    for (UBYTE icon = 0; icon < NUM_SELECTION; ++icon) {
+        drawSelectionHealth(icon);
     }
 }
 

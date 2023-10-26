@@ -33,6 +33,7 @@ void iconInit(tIcon *icon,
 
     icon->maskLeft = maskLeft;
     icon->maskRight = maskRight;
+    icon->healthMax = icon->healthVal = 0;
     icon->dstModulo = bitmapGetByteWidth(iconBuffer) - (blitWords << 1);
     icon->iconDstPtr = iconBuffer->Planes[0] + dstOffs;
     icon->bltsize = ((height * iconTileMap->Depth) << 6) | (width >> 4);
@@ -52,6 +53,12 @@ void iconSetSource(tIcon *icon, tBitMap *iconTileMap, IconIdx iconIdx) {
         UWORD srcOffs = bitmapGetByteWidth(iconTileMap) * iconIdx * height;
         icon->iconSrcPtr = iconTileMap->Planes[0] + srcOffs;
     }
+    icon->healthVal = NULL;
+}
+
+void iconSetHealth(tIcon *icon, UWORD *value, UWORD *max) {
+    icon->healthVal = value;
+    icon->healthMax = max;
 }
 
 void iconDraw(tIcon *icon, UBYTE drawAfterOtherIcon) {

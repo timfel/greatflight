@@ -41,6 +41,8 @@ typedef struct {
         tIconActionUnit unitAction;
         tIconActionBuilding buildingAction;
     };
+    UWORD *healthVal;
+    UWORD *healthMax;
 #ifdef ACE_DEBUG
     UBYTE bpp;
 #endif
@@ -67,6 +69,7 @@ void iconSetSource(tIcon *icon, tBitMap *iconTileMap, IconIdx iconIdx);
 void iconSetUnitAction(tIcon *icon, tIconActionUnit action);
 void iconSetBuildingAction(tIcon *icon, tIconActionBuilding action);
 void iconDraw(tIcon *icon, UBYTE drawAfterOtherIcon);
+void iconSetHealth(tIcon *icon, UWORD *value, UWORD *max);
 
 // Now all the actual unitAction handling
 void iconActionMove(Unit **unit, UBYTE unitc);

@@ -212,7 +212,7 @@ void actionBuild(Unit *unit) {
                 unit->action.action = ActionStill;
                 // TODO: what if no room? unit lost?
                 unitPlace(unit, unit->action.move.ubTargetX, unit->action.move.ubTargetY);
-            } else if (building->hp >= BuildingTypes[building->type].stats.maxHP) {
+            } else if (building->hp >= buildingTypeMaxHealth(&BuildingTypes[building->type])) {
                 unit->action.action = ActionStill;
                 // TODO: what if no room? unit lost?
                 unitPlace(unit, unit->action.move.ubTargetX, unit->action.move.ubTargetY);
@@ -250,8 +250,9 @@ void actionDo(Unit *unit) {
 
 void actionBeingBuilt(Building *building) {
     BuildingType *type = &BuildingTypes[building->type];
-    if (building->hp >= type->stats.maxHP) {
-        building->hp = type->stats.maxHP;
+    UWORD maxHp = buildingTypeMaxHealth(type);
+    if (building->hp >= maxHp) {
+        building->hp = maxHp;
         building->action.action = ActionStill;
         if (g_Screen.m_pSelectedBuilding == building) {
             g_Screen.m_ubBottomPanelDirty = 1;
@@ -274,7 +275,7 @@ void actionTrain(Building *building) {
         UnitType *type = &UnitTypes[building->action.train.u5UnitType1];
         UWORD gold = type->costs.gold;
         UWORD lumber = type->costs.lumber;
-        UWORD time = type->costs.time;
+        UWORD time = type->costs.timeBase << type->costs.timeShift;
         Player *owner = &g_pPlayers[building->owner];
         if (owner->gold >= gold && owner->lumber >= lumber) {
             owner->gold -= gold;

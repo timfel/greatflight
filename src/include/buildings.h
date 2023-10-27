@@ -2,6 +2,7 @@
 #define BUILDINGS
 
 #include "include/actions.h"
+#include "include/units.h"
 #include <ace/types.h>
 
 typedef enum __attribute__((__packed__)) {
@@ -24,7 +25,8 @@ typedef struct {
     UBYTE tileIdx;
     UBYTE size;
     struct {
-        UWORD maxHP;
+        UBYTE hpShift;
+        HPBase baseHp;
     } stats;
     struct {
         UWORD gold;
@@ -62,6 +64,10 @@ UBYTE buildingCanBeAt(BuildingTypeIndex type, tUbCoordYX loc, UBYTE ignoreOrigin
 UBYTE buildingNew(BuildingTypeIndex type, tUbCoordYX loc, UBYTE owner);
 
 void buildingDestroy(Building *building);
+
+static inline UWORD buildingTypeMaxHealth(BuildingType *type) {
+    return type->stats.baseHp << type->stats.hpShift;
+}
 
 void buildingManagerInitialize(void);
 void buildingManagerProcess(void);

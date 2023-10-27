@@ -12,7 +12,8 @@ BuildingType BuildingTypes[] = {
         .tileIdx = 44,
         .size = 4,
         .stats = {
-            .maxHP = 1200,
+            .hpShift = 6,
+            .baseHp = HP_20,
         },
         .costs = {
             .gold = 1200,
@@ -26,7 +27,8 @@ BuildingType BuildingTypes[] = {
         .tileIdx = 23,
         .size = 2,
         .stats = {
-            .maxHP = 400,
+            .hpShift = 5,
+            .baseHp = HP_25,
         },
         .costs = {
             .gold = 500,
@@ -40,7 +42,8 @@ BuildingType BuildingTypes[] = {
         .tileIdx = 24,
         .size = 4,
         .stats = {
-            .maxHP = 800,
+            .hpShift = 5,
+            .baseHp = HP_25,
         },
         .costs = {
             .gold = 700,
@@ -54,7 +57,8 @@ BuildingType BuildingTypes[] = {
         .tileIdx = 28,
         .size = 4,
         .stats = {
-            .maxHP = 600,
+            .hpShift = 5,
+            .baseHp = HP_20,
         },
         .costs = {
             .gold = 600,
@@ -68,7 +72,8 @@ BuildingType BuildingTypes[] = {
         .tileIdx = 21,
         .size = 2,
         .stats = {
-            .maxHP = 750,
+            .hpShift = 5,
+            .baseHp = HP_25,
         },
         .costs = {
             .gold = 800,
@@ -82,7 +87,8 @@ BuildingType BuildingTypes[] = {
         .tileIdx = 36,
         .size = 4,
         .stats = {
-            .maxHP = 500,
+            .hpShift = 5,
+            .baseHp = HP_20,
         },
         .costs = {
             .gold = 1000,
@@ -96,7 +102,8 @@ BuildingType BuildingTypes[] = {
         .tileIdx = 32,
         .size = 4,
         .stats = {
-            .maxHP = 700,
+            .hpShift = 5,
+            .baseHp = HP_25,
         },
         .costs = {
             .gold = 900,
@@ -110,7 +117,8 @@ BuildingType BuildingTypes[] = {
         .tileIdx = 48,
         .size = 2,
         .stats = {
-            .maxHP = 500,
+            .hpShift = 5,
+            .baseHp = HP_20,
         },
         .costs = {
             .gold = 1000,

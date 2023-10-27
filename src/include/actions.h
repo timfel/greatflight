@@ -22,7 +22,6 @@ typedef enum __attribute__ ((__packed__)) {
 _Static_assert(sizeof(ActionType) == sizeof(UBYTE), "unit stats is not 1 byte");
 
 typedef struct __attribute__((__packed__)) {
-    ActionType action;
     union {
         ULONG ulActionData;
         struct __attribute__((__packed__)) {
@@ -70,15 +69,16 @@ typedef struct __attribute__((__packed__)) {
             };
         } build;
         struct __attribute__((__packed__)) {    
+            UWORD uwTimeLeft;
             unsigned u5UnitType1:5;
             unsigned u5UnitType2:5;
             unsigned u5UnitType3:5;
-            UWORD uwTimeLeft;
         } train;
         struct __attribute__((__packed__)) {
             UBYTE ubTimeout;
         } die;
     };
+    ActionType action;
 } Action;
 _Static_assert(sizeof(Action) == sizeof(UBYTE) * 5, "action is too big");
 

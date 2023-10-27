@@ -15,7 +15,8 @@ UnitType UnitTypes[] = {
         .spritesheetPath = "resources/units/peasant.bm",
         .maskPath = "resources/units/peasant.msk",
         .stats = {
-            .maxHP = 30,
+            .hpShift = 0,
+            .hpBase = HP_30,
             .maxMana = 0,
             .speed = 2,
         },
@@ -23,7 +24,8 @@ UnitType UnitTypes[] = {
         .costs = {
             .gold = 400,
             .lumber = 0,
-            .time = 250,
+            .timeBase = HP_30,
+            .timeShift = 3,
         },
         .anim = {
             .large = 0,
@@ -180,6 +182,8 @@ Unit * unitNew(UnitTypeIndex typeIdx, UBYTE owner) {
     unit->type = typeIdx;
     unit->loc = UNIT_INIT_TILE_POSITION;
     unit->owner = owner;
+    unit->stats.hp = unitTypeMaxHealth(&UnitTypes[unit->type]);
+    unit->stats.mana = 0;
     return unit;
 }
 
@@ -266,7 +270,7 @@ void loadUnit(tFile *map, UBYTE owner) {
     fileRead(map, &unit->action.ubActionDataD, 1);
     fileRead(map, &unit->stats.hp, 1);
     if (unit->stats.hp == 0) {
-        unit->stats.hp = UnitTypes[unit->type].stats.maxHP;
+        unit->stats.hp = unitTypeMaxHealth(&UnitTypes[unit->type]);
     }
     fileRead(map, &unit->stats.mana, 1);
     if (unit->stats.mana == 0) {

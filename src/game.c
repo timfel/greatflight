@@ -277,18 +277,30 @@ void drawSelectionIcon(IconIdx unitIcon, UBYTE idx) {
 void drawSelectionHealth(UBYTE idx) {
     tIcon *icon = &g_Screen.m_pSelectionIcons[idx];
     // TODO: move into icons.c
-    if (icon->healthVal) {
+    if (icon->healthValue) {
         // XXX: all hardcoded, using last pixel row in icon for health
-        UBYTE *pHpBar = icon->iconDstPtr +
-            17 * 320 / 8 * BPP + // 17 pixels down
-            1 * 320 / 8; // 1 palette bit down, so we draw on 0b00X0 (light green)
         // TODO: optimize!
-        UBYTE pixels = *icon->healthVal * 32 / *icon->healthMax;
+        UBYTE *pHpBar1 = icon->iconDstPtr +
+            16 * 320 / 8 * BPP + // 16 pixels down
+            1 * 320 / 8; // 1 palette bit down, so we draw on 0b00X0 (dark green)
+        UBYTE *pHpBar2 = icon->iconDstPtr +
+            17 * 320 / 8 * BPP + // 17 pixels down
+            1 * 320 / 8; // 1 palette bit down, so we draw on 0b00X0 (dark green)
+        UBYTE pixels = *icon->healthValue >> icon->healthShift;
+        switch (icon->healthBase) {
+            case HP_20:
+                pixels = pixels + (pixels >> 1);
+                break;
+            case HP_25:
+                pixels = pixels + (pixels >> 2);
+                break;
+        }
         ULONG value = 0;
         for (UBYTE p = 0; p < pixels; ++p) {
-            value = (value << 1) | 1;
+            value = (value >> 1) | 0x80000000L;
         }
-        *((ULONG*) pHpBar) = value;
+        *((ULONG*) pHpBar1) = value;
+        *((ULONG*) pHpBar2) = value;
     }
 }
 
@@ -301,7 +313,12 @@ void drawBuildingInfo(Building *building) {
     if (building->action.action == ActionTrain) {
         // this must come first, since we want to re-use the blitter register values
         // from drawing the building icon
-        drawSelectionIcon(UnitTypes[building->action.train.u5UnitType1].iconIdx, 3);
+        UnitType *type1 = &UnitTypes[building->action.train.u5UnitType1];
+        drawSelectionIcon(type1->iconIdx, 3);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
+        iconSetHealth(&g_Screen.m_pSelectionIcons[3], &building->action.train.uwTimeLeft, type1->costs.timeShift, type1->costs.timeBase);
+#pragma GCC diagnostic pop
         drawSelectionIcon(UnitTypes[building->action.train.u5UnitType2].iconIdx, 4);
         drawSelectionIcon(UnitTypes[building->action.train.u5UnitType3].iconIdx, 5);
     }
@@ -317,9 +334,11 @@ void drawInfoPanel(void) {
         if (g_Screen.m_ubSelectedUnitCount) {
             UnitTypeIndex type;
             for(; idx < g_Screen.m_ubSelectedUnitCount; ++idx) {
-                type = g_Screen.m_pSelectedUnit[idx]->type;
-                drawSelectionIcon(UnitTypes[type].iconIdx, idx);
-                iconSetHealth(&g_Screen.m_pSelectionIcons[idx], (UWORD *)&g_Screen.m_pSelectedUnit[idx]->stats.hp, (UWORD *)&UnitTypes[type].stats.maxHP);
+                Unit *unit = g_Screen.m_pSelectedUnit[idx];
+                type = unit->type;
+                UnitType *typePtr = &UnitTypes[type];
+                drawSelectionIcon(typePtr->iconIdx, idx);
+                iconSetHealth(&g_Screen.m_pSelectionIcons[idx], &unit->stats.hp, typePtr->stats.hpShift, typePtr->stats.hpBase);
             }
             for (UBYTE icon = idx; icon < NUM_SELECTION; ++icon) {
                 drawSelectionIcon(ICON_NONE, icon);
@@ -348,12 +367,13 @@ void drawInfoPanel(void) {
                 iconSetSource(&g_Screen.m_pActionIcons[5], g_Screen.m_pIcons, ICON_FRAME);
             }
         } else if (g_Screen.m_pSelectedBuilding) {
-            BuildingType *type = &BuildingTypes[g_Screen.m_pSelectedBuilding->type];
-            drawSelectionIcon(type->iconIdx, 0);    
-            iconSetHealth(&g_Screen.m_pSelectionIcons[idx], &g_Screen.m_pSelectedBuilding->hp, &type->stats.maxHP);
+            Building *b = g_Screen.m_pSelectedBuilding;
+            BuildingType *type = &BuildingTypes[b->type];
+            drawSelectionIcon(type->iconIdx, 0);
+            iconSetHealth(&g_Screen.m_pSelectionIcons[0], &b->hp, type->stats.hpShift, type->stats.baseHp);
             for (UBYTE icon = 1; icon < NUM_SELECTION; ++icon) {
                 drawSelectionIcon(ICON_NONE, icon);
-            }
+                }
             drawBuildingInfo(g_Screen.m_pSelectedBuilding);
             if (g_Screen.m_pSelectedBuilding->action.action == ActionBeingBuilt) {
                 for (UBYTE icon = 0; icon < NUM_ACTION_ICONS - 1; ++icon) {
@@ -542,8 +562,8 @@ void minimapUpdate(void) {
                 minimapStatePixels3 <<= 1;
                 UWORD tile = g_Map.m_ubPathmapXY[x][y];
                 switch (tile) {
-                    case MAP_GROUND_FLAG: // 0b0010 -> light green
-                        minimapStatePixels  |= 0b0;
+                    case MAP_GROUND_FLAG: // 0b0011 -> light green
+                        minimapStatePixels  |= 0b1;
                         minimapStatePixels2 |= 0b1;
                         minimapStatePixels3 |= 0b0;
                         break;
@@ -552,8 +572,8 @@ void minimapUpdate(void) {
                         minimapStatePixels2 |= 0b0;
                         minimapStatePixels3 |= 0b1;
                         break;
-                    case MAP_FOREST_FLAG: // 0b0011 -> dark green
-                        minimapStatePixels  |= 0b1;
+                    case MAP_FOREST_FLAG: // 0b0010 -> dark green
+                        minimapStatePixels  |= 0b0;
                         minimapStatePixels2 |= 0b1;
                         minimapStatePixels3 |= 0b0;
                         break;

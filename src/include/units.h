@@ -5,6 +5,7 @@
 #include "include/map.h"
 #include "include/icons.h"
 
+#include <ace/managers/log.h>
 #include <ace/utils/bitmap.h>
 #include <ace/utils/file.h>
 
@@ -19,6 +20,34 @@
 #define DIRECTION_WEST 3
 #define DIRECTIONS 4
 
+/* 
+We store max health as a combination of two values:
+the shift value, and a base value.
+We want to end up with max health values that can be
+mapped into the range 0-30 for the health bars cheaply.
+For example, to get a health of 80, we say:
+    shift = 2, base 20.
+    Then, the max health is 20 << 2 = 80.
+    To map it into the health bar range, we
+    do (80 >> 2) + (80 >> 2 >> 1) = 20 + 10 = 30.
+To get a health of 60, we say:
+    shift = 1, base = 30.
+    Then, the max health is 30 << 1 = 60.
+    To map it into the health bar range, we
+    do (60 >> 1) = 30.
+To get a health of 200, we say:
+    shift = 3, base = 25.
+    Then, the max health is 25 << 3 = 200.
+    To map it into the health bar range, we
+    do (200 >> 3) + (200 >> 3 >> 2) = 25 + 6 = 31
+    and we drop the extra pixel.
+*/
+typedef enum __attribute__((__packed__)) {
+    HP_20 = 20,
+    HP_25 = 25,
+    HP_30 = 30
+} HPBase;
+
 typedef struct {
     const char* name;
     union {
@@ -31,14 +60,16 @@ typedef struct {
     };
     UBYTE iconIdx;
     struct {
-        UBYTE maxHP;
+        UBYTE hpShift;
+        HPBase hpBase;
         UBYTE speed;
         UBYTE maxMana;
     } stats;
     struct {
         UWORD gold;
         UWORD lumber;
-        UWORD time;
+        UBYTE timeShift;
+        HPBase timeBase;
     } costs;
     struct {
         unsigned large:1; // 16x16 or 24x24 pixels
@@ -75,11 +106,9 @@ typedef enum __attribute__((__packed__)) {
 } UnitTypeIndex;
 
 typedef struct {
-    UBYTE hp;
+    UWORD hp;
     UBYTE mana;
 } UnitStats;
-
-_Static_assert(sizeof(UnitStats) == sizeof(UWORD), "unit stats is not 1 word");
 
 typedef struct _unitmanager tUnitManager;
 
@@ -116,6 +145,10 @@ extern UnitType UnitTypes[];
 
 /* The maximum number of units the game will allocate memory for. */
 #define MAX_UNITS 200
+
+static inline UBYTE unitTypeMaxHealth(UnitType *type) {
+    return type->stats.hpBase << type->stats.hpShift;
+}
 
 /**
  * @brief Initialize the unit manager.

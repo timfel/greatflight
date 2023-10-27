@@ -221,9 +221,6 @@ void actionBuild(Unit *unit) {
                     return;
                 }
                 building->hp += unit->action.build.u6buildingHPIncrease + 4;
-#ifdef ACE_DEBUG
-                building->hp <<= 1;
-#endif
             }
         }
     }

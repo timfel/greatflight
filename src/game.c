@@ -299,6 +299,7 @@ void drawSelectionHealth(UBYTE idx) {
         for (UBYTE p = 0; p < pixels; ++p) {
             value = (value >> 1) | 0x80000000L;
         }
+        value >>= 1;
         *((ULONG*) pHpBar1) = value;
         *((ULONG*) pHpBar2) = value;
     }

@@ -15,6 +15,26 @@ void actionMoveTo(Unit *unit, tUbCoordYX goal) {
     unit->nextAction.action = ActionMove;
 }
 
+void actionHarvestAt(Unit *unit, tUbCoordYX goal) {
+    UBYTE tile = g_Map.m_ubPathmapXY[goal.ubX][goal.ubY];
+    if (tileIsHarvestable(tile)) {
+        logWrite("harvest terrain\n");
+    } else if (!tileIsWalkable(tile)) {
+        logWrite("harvest unit\n");
+    } else {
+        actionMoveTo(unit, goal);
+    }
+}
+
+void actionAttackAt(Unit *unit, tUbCoordYX goal) {
+    UBYTE tile = g_Map.m_ubPathmapXY[goal.ubX][goal.ubY];
+    if (tileIsWalkable(tile)) {
+        logWrite("attack move\n");
+    } else {
+        logWrite("attack unit\n");
+    }
+}
+
 enum __attribute__((__packed__)) BuildState {
     BuildStateMoveToGoal,
     BuildStateOpenConstructionSite,

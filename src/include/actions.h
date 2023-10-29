@@ -89,6 +89,8 @@ void actionDo(Unit *unit);
 void actionMoveTo(Unit *unit, tUbCoordYX goal);
 void actionStop(Unit *unit);
 void actionBuildAt(Unit *unit, tUbCoordYX goal, UBYTE tileType);
+void actionHarvestAt(Unit *unit, tUbCoordYX goal);
+void actionAttackAt(Unit *unit, tUbCoordYX goal);
 
 void buildingDo(Building *building);
 

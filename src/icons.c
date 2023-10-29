@@ -93,6 +93,15 @@ void iconSetBuildingAction(tIcon *icon, tIconActionBuilding action) {
     icon->buildingAction = action;
 }
 
+#define ACTION_ASKING_FOR_TARGET(name) \
+    void iconAction ## name(Unit **, UBYTE unitc) { \
+        if (!unitc) { \
+            iconRectSpritesUpdate(0, 0); \
+            return; \
+        } \
+        g_Screen.lmbAction = &iconAction ## name ## To; \
+    }
+
 void iconActionMoveTo(Unit **unit, UBYTE unitc, tUbCoordYX tilePos) {
     while (unitc--) {
         actionMoveTo(*unit++, tilePos);
@@ -101,29 +110,31 @@ void iconActionMoveTo(Unit **unit, UBYTE unitc, tUbCoordYX tilePos) {
     g_Screen.lmbAction = NULL;
 }
 
-void iconActionMove(Unit **, UBYTE unitc) {
-    if (!unitc) {
-        iconRectSpritesUpdate(0, 0);
+void iconActionAttackTo(Unit **unit, UBYTE unitc, tUbCoordYX tilePos) {
+    while (unitc--) {
+        actionAttackAt(*unit++, tilePos);
     }
-    g_Screen.lmbAction = &iconActionMoveTo;
+    iconRectSpritesUpdate(0, 0);
+    g_Screen.lmbAction = NULL;
 }
+
+void iconActionHarvestTo(Unit **unit, UBYTE unitc, tUbCoordYX tilePos) {
+    while (unitc--) {
+        actionHarvestAt(*unit++, tilePos);
+    }
+    iconRectSpritesUpdate(0, 0);
+    g_Screen.lmbAction = NULL;
+}
+
+ACTION_ASKING_FOR_TARGET(Move);
+ACTION_ASKING_FOR_TARGET(Attack);
+ACTION_ASKING_FOR_TARGET(Harvest);
 
 void iconActionStop(Unit **unit, UBYTE unitc) {
     while (unitc--) {
         actionStop(*unit++);
         iconRectSpritesUpdate(0, 0);
     }
-}
-
-void iconActionAttack(Unit **, UBYTE unitc) {
-    if (!unitc) {
-        iconRectSpritesUpdate(0, 0);
-    }
-    logWrite("Attack");
-}
-
-void iconActionHarvest(Unit **, UBYTE ) {
-    logWrite("Harvest");
 }
 
 void cannotBuild(void) {

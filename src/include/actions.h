@@ -4,20 +4,33 @@
 #include "include/map.h"
 #include "ace/types.h"
 
+/*
+ * Many actions use ActionMove to move to a goal and store
+ * themselves in the follow up action data.
+ * Action move must be interruptible by any action though.
+ * So move is only interrupted by action ids lower than move.
+ * When actions use move but don't want to be interrupted by
+ * move themselves, they set the high bit and thus can store their
+ * data in the nextAction field of the unit.
+ */
+#define ACTION_AFTER_MOVE(action) ((action) | 0x80)
+#define ACTION_WITHOUT_MOVE(action) ((action) & 0x7F)
+#define ACTION_IS_AFTER_MOVE(action) ((action) & 0x80)
 typedef enum __attribute__ ((__packed__)) {
     ActionStill,
-    ActionMove,
     ActionStop,
     ActionAttackMove,
     ActionAttackTarget,
-    ActionHarvest,
+    ActionHarvestTerrain,
+    ActionHarvestMine,
     ActionCast,
     ActionBuild,
-    ActionBeingBuilt,
     ActionRepair,
+    ActionDie,
+    ActionBeingBuilt,
     ActionTrain,
     ActionResearch,
-    ActionDie
+    ActionMove,
 } ActionType;
 _Static_assert(sizeof(ActionType) == sizeof(UBYTE), "unit stats is not 1 byte");
 
@@ -38,33 +51,24 @@ typedef struct __attribute__((__packed__)) {
             UBYTE ubWait;
         } still;
         struct __attribute__((__packed__)) {
-            union {
-                struct __attribute__((__packed__)) {
-                    UBYTE ubTargetY;
-                    UBYTE ubTargetX;
-                };
-                tUbCoordYX target;
-            };
+            tUbCoordYX target;
             unsigned u4Wait:4;
             unsigned u4Retries:4;
             UBYTE unused;
         } move;
         struct __attribute__((__packed__)) {
-            UBYTE __move1;
-            UBYTE __move2;
-            union {
-                UBYTE __move3;
+            UBYTE ubState;
+            union __attribute__((__packed__)) {
+                // depending on state this stores the desired type
+                // or the new building id
                 UBYTE ubBuildingID;
+                UBYTE ubBuildingType;
             };
             union {
+                tUbCoordYX target;
                 struct __attribute__((__packed__)) {
-                    unsigned u6BuildingType:6; // 20 buildings, at most 64
-                    unsigned u2State:2; // going to goal, groundwork, waiting
-                };
-                struct __attribute__((__packed__)) {
-                    unsigned u6buildingHPIncrease:2;
-                    unsigned u6buildingHPWait:4;
-                    unsigned __u2State:2;
+                    UBYTE ubBuildingHPIncrease;
+                    UBYTE ubBuildingHPWait;
                 };
             };
         } build;
@@ -77,6 +81,12 @@ typedef struct __attribute__((__packed__)) {
         struct __attribute__((__packed__)) {
             UBYTE ubTimeout;
         } die;
+        struct __attribute__((__packed__)) {
+            unsigned u4State:4;
+            unsigned u4Direction:4;
+            UBYTE ubWait;
+            tUbCoordYX lastHarvestLocation;
+        } harvest;
     };
     ActionType action;
 } Action;

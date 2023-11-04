@@ -208,7 +208,9 @@ UBYTE unitCanBeAt(Unit *, UBYTE x, UBYTE y) {
     return mapIsWalkable(x, y);
 }
 
-UBYTE unitPlace(Unit *unit, UBYTE x, UBYTE y) {
+UBYTE unitPlace(Unit *unit, tUbCoordYX loc) {
+    UBYTE x = loc.ubX;
+    UBYTE y = loc.ubY;
     UBYTE actualX, actualY;
     // drop out no further than 5 tiles away
     for (UBYTE range = 0; range < 5; ++range) {
@@ -258,7 +260,7 @@ void loadUnit(tFile *map, UBYTE owner) {
     Unit *unit = unitNew(type, owner);
     fileRead(map, &x, 1);
     fileRead(map, &y, 1);
-    if (!unitPlace(unit, x, y)) {
+    if (!unitPlace(unit, (tUbCoordYX){.ubX = x, .ubY = y})) {
         logWrite("DANGER WILL ROBINSON! Could not place unit at %d:%d", x, y);
         unitDelete(unit);
         return;
@@ -305,5 +307,13 @@ UBYTE unitGetFrame(Unit *self) {
 }
 
 void unitSetOffMap(Unit *self) {
+    unmarkMapTile(self->x, self->y);
+    for (UBYTE unitIdx = 0; unitIdx < g_Screen.m_ubSelectedUnitCount; ++unitIdx) {
+        if (g_Screen.m_pSelectedUnit[unitIdx] == self) {
+            g_Screen.m_ubSelectedUnitCount = 0;
+            g_Screen.m_ubBottomPanelDirty = 1;
+            break;
+        }
+    }
     self->loc = UNIT_FREE_TILE_POSITION;
 }

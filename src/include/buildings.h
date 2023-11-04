@@ -6,6 +6,7 @@
 #include <ace/types.h>
 
 typedef enum __attribute__((__packed__)) {
+    BUILDING_NONE,
     BUILDING_HUMAN_TOWNHALL,
     BUILDING_HUMAN_FARM,
     BUILDING_HUMAN_BARRACKS,
@@ -72,6 +73,8 @@ static inline UWORD buildingTypeMaxHealth(BuildingType *type) {
 void buildingManagerInitialize(void);
 void buildingManagerProcess(void);
 void buildingManagerDestroy(void);
+
+Building *buildingManagerFindBuildingByTypeAndPlayerAndLocation(BuildingTypeIndex typeIdx, UBYTE ownerIdx, tUbCoordYX loc);
 
 Building *buildingManagerBuildingAt(tUbCoordYX tile);
 

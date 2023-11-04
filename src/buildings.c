@@ -18,7 +18,7 @@ BuildingType BuildingTypes[] = {
         .costs = {
             .gold = 1200,
             .wood = 800,
-            .hpIncrease = 2,
+            .hpIncrease = 6,
         },
     },
     [BUILDING_HUMAN_FARM] = {
@@ -33,7 +33,7 @@ BuildingType BuildingTypes[] = {
         .costs = {
             .gold = 500,
             .wood = 250,
-            .hpIncrease = 1,
+            .hpIncrease = 5,
         },
     },
     [BUILDING_HUMAN_BARRACKS] = {
@@ -48,7 +48,7 @@ BuildingType BuildingTypes[] = {
         .costs = {
             .gold = 700,
             .wood = 450,
-            .hpIncrease = 1,
+            .hpIncrease = 5,
         },
     },
     [BUILDING_HUMAN_LUMBERMILL] = {
@@ -63,7 +63,7 @@ BuildingType BuildingTypes[] = {
         .costs = {
             .gold = 600,
             .wood = 450,
-            .hpIncrease = 1,
+            .hpIncrease = 5,
         },
     },
     [BUILDING_HUMAN_SMITHY] = {
@@ -78,7 +78,7 @@ BuildingType BuildingTypes[] = {
         .costs = {
             .gold = 800,
             .wood = 450,
-            .hpIncrease = 1,
+            .hpIncrease = 5,
         },
     },
     [BUILDING_HUMAN_STABLES] = {
@@ -93,7 +93,7 @@ BuildingType BuildingTypes[] = {
         .costs = {
             .gold = 1000,
             .wood = 300,
-            .hpIncrease = 0,
+            .hpIncrease = 4,
         },
     },
     [BUILDING_HUMAN_CHURCH] = {
@@ -108,7 +108,7 @@ BuildingType BuildingTypes[] = {
         .costs = {
             .gold = 900,
             .wood = 500,
-            .hpIncrease = 1,
+            .hpIncrease = 5,
         },
     },
     [BUILDING_HUMAN_TOWER] = {
@@ -123,7 +123,7 @@ BuildingType BuildingTypes[] = {
         .costs = {
             .gold = 1000,
             .wood = 200,
-            .hpIncrease = 1,
+            .hpIncrease = 5,
         }
     },
 };
@@ -200,6 +200,10 @@ void buildingDestroy(Building *building) {
             g_Map.m_ulTilemapXY[ubTileX + x][ubTileY + y] = tileIndexToTileBitmapOffset(TILEINDEX_GRASS);
         }
     }
+
+    // make sure it is skipped in action loop
+    building->action.action = ActionStill;
+    building->type = BUILDING_NONE;
 }
 
 void buildingManagerInitialize(void) {
@@ -217,15 +221,41 @@ void buildingManagerDestroy() {
 
 void buildingManagerProcess(void) {
     Building *building = g_BuildingManager.building;
-    UBYTE count = g_BuildingManager.count;
+    UBYTE count = MAX_BUILDINGS;
     while (count--) {
         buildingDo(building);
         building++;
     }
 }
 
+UBYTE fast2dDistance(tUbCoordYX a, tUbCoordYX b) {
+    // assumes that actual values are maximum 64
+    BYTE x = ABS((BYTE)a.ubX - (BYTE)b.ubX);
+    BYTE y = ABS((BYTE)a.ubY - (BYTE)b.ubY);
+    // this function computes the distance from 0,0 to x,y with 3.5% error
+    // found here: https://www.reddit.com/r/askmath/comments/ekzurn/understanding_a_fast_distance_calculation/
+    int mn = MIN(x, y);
+    return (x + y - (mn / (2 << 1)) - (mn / (2 << 2)) + (mn / (2 << 4)));
+}
+
+Building *buildingManagerFindBuildingByTypeAndPlayerAndLocation(BuildingTypeIndex typeIdx, UBYTE ownerIdx, tUbCoordYX loc) {
+    Building *building = g_BuildingManager.building;
+    UBYTE count = MAX_BUILDINGS;
+    Building *bestBuilding = NULL;
+    UBYTE dist = 0xFF;
+    while (count--) {
+        if (building->owner == ownerIdx && building->type == typeIdx) {
+            if (fast2dDistance(building->loc, loc) < dist) {
+                bestBuilding = building;
+            }
+        }
+        building++;
+    }
+    return bestBuilding;
+}
+
 Building *buildingManagerBuildingAt(tUbCoordYX tile) {
-    for (UBYTE i = 0; i < g_BuildingManager.count; ++i) {
+    for (UBYTE i = 0; i < MAX_BUILDINGS; ++i) {
         Building *building = &g_BuildingManager.building[i];
         UBYTE sz = BuildingTypes[building->type].size;
         tUbCoordYX loc = building->loc;

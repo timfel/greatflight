@@ -56,7 +56,7 @@ static inline UBYTE mapIsWalkable(UBYTE x, UBYTE y) {
 }
 
 static inline UBYTE tileIsHarvestable(UBYTE tile) {
-    return tile & MAP_FOREST_FLAG;
+    return (tile & MAP_FOREST_FLAG) == MAP_FOREST_FLAG;
 }
 
 static inline UBYTE mapIsHarvestable(UBYTE x, UBYTE y) {

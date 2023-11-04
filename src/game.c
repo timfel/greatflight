@@ -67,6 +67,10 @@ void createViewports() {
                              TAG_END);
 }
 
+UBYTE tileBitmapOffsetToTileIndex(ULONG offset) {
+    return ((offset - (ULONG)g_Screen.m_map.m_pTilemap->Planes[0]) / g_Screen.m_map.m_pTilemap->BytesPerRow) >> TILE_SHIFT;
+}
+
 ULONG tileIndexToTileBitmapOffset(UBYTE index) {
     return (ULONG)(g_Screen.m_map.m_pTilemap->Planes[0] + (g_Screen.m_map.m_pTilemap->BytesPerRow * (index << TILE_SHIFT)));
 }

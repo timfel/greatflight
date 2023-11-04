@@ -297,7 +297,7 @@ void actionHarvest(Unit *unit) {
     switch (unit->action.harvest.u4State) {
         case HarvestMoveToHarvest: {
             if (ACTION_IS_AFTER_MOVE(action)) {
-                UWORD result = findHarvestSpotAround(unit->loc.ubX, unit->loc.ubY);
+                UWORD result = findHarvestableTileAround(unit->loc);
                 if (result) {
                     // reached a harvest spot, start harvesting
                     if (action == ACTION_AFTER_MOVE(ActionHarvestMine)) {
@@ -360,6 +360,13 @@ void actionHarvest(Unit *unit) {
             return;
         }
         case HarvestWaitAtForest: {
+            UWORD result = findHarvestableTileAround(unit->loc);
+            if (!result) {
+                // someone else removed our trees, find a new spot
+                unit->action.action = ACTION_WITHOUT_MOVE(unit->action.action);
+                unit->action.harvest.u4State = HarvestMoveToHarvest;
+                return;
+            }
             UBYTE wait = unit->action.harvest.ubWait;
             UnitType *type = &UnitTypes[unit->type];
             if (wait % ((type->anim.wait + 1) << 1) == 0) {
@@ -370,6 +377,25 @@ void actionHarvest(Unit *unit) {
             if (++unit->action.harvest.ubWait < WAIT_AT_FOREST) {
                 return;
             }
+            tUbCoordYX tilemapPos = (tUbCoordYX){
+                .ubX = (tUbCoordYX){.uwYX = result}.ubX / TILE_SIZE_FACTOR,
+                .ubY = (tUbCoordYX){.uwYX = result}.ubY / TILE_SIZE_FACTOR
+            };
+            // XXX: extract the below into the right place
+            UBYTE tile = tileBitmapOffsetToTileIndex(g_Map.m_ulTilemapXY[tilemapPos.ubX][tilemapPos.ubY]);
+            g_Map.m_ulTilemapXY[tilemapPos.ubX][tilemapPos.ubY] = tileIndexToTileBitmapOffset(--tile);
+            if (tile < 6) {
+                tUbCoordYX resultPos = (tUbCoordYX){
+                    .ubX = tilemapPos.ubX * TILE_SIZE_FACTOR,
+                    .ubY = tilemapPos.ubY * TILE_SIZE_FACTOR
+                };
+                for (UBYTE y = 0; y < 2; ++y) {
+                    for (UBYTE x = 0; x < 2; ++x) {
+                        g_Map.m_ubPathmapXY[resultPos.ubX + x][resultPos.ubY + y] ^= MAP_FOREST_FLAG;
+                    }
+                }
+            }
+            // END XXX
             unit->action.action = ACTION_WITHOUT_MOVE(unit->action.action);
             unit->action.harvest.u4State = HarvestMoveToDepot;
             return;

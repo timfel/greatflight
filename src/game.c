@@ -67,18 +67,6 @@ void createViewports() {
                              TAG_END);
 }
 
-UBYTE tileBitmapOffsetToTileIndex(ULONG offset) {
-    return ((offset - (ULONG)g_Screen.m_map.m_pTilemap->Planes[0]) / g_Screen.m_map.m_pTilemap->BytesPerRow) >> TILE_SHIFT;
-}
-
-ULONG tileIndexToTileBitmapOffset(UBYTE index) {
-    return (ULONG)(g_Screen.m_map.m_pTilemap->Planes[0] + (g_Screen.m_map.m_pTilemap->BytesPerRow * (index << TILE_SHIFT)));
-}
-
-void loadTileBitmap() {
-    g_Screen.m_map.m_pTilemap = bitmapCreateFromFile(g_Map.m_pTileset, 0);
-}
-
 void loadMap(const char* name, UWORD mapbufCoplistStart, UWORD mapColorsCoplistStart) {
     char* mapname = MAPDIR LONGEST_MAPNAME;
 
@@ -88,7 +76,7 @@ void loadMap(const char* name, UWORD mapbufCoplistStart, UWORD mapColorsCoplistS
         logWrite("ERROR: Cannot open file %s!\n", mapname);
     }
 
-    mapLoad(map, &loadTileBitmap);
+    mapLoad(map);
     playersLoad(map);
     unitsLoad(map);
     fileClose(map);

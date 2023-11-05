@@ -221,14 +221,14 @@ UBYTE unitPlace(Unit *unit, tUbCoordYX loc) {
                 if (unitCanBeAt(unit, actualX, actualY)) {
                     unit->x = actualX;
                     unit->y = actualY;
-                    markMapTile(actualX, actualY);
+                    mapMarkTileOccupied(actualX, actualY);
                     return 1;
                 }
                 actualY = y - yoff;
                 if (unitCanBeAt(unit, actualX, actualY)) {
                     unit->x = actualX;
                     unit->y = actualY;
-                    markMapTile(actualX, actualY);
+                    mapMarkTileOccupied(actualX, actualY);
                     return 1;
                 }
             }
@@ -238,14 +238,14 @@ UBYTE unitPlace(Unit *unit, tUbCoordYX loc) {
                 if (unitCanBeAt(unit, actualX, actualY)) {
                     unit->x = actualX;
                     unit->y = actualY;
-                    markMapTile(actualX, actualY);
+                    mapMarkTileOccupied(actualX, actualY);
                     return 1;
                 }
                 actualY = y - yoff;
                 if (unitCanBeAt(unit, actualX, actualY)) {
                     unit->x = actualX;
                     unit->y = actualY;
-                    markMapTile(actualX, actualY);
+                    mapMarkTileOccupied(actualX, actualY);
                     return 1;
                 }
             }
@@ -307,7 +307,7 @@ UBYTE unitGetFrame(Unit *self) {
 }
 
 void unitSetOffMap(Unit *self) {
-    unmarkMapTile(self->x, self->y);
+    mapUnmarkTileOccupied(self->x, self->y);
     for (UBYTE unitIdx = 0; unitIdx < g_Screen.m_ubSelectedUnitCount; ++unitIdx) {
         if (g_Screen.m_pSelectedUnit[unitIdx] == self) {
             g_Screen.m_ubSelectedUnitCount = 0;

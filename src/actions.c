@@ -158,7 +158,7 @@ void actionMove(Unit *unit) {
             }
             return;
         }
-        unmarkMapTile(tilePos.ubX, tilePos.ubY);
+        mapUnmarkTileOccupied(tilePos.ubX, tilePos.ubY);
         if (vectorX) {
             unit->loc.ubX += vectorX;
             unit->IX = -vectorX * (PATHMAP_TILE_SIZE - speed);
@@ -168,7 +168,7 @@ void actionMove(Unit *unit) {
             unit->IY = -vectorY * (PATHMAP_TILE_SIZE - speed);
         }
         tilePos = unitGetTilePosition(unit);
-        markMapTile(tilePos.ubX, tilePos.ubY);
+        mapMarkTileOccupied(tilePos.ubX, tilePos.ubY);
     }
     if (unit->action.move.u4Wait) {
         --unit->action.move.u4Wait;
@@ -377,25 +377,8 @@ void actionHarvest(Unit *unit) {
             if (++unit->action.harvest.ubWait < WAIT_AT_FOREST) {
                 return;
             }
-            tUbCoordYX tilemapPos = (tUbCoordYX){
-                .ubX = (tUbCoordYX){.uwYX = result}.ubX / TILE_SIZE_FACTOR,
-                .ubY = (tUbCoordYX){.uwYX = result}.ubY / TILE_SIZE_FACTOR
-            };
-            // XXX: extract the below into the right place
-            UBYTE tile = tileBitmapOffsetToTileIndex(g_Map.m_ulTilemapXY[tilemapPos.ubX][tilemapPos.ubY]);
-            g_Map.m_ulTilemapXY[tilemapPos.ubX][tilemapPos.ubY] -= TILE_FRAME_BYTES;
-            if (tile <= 6) {
-                tUbCoordYX resultPos = (tUbCoordYX){
-                    .ubX = tilemapPos.ubX * TILE_SIZE_FACTOR,
-                    .ubY = tilemapPos.ubY * TILE_SIZE_FACTOR
-                };
-                for (UBYTE y = 0; y < 2; ++y) {
-                    for (UBYTE x = 0; x < 2; ++x) {
-                        g_Map.m_ubPathmapXY[resultPos.ubX + x][resultPos.ubY + y] = MAP_GROUND_FLAG;
-                    }
-                }
-            }
-            // END XXX
+            mapDecGraphicTileAt((tUbCoordYX){.uwYX = result}.ubX, (tUbCoordYX){.uwYX = result}.ubY);
+
             unit->action.action = ACTION_WITHOUT_MOVE(unit->action.action);
             unit->action.harvest.u4State = HarvestMoveToDepot;
             return;
@@ -550,12 +533,11 @@ void actionBeingBuilt(Building *building) {
             g_Screen.m_ubBottomPanelDirty = 1;
         }
         tUbCoordYX loc = building->loc;
-        loc.uwYX = loc.uwYX / TILE_SIZE_FACTOR;
         UBYTE buildingTileIdx = type->tileIdx;
-        UBYTE buildingSize = type->size / TILE_SIZE_FACTOR;
-        for (UBYTE y = 0; y < buildingSize; ++y) {
-            for (UBYTE x = 0; x < buildingSize; ++x) {
-                g_Map.m_ulTilemapXY[loc.ubX + x][loc.ubY + y] = tileIndexToTileBitmapOffset(buildingTileIdx++);
+        UBYTE buildingSize = type->size;
+        for (UBYTE y = 0; y < buildingSize; y += TILE_SIZE_FACTOR) {
+            for (UBYTE x = 0; x < buildingSize; x += TILE_SIZE_FACTOR) {
+                mapSetGraphicTileAt(loc.ubX + x, loc.ubY + y, buildingTileIdx++);
             }
         }
     }

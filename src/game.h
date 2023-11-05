@@ -104,9 +104,6 @@ void screenDestroy(void);
 
 extern struct Screen g_Screen;
 
-extern ULONG tileIndexToTileBitmapOffset(UBYTE index);
-extern UBYTE tileBitmapOffsetToTileIndex(ULONG offset);
-
 void gameGsCreate(void);
 void gameGsLoop(void);
 void gameGsDestroy(void);

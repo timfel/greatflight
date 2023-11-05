@@ -39,7 +39,7 @@ enum __attribute__((__packed__)) TileIndices {
  */
 extern struct Map g_Map;
 
-extern void mapLoad(tFile *file, void(*loadTileBitmap)());
+extern void mapLoad(tFile *file);
 
 #define MAP_UNWALKABLE_FLAG 0b1
 #define MAP_GROUND_FLAG    0b10
@@ -63,73 +63,33 @@ static inline UBYTE mapIsHarvestable(UBYTE x, UBYTE y) {
     return tileIsHarvestable(g_Map.m_ubPathmapXY[x][y]);
 }
 
-static inline void markMapTile(UBYTE x, UBYTE y) {
+static inline void mapMarkTileOccupied(UBYTE x, UBYTE y) {
     g_Map.m_ubPathmapXY[x][y] |= MAP_UNWALKABLE_FLAG;
 }
 
-static inline void unmarkMapTile(UBYTE x, UBYTE y) {
+static inline void mapUnmarkTileOccupied(UBYTE x, UBYTE y) {
     g_Map.m_ubPathmapXY[x][y] ^= MAP_UNWALKABLE_FLAG;
 }
 
 /*
- * 
- * dbu_ ____ tttt tttt - (d)iscovered, 
- * 
- * 
- * 11bb bbqq qqii iiii - 4x4 (b)uilding id (gold, barracks, mill, Stable, Hall, Church = 11), (q)uadrant of building, unitlist (i)ndex
- * 101b bbqq qqii iiii - 3x3 (b)uilding id (smith, tower, farm), (q)uadrant of building, unitlist (i)ndex
- * 1001 bqqq qqii iiii - 5x5 (b)uilding id (blackrock, stormwind), (q)uadrant of building, unitlist (i)ndex
- * 01uu uuuu iiii iiii - (u)nused, unit (i)d
- * 00wb dhau tttt tttt - (w)alkable, (b)uildable, (d)iscovered, (h)arvestable, (a)ttackable, (u)nused, original (t)ile from map data
+ * Return the graphical tile at the pathmap position.
  */
+UBYTE mapGetGraphicTileAt(UBYTE x, UBYTE y);
+/*
+ * Set graphical tile at the pathmap position.
+ */
+void mapSetGraphicTileAt(UBYTE x, UBYTE y, UBYTE tileIndex);
+/*
+ * Increment the tile at the pathmap position by 1.
+ */
+void mapIncGraphicTileAt(UBYTE x, UBYTE y);
+/*
+ * Decrement the tile at the pathmap position by 1.
+ */
+void mapDecGraphicTileAt(UBYTE x, UBYTE y);
 
-typedef UWORD* tileInfo;
+ULONG tileIndexToTileBitmapOffset(UBYTE index);
 
-#define tileInfoIsBuildingMacro(x) BTST(*x, 0)
-#define tileInfoIsUnitMacro(x) BTST(*x, 1)
-#define tileInfoIsDiscovered(x) BTST(*x, 0)
-
-struct tileInfoFull {
-    unsigned isBuilding:1;
-    unsigned isUnit:1;
-    union {
-        struct {
-            unsigned is4x4:1;
-            unsigned is3x3:1;
-            unsigned is5x5:1;
-        } size;
-        struct {
-            unsigned padding:1;
-            unsigned type:4;
-            unsigned quadrant:4;
-            unsigned index:6;
-        } four;
-        struct {
-            unsigned padding:2;
-            unsigned type:3;
-            unsigned quadrant:4;
-            unsigned index:6;
-        } three;
-        struct {
-            unsigned padding:3;
-            unsigned type:1;
-            unsigned quadrant:5;
-            unsigned index:6;
-        } five;
-    } building;
-    struct {
-        unsigned padding:6;
-        unsigned index:8;
-    } unit;
-    struct {
-        unsigned isWalkable:1;
-        unsigned isBuildable:1;
-        unsigned isDiscovered:1;
-        unsigned isHarvestable:1;
-        unsigned isAttackable:1;
-        unsigned unused:1;
-        unsigned originalTileIndex:8;
-    } info;
-};
+UBYTE tileBitmapOffsetToTileIndex(ULONG offset);
 
 #endif

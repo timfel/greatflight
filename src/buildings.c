@@ -157,21 +157,12 @@ UBYTE buildingNew(BuildingTypeIndex typeIdx, tUbCoordYX loc, UBYTE owner) {
     building->type = typeIdx;
     building->owner = owner;
 
-    // place it on the pathmap
-    UBYTE sz = type->size;
-    for (UBYTE x = 0; x < sz; ++x) {
-        for (UBYTE y = 0; y < sz; ++y) {
-            markMapTile(loc.ubX + x, loc.ubY + y);
-        }
-    }
-
     // place construction site
-    UBYTE ubTileX = loc.ubX / TILE_SIZE_FACTOR;
-    UBYTE ubTileY = loc.ubY / TILE_SIZE_FACTOR;
+    UBYTE sz = type->size;
     UBYTE buildingTileIdx = sz == 2 ? TILEINDEX_CONSTRUCTION_SMALL : TILEINDEX_CONSTRUCTION_LARGE;
-    for (UBYTE y = 0; y < sz / TILE_SIZE_FACTOR; ++y) {
-        for (UBYTE x = 0; x < sz / TILE_SIZE_FACTOR; ++x) {
-            g_Map.m_ulTilemapXY[ubTileX + x][ubTileY + y] = tileIndexToTileBitmapOffset(buildingTileIdx++);
+    for (UBYTE y = 0; y < sz; y += TILE_SIZE_FACTOR) {
+        for (UBYTE x = 0; x < sz; x += TILE_SIZE_FACTOR) {
+            mapSetGraphicTileAt(loc.ubX + x, loc.ubY + y, buildingTileIdx++);
         }
     }
     return id;
@@ -188,16 +179,14 @@ void buildingDestroy(Building *building) {
     UBYTE sz = type->size;
     for (UBYTE x = 0; x < sz; ++x) {
         for (UBYTE y = 0; y < sz; ++y) {
-            unmarkMapTile(loc.ubX + x, loc.ubY + y);
+            mapUnmarkTileOccupied(loc.ubX + x, loc.ubY + y);
         }
     }
 
     // replace grass tiles
-    UBYTE ubTileX = loc.ubX / TILE_SIZE_FACTOR;
-    UBYTE ubTileY = loc.ubY / TILE_SIZE_FACTOR;
-    for (UBYTE y = 0; y < sz / TILE_SIZE_FACTOR; ++y) {
-        for (UBYTE x = 0; x < sz / TILE_SIZE_FACTOR; ++x) {
-            g_Map.m_ulTilemapXY[ubTileX + x][ubTileY + y] = tileIndexToTileBitmapOffset(TILEINDEX_GRASS);
+    for (UBYTE y = 0; y < sz; y += TILE_SIZE_FACTOR) {
+        for (UBYTE x = 0; x < sz; x += TILE_SIZE_FACTOR) {
+            mapSetGraphicTileAt(loc.ubX + x, loc.ubY + y, TILEINDEX_GRASS);
         }
     }
 

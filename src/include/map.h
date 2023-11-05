@@ -43,8 +43,8 @@ extern void mapLoad(tFile *file, void(*loadTileBitmap)());
 
 #define MAP_UNWALKABLE_FLAG 0b1
 #define MAP_GROUND_FLAG    0b10
-#define MAP_FOREST_FLAG   0b101
-#define MAP_WATER_FLAG   0b1001
+#define MAP_FOREST_FLAG   0b100
+#define MAP_WATER_FLAG   0b1000
 #define MAP_COAST_FLAG  0b10000
 
 static inline UBYTE tileIsWalkable(UBYTE tile) {
@@ -56,7 +56,7 @@ static inline UBYTE mapIsWalkable(UBYTE x, UBYTE y) {
 }
 
 static inline UBYTE tileIsHarvestable(UBYTE tile) {
-    return (tile & MAP_FOREST_FLAG) == MAP_FOREST_FLAG;
+    return tile & MAP_FOREST_FLAG;
 }
 
 static inline UBYTE mapIsHarvestable(UBYTE x, UBYTE y) {

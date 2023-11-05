@@ -383,15 +383,15 @@ void actionHarvest(Unit *unit) {
             };
             // XXX: extract the below into the right place
             UBYTE tile = tileBitmapOffsetToTileIndex(g_Map.m_ulTilemapXY[tilemapPos.ubX][tilemapPos.ubY]);
-            g_Map.m_ulTilemapXY[tilemapPos.ubX][tilemapPos.ubY] = tileIndexToTileBitmapOffset(--tile);
-            if (tile < 6) {
+            g_Map.m_ulTilemapXY[tilemapPos.ubX][tilemapPos.ubY] -= TILE_FRAME_BYTES;
+            if (tile <= 6) {
                 tUbCoordYX resultPos = (tUbCoordYX){
                     .ubX = tilemapPos.ubX * TILE_SIZE_FACTOR,
                     .ubY = tilemapPos.ubY * TILE_SIZE_FACTOR
                 };
                 for (UBYTE y = 0; y < 2; ++y) {
                     for (UBYTE x = 0; x < 2; ++x) {
-                        g_Map.m_ubPathmapXY[resultPos.ubX + x][resultPos.ubY + y] ^= MAP_FOREST_FLAG;
+                        g_Map.m_ubPathmapXY[resultPos.ubX + x][resultPos.ubY + y] = MAP_GROUND_FLAG;
                     }
                 }
             }

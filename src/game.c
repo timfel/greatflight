@@ -577,12 +577,12 @@ void minimapUpdate(void) {
                         minimapStatePixels2 |= 0b0;
                         minimapStatePixels3 |= 0b1;
                         break;
-                    case MAP_FOREST_FLAG: // 0b0010 -> dark green
+                    case MAP_FOREST_FLAG | MAP_UNWALKABLE_FLAG: // 0b0010 -> dark green
                         minimapStatePixels  |= 0b0;
                         minimapStatePixels2 |= 0b1;
                         minimapStatePixels3 |= 0b0;
                         break;
-                    case MAP_WATER_FLAG: // 0b0111 -> lightBlue
+                    case MAP_WATER_FLAG | MAP_UNWALKABLE_FLAG: // 0b0111 -> lightBlue
                         minimapStatePixels  |= 0b1;
                         minimapStatePixels2 |= 0b1;
                         minimapStatePixels3 |= 0b1;

@@ -41,19 +41,28 @@ void actionHarvestAt(Unit *unit, tUbCoordYX goal) {
     unit->nextAction.harvest.ubWait = 0;
     if (tileIsHarvestable(tile)) {
         unit->nextAction.action = ActionHarvestTerrain;
-    } else if (!tileIsWalkable(tile)) {
-        unit->nextAction.action = ActionHarvestMine;
-    } else {
-        actionMoveTo(unit, goal);
+        return;
     }
+    Building *building = buildingManagerBuildingAt(goal);
+    if (building && building->type == BUILDING_GOLD_MINE) {
+        unit->nextAction.action = ActionHarvestMine;
+        return;
+    }
+    logWrite("nothing to harvest there\n");
 }
 
-void actionAttackAt(Unit *, tUbCoordYX goal) {
-    if (mapIsWalkable(goal.ubX, goal.ubY)) {
-        logWrite("attack move\n");
-    } else {
-        logWrite("attack unit\n");
+void actionAttackAt(Unit *self, tUbCoordYX goal) {
+    Unit *unit = unitManagerUnitAt(goal);
+    if (unit && unit != self) {
+        logWrite("attack '%s'#%d (Player %d)\n", UnitTypes[unit->type].name, unit->id, unit->owner);
+        return;
     }
+    Building *building = buildingManagerBuildingAt(goal);
+    if (building) {
+        logWrite("attack '%s'#%d (Player %d)\n", BuildingTypes[building->type].name, building->id, building->owner);
+        return;
+    }
+    logWrite("attack move\n");
 }
 
 enum __attribute__((__packed__)) BuildState {
@@ -167,7 +176,7 @@ void actionMove(Unit *unit) {
             unit->IY = -vectorY * (PATHMAP_TILE_SIZE - speed);
         }
         tilePos = unitGetTilePosition(unit);
-        mapMarkTileOccupied(tilePos.ubX, tilePos.ubY);
+        mapMarkTileOccupied(unit->id, unit->owner, tilePos.ubX, tilePos.ubY);
     }
     if (unit->action.move.u4Wait) {
         --unit->action.move.u4Wait;
@@ -532,7 +541,7 @@ void actionBeingBuilt(Building *building) {
             g_Screen.m_ubBottomPanelDirty = 1;
         }
         tUbCoordYX loc = building->loc;
-        mapSetGraphicTileRangeSquare(loc.ubX, loc.ubY, type->size, type->tileIdx);
+        mapSetBuildingGraphics(building->id, building->owner, loc.ubX, loc.ubY, type->size, type->tileIdx);
     }
 }
 

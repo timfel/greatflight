@@ -575,9 +575,13 @@ void minimapUpdate(void) {
                         minimapStatePixels2 |= 0b1;
                         minimapStatePixels3 |= 0b1;
                         break;
+                    case MAP_GROUND_FLAG | MAP_UNWALKABLE_FLAG | MAP_OWNER_BIT:
+                    case MAP_GROUND_FLAG | MAP_COAST_FLAG | MAP_UNWALKABLE_FLAG | MAP_OWNER_BIT:
+                    case MAP_UNWALKABLE_FLAG | MAP_OWNER_BIT: // 0b0000 -> black, enemy unit
+                        break;
                     case MAP_GROUND_FLAG | MAP_UNWALKABLE_FLAG:
                     case MAP_GROUND_FLAG | MAP_COAST_FLAG | MAP_UNWALKABLE_FLAG:
-                    case MAP_UNWALKABLE_FLAG: // 0b0001 -> white
+                    case MAP_UNWALKABLE_FLAG: // 0b0001 -> white, friendly unit
                         minimapStatePixels  |= 0b1;
                         minimapStatePixels2 |= 0b0;
                         minimapStatePixels3 |= 0b0;

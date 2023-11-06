@@ -115,6 +115,7 @@ typedef struct _unitmanager tUnitManager;
 typedef struct _unit {
     UBYTE type;
     UBYTE owner;
+    UBYTE id;
     union {
         struct {
              // tile Y

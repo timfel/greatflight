@@ -74,6 +74,7 @@ void unitManagerInitialize(void) {
 #ifdef ACE_DEBUG
         g_UnitManager.units[i].loc = UNIT_FREE_TILE_POSITION;
 #endif
+        g_UnitManager.units[i].id = i;
         g_UnitManager.freeUnitsStack[i] = i;
     }
 
@@ -159,12 +160,18 @@ void unitManagerProcessUnits(tUbCoordYX viewportTopLeft, tUbCoordYX viewportBott
 }
 
 Unit *unitManagerUnitAt(tUbCoordYX tile) {
-    for (UBYTE i = 0; i < g_UnitManager.unitCount; ++i) {
-        Unit *unit = &g_UnitManager.units[i];
-        tUbCoordYX loc = unitGetTilePosition(unit);
-        if (loc.uwYX == tile.uwYX) {
-            return unit;
+    UBYTE id = mapGetUnitAt(tile.ubX, tile.ubY);
+    if (id < MAX_UNITS) {
+        Unit *unit = &g_UnitManager.units[id];
+#ifdef ACE_DEBUG
+        if (!unitManagerUnitIsActive(unit)) {
+            logWrite("FATAL: Found inactive unit in cache!!!");
         }
+        if (unit->loc.uwYX != tile.uwYX) {
+            logWrite("FATAL: Found unit in cache at different location!!!");
+        }
+#endif
+        return unit;
     }
     return NULL;
 }
@@ -193,14 +200,9 @@ void unitDelete(Unit *unit) {
         logWrite("Deleting inactive unit!!!");
     }
     unit->loc = UNIT_FREE_TILE_POSITION;
-    ULONG longIdx = (ULONG)unit - (ULONG)g_UnitManager.units;
-    if (longIdx > 255) {
-        logWrite("ALARM! unit idx is whaaat? %ld\n", longIdx);
-    }
 #endif
-    UBYTE idx = (ULONG)unit - (ULONG)g_UnitManager.units;
     g_UnitManager.unitCount--;
-    g_UnitManager.freeUnitsStack[g_UnitManager.unitCount] = idx;
+    g_UnitManager.freeUnitsStack[g_UnitManager.unitCount] = unit->id;
 }
 
 UBYTE unitCanBeAt(Unit *, UBYTE x, UBYTE y) {
@@ -221,14 +223,14 @@ UBYTE unitPlace(Unit *unit, tUbCoordYX loc) {
                 if (unitCanBeAt(unit, actualX, actualY)) {
                     unit->x = actualX;
                     unit->y = actualY;
-                    mapMarkTileOccupied(actualX, actualY);
+                    mapMarkTileOccupied(unit->id, unit->owner, actualX, actualY);
                     return 1;
                 }
                 actualY = y - yoff;
                 if (unitCanBeAt(unit, actualX, actualY)) {
                     unit->x = actualX;
                     unit->y = actualY;
-                    mapMarkTileOccupied(actualX, actualY);
+                    mapMarkTileOccupied(unit->id, unit->owner, actualX, actualY);
                     return 1;
                 }
             }
@@ -238,14 +240,14 @@ UBYTE unitPlace(Unit *unit, tUbCoordYX loc) {
                 if (unitCanBeAt(unit, actualX, actualY)) {
                     unit->x = actualX;
                     unit->y = actualY;
-                    mapMarkTileOccupied(actualX, actualY);
+                    mapMarkTileOccupied(unit->id, unit->owner, actualX, actualY);
                     return 1;
                 }
                 actualY = y - yoff;
                 if (unitCanBeAt(unit, actualX, actualY)) {
                     unit->x = actualX;
                     unit->y = actualY;
-                    mapMarkTileOccupied(actualX, actualY);
+                    mapMarkTileOccupied(unit->id, unit->owner, actualX, actualY);
                     return 1;
                 }
             }

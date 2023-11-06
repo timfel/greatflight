@@ -160,16 +160,15 @@ UBYTE buildingNew(BuildingTypeIndex typeIdx, tUbCoordYX loc, UBYTE owner) {
     // place construction site
     UBYTE sz = type->size;
     UBYTE buildingTileIdx = sz == 2 ? TILEINDEX_CONSTRUCTION_SMALL : TILEINDEX_CONSTRUCTION_LARGE;
-    mapSetGraphicTileRangeSquare(loc.ubX, loc.ubY, sz, buildingTileIdx);
+    mapSetBuildingGraphics(id, owner, loc.ubX, loc.ubY, sz, buildingTileIdx);
     return id;
 }
 
 void buildingDestroy(Building *building) {
     BuildingType *type = &BuildingTypes[building->type];
     tUbCoordYX loc = building->loc;
-    UBYTE idx = (ULONG)building - (ULONG)g_BuildingManager.building;
     g_BuildingManager.count--;
-    g_BuildingManager.freeStack[g_BuildingManager.count] = idx;
+    g_BuildingManager.freeStack[g_BuildingManager.count] = building->id;
 
     // replace grass tiles
     mapSetGraphicTileSquare(loc.ubX, loc.ubY, type->size, TILEINDEX_GRASS);
@@ -182,6 +181,7 @@ void buildingDestroy(Building *building) {
 void buildingManagerInitialize(void) {
     g_BuildingManager.count = 0;
     for (UBYTE i = 0; i < MAX_BUILDINGS; ++i) {
+        g_BuildingManager.building[i].id = i;
         g_BuildingManager.freeStack[i] = i;
     }
 }
@@ -228,14 +228,15 @@ Building *buildingManagerFindBuildingByTypeAndPlayerAndLocation(BuildingTypeInde
 }
 
 Building *buildingManagerBuildingAt(tUbCoordYX tile) {
-    for (UBYTE i = 0; i < MAX_BUILDINGS; ++i) {
-        Building *building = &g_BuildingManager.building[i];
-        UBYTE sz = BuildingTypes[building->type].size;
-        tUbCoordYX loc = building->loc;
-        if (tile.ubX >= loc.ubX && tile.ubX <= loc.ubX + sz &&
-	            tile.ubY >= loc.ubY && tile.ubY <= loc.ubY + sz) {
-            return building;
+    UBYTE id = mapGetBuildingAt(tile.ubX, tile.ubY);
+    if (id < MAX_BUILDINGS) {
+        Building *building = &g_BuildingManager.building[id];
+#ifdef ACE_DEBUG
+        if (building->type == BUILDING_NONE) {
+            logWrite("FATAL: Found inactive building in cache!!!");
         }
+#endif
+        return building;
     }
     return NULL;
 }

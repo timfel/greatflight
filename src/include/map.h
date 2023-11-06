@@ -22,6 +22,7 @@ struct Map {
     const char *m_pTileset;
     ULONG m_ulTilemapXY[MAP_SIZE][MAP_SIZE];
     UBYTE m_ubPathmapXY[PATHMAP_SIZE][PATHMAP_SIZE];
+    UBYTE m_ubUnitCacheXY[PATHMAP_SIZE][PATHMAP_SIZE];
 };
 
 enum __attribute__((__packed__)) TileIndices {
@@ -41,11 +42,13 @@ extern struct Map g_Map;
 
 extern void mapLoad(tFile *file);
 
-#define MAP_UNWALKABLE_FLAG 0b1
-#define MAP_GROUND_FLAG    0b10
-#define MAP_FOREST_FLAG   0b100
-#define MAP_WATER_FLAG   0b1000
-#define MAP_COAST_FLAG  0b10000
+#define MAP_UNWALKABLE_FLAG (1 << 0)
+#define MAP_GROUND_FLAG     (1 << 1)
+#define MAP_FOREST_FLAG     (1 << 2)
+#define MAP_WATER_FLAG      (1 << 3)
+#define MAP_COAST_FLAG      (1 << 4)
+#define MAP_BUILDING_FLAG   (1 << 5)
+#define MAP_OWNER_BIT       (1 << 6)
 
 static inline UBYTE mapGetTileAt(UBYTE x, UBYTE y) {
     return g_Map.m_ubPathmapXY[x][y];
@@ -57,6 +60,14 @@ static inline UBYTE tileIsWalkable(UBYTE tile) {
 
 static inline UBYTE mapIsWalkable(UBYTE x, UBYTE y) {
     return x < PATHMAP_SIZE && y < PATHMAP_SIZE && tileIsWalkable(g_Map.m_ubPathmapXY[x][y]);
+}
+
+static inline UBYTE tileIsBuilding(UBYTE tile) {
+    return tile & MAP_BUILDING_FLAG;
+}
+
+static inline UBYTE mapIsBuilding(UBYTE x, UBYTE y) {
+    return tileIsBuilding(g_Map.m_ubPathmapXY[x][y]);
 }
 
 static inline UBYTE tileIsHarvestable(UBYTE tile) {
@@ -71,12 +82,36 @@ static inline UBYTE mapIsGround(UBYTE x, UBYTE y) {
     return g_Map.m_ubPathmapXY[x][y] == MAP_GROUND_FLAG;
 }
 
-static inline void mapMarkTileOccupied(UBYTE x, UBYTE y) {
-    g_Map.m_ubPathmapXY[x][y] |= MAP_UNWALKABLE_FLAG;
+static inline void mapMarkTileOccupied(UBYTE id, UBYTE owner, UBYTE x, UBYTE y) {
+    g_Map.m_ubPathmapXY[x][y] |= (MAP_UNWALKABLE_FLAG | (owner ? MAP_OWNER_BIT : 0));
+    g_Map.m_ubUnitCacheXY[x][y] = id;
 }
 
 static inline void mapUnmarkTileOccupied(UBYTE x, UBYTE y) {
-    g_Map.m_ubPathmapXY[x][y] ^= MAP_UNWALKABLE_FLAG;
+    g_Map.m_ubPathmapXY[x][y] &= ~(MAP_UNWALKABLE_FLAG | MAP_OWNER_BIT);
+}
+
+static inline UBYTE tileGetOwner(UBYTE tile) {
+    return (tile & MAP_OWNER_BIT) ? 1 : 0;
+}
+
+static inline UBYTE mapGetOwnerAt(UBYTE x, UBYTE y) {
+    return tileGetOwner(g_Map.m_ubPathmapXY[x][y]);
+}
+
+static inline UBYTE mapGetUnitAt(UBYTE x, UBYTE y) {
+    UBYTE tile = g_Map.m_ubPathmapXY[x][y];
+    if (tileIsWalkable(tile) || tileIsBuilding(tile)) {
+        return -1;
+    }
+    return g_Map.m_ubUnitCacheXY[x][y];
+}
+
+static inline UBYTE mapGetBuildingAt(UBYTE x, UBYTE y) {
+    if (!mapIsBuilding(x, y)) {
+        return -1;
+    }
+    return g_Map.m_ubUnitCacheXY[x][y];
 }
 
 /*
@@ -97,7 +132,7 @@ void mapSetGraphicTileSquare(UBYTE topLeftX, UBYTE topLeftY, UBYTE size, UBYTE t
  * Set a range of graphical tiles in a square starting at the given pathmap position,
  * incrementing the tile index along the way. 
  */
-void mapSetGraphicTileRangeSquare(UBYTE topLeftX, UBYTE topLeftY, UBYTE size, UBYTE firstTileIndex);
+void mapSetBuildingGraphics(UBYTE id, UBYTE owner, UBYTE topLeftX, UBYTE topLeftY, UBYTE size, UBYTE firstTileIndex);
 
 /*
  * Increment the tile at the pathmap position by 1.

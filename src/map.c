@@ -95,10 +95,10 @@ static void setFlags(UBYTE tileIndex, UBYTE x, UBYTE y) {
             break;
         // buildings or decorations
         default:
-            g_Map.m_ubPathmapXY[x][y] = MAP_UNWALKABLE_FLAG;
-            g_Map.m_ubPathmapXY[x + 1][y] = MAP_UNWALKABLE_FLAG;
-            g_Map.m_ubPathmapXY[x + 1][y + 1] = MAP_UNWALKABLE_FLAG;
-            g_Map.m_ubPathmapXY[x][y + 1] = MAP_UNWALKABLE_FLAG;
+            g_Map.m_ubPathmapXY[x][y] = MAP_UNWALKABLE_FLAG | MAP_BUILDING_FLAG;
+            g_Map.m_ubPathmapXY[x + 1][y] = MAP_UNWALKABLE_FLAG | MAP_BUILDING_FLAG;
+            g_Map.m_ubPathmapXY[x + 1][y + 1] = MAP_UNWALKABLE_FLAG | MAP_BUILDING_FLAG;
+            g_Map.m_ubPathmapXY[x][y + 1] = MAP_UNWALKABLE_FLAG | MAP_BUILDING_FLAG;
             break;
     }
 }
@@ -155,16 +155,26 @@ void mapSetGraphicTileSquare(UBYTE topLeftX, UBYTE topLeftY, UBYTE size, UBYTE t
     }
 }
 
-void mapSetGraphicTileRangeSquare(UBYTE topLeftX, UBYTE topLeftY, UBYTE size, UBYTE tileIndex) {
+void mapSetBuildingGraphics(UBYTE id, UBYTE owner, UBYTE topLeftX, UBYTE topLeftY, UBYTE size, UBYTE tileIndex) {
     topLeftX = topLeftX / TILE_SIZE_FACTOR;
     topLeftY = topLeftY / TILE_SIZE_FACTOR;
     size = size / TILE_SIZE_FACTOR;
     UBYTE maxX = topLeftX + size;
     UBYTE maxY = topLeftY + size;
+    UBYTE pathFlag = MAP_UNWALKABLE_FLAG | MAP_BUILDING_FLAG | (owner ? MAP_OWNER_BIT : 0);
     for (UBYTE y = topLeftY; y < maxY; ++y) {
         for (UBYTE x = topLeftX; x < maxX; ++x) {
             g_Map.m_ulTilemapXY[x][y] = tileIndexToTileBitmapOffset(tileIndex);
-            setFlags(tileIndex, x * TILE_SIZE_FACTOR, y * TILE_SIZE_FACTOR);
+            UBYTE pathX = x * TILE_SIZE_FACTOR;
+            UBYTE pathY = y * TILE_SIZE_FACTOR;
+            g_Map.m_ubPathmapXY[pathX][pathY] = pathFlag;
+            g_Map.m_ubPathmapXY[pathX][pathY + 1] = pathFlag;
+            g_Map.m_ubPathmapXY[pathX + 1][pathY] = pathFlag;
+            g_Map.m_ubPathmapXY[pathX + 1][pathY + 1] = pathFlag;
+            g_Map.m_ubUnitCacheXY[pathX][pathY] = id;
+            g_Map.m_ubUnitCacheXY[pathX][pathY + 1] = id;
+            g_Map.m_ubUnitCacheXY[pathX + 1][pathY] = id;
+            g_Map.m_ubUnitCacheXY[pathX + 1][pathY + 1] = id;
             ++tileIndex;
         }
     }

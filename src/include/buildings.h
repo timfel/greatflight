@@ -42,6 +42,7 @@ typedef struct _building {
     Action action;
     UWORD hp;
     tUbCoordYX rallyPoint;
+    UBYTE id;
     UBYTE owner;
 } Building;
 

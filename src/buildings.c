@@ -160,11 +160,7 @@ UBYTE buildingNew(BuildingTypeIndex typeIdx, tUbCoordYX loc, UBYTE owner) {
     // place construction site
     UBYTE sz = type->size;
     UBYTE buildingTileIdx = sz == 2 ? TILEINDEX_CONSTRUCTION_SMALL : TILEINDEX_CONSTRUCTION_LARGE;
-    for (UBYTE y = 0; y < sz; y += TILE_SIZE_FACTOR) {
-        for (UBYTE x = 0; x < sz; x += TILE_SIZE_FACTOR) {
-            mapSetGraphicTileAt(loc.ubX + x, loc.ubY + y, buildingTileIdx++);
-        }
-    }
+    mapSetGraphicTileRangeSquare(loc.ubX, loc.ubY, sz, buildingTileIdx);
     return id;
 }
 
@@ -175,20 +171,8 @@ void buildingDestroy(Building *building) {
     g_BuildingManager.count--;
     g_BuildingManager.freeStack[g_BuildingManager.count] = idx;
 
-    // remove from the pathmap
-    UBYTE sz = type->size;
-    for (UBYTE x = 0; x < sz; ++x) {
-        for (UBYTE y = 0; y < sz; ++y) {
-            mapUnmarkTileOccupied(loc.ubX + x, loc.ubY + y);
-        }
-    }
-
     // replace grass tiles
-    for (UBYTE y = 0; y < sz; y += TILE_SIZE_FACTOR) {
-        for (UBYTE x = 0; x < sz; x += TILE_SIZE_FACTOR) {
-            mapSetGraphicTileAt(loc.ubX + x, loc.ubY + y, TILEINDEX_GRASS);
-        }
-    }
+    mapSetGraphicTileSquare(loc.ubX, loc.ubY, type->size, TILEINDEX_GRASS);
 
     // make sure it is skipped in action loop
     building->action.action = ActionStill;

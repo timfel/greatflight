@@ -79,6 +79,18 @@ UBYTE mapGetGraphicTileAt(UBYTE x, UBYTE y);
  * Set graphical tile at the pathmap position.
  */
 void mapSetGraphicTileAt(UBYTE x, UBYTE y, UBYTE tileIndex);
+
+/*
+ * Set a graphical tile in a square starting at the pathmap position.
+ */
+void mapSetGraphicTileSquare(UBYTE topLeftX, UBYTE topLeftY, UBYTE size, UBYTE tileIndex);
+
+/*
+ * Set a range of graphical tiles in a square starting at the given pathmap position,
+ * incrementing the tile index along the way. 
+ */
+void mapSetGraphicTileRangeSquare(UBYTE topLeftX, UBYTE topLeftY, UBYTE size, UBYTE firstTileIndex);
+
 /*
  * Increment the tile at the pathmap position by 1.
  */

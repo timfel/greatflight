@@ -140,6 +140,36 @@ void mapSetGraphicTileAt(UBYTE x, UBYTE y, UBYTE tileIndex) {
     setFlags(tileIndex, x / TILE_SIZE_FACTOR * TILE_SIZE_FACTOR, y / TILE_SIZE_FACTOR * TILE_SIZE_FACTOR);
 }
 
+void mapSetGraphicTileSquare(UBYTE topLeftX, UBYTE topLeftY, UBYTE size, UBYTE tileIndex) {
+    topLeftX = topLeftX / TILE_SIZE_FACTOR;
+    topLeftY = topLeftY / TILE_SIZE_FACTOR;
+    size = size / TILE_SIZE_FACTOR;
+    UBYTE maxX = topLeftX + size;
+    UBYTE maxY = topLeftY + size;
+    ULONG tileOffset = tileIndexToTileBitmapOffset(tileIndex);
+    for (UBYTE y = topLeftY; y < maxY; ++y) {
+        for (UBYTE x = topLeftX; x < maxX; ++x) {
+            g_Map.m_ulTilemapXY[x][y] = tileOffset;
+            setFlags(tileIndex, x * TILE_SIZE_FACTOR, y * TILE_SIZE_FACTOR);
+        }
+    }
+}
+
+void mapSetGraphicTileRangeSquare(UBYTE topLeftX, UBYTE topLeftY, UBYTE size, UBYTE tileIndex) {
+    topLeftX = topLeftX / TILE_SIZE_FACTOR;
+    topLeftY = topLeftY / TILE_SIZE_FACTOR;
+    size = size / TILE_SIZE_FACTOR;
+    UBYTE maxX = topLeftX + size;
+    UBYTE maxY = topLeftY + size;
+    for (UBYTE y = topLeftY; y < maxY; ++y) {
+        for (UBYTE x = topLeftX; x < maxX; ++x) {
+            g_Map.m_ulTilemapXY[x][y] = tileIndexToTileBitmapOffset(tileIndex);
+            setFlags(tileIndex, x * TILE_SIZE_FACTOR, y * TILE_SIZE_FACTOR);
+            ++tileIndex;
+        }
+    }
+}
+
 void mapIncGraphicTileAt(UBYTE x, UBYTE y) {
     UBYTE newTile = mapGetGraphicTileAt(x, y) + 1;
     g_Map.m_ulTilemapXY[x / TILE_SIZE_FACTOR][y / TILE_SIZE_FACTOR] += TILE_FRAME_BYTES;

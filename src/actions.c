@@ -533,13 +533,7 @@ void actionBeingBuilt(Building *building) {
             g_Screen.m_ubBottomPanelDirty = 1;
         }
         tUbCoordYX loc = building->loc;
-        UBYTE buildingTileIdx = type->tileIdx;
-        UBYTE buildingSize = type->size;
-        for (UBYTE y = 0; y < buildingSize; y += TILE_SIZE_FACTOR) {
-            for (UBYTE x = 0; x < buildingSize; x += TILE_SIZE_FACTOR) {
-                mapSetGraphicTileAt(loc.ubX + x, loc.ubY + y, buildingTileIdx++);
-            }
-        }
+        mapSetGraphicTileRangeSquare(loc.ubX, loc.ubY, type->size, type->tileIdx);
     }
 }
 

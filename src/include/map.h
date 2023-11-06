@@ -47,6 +47,10 @@ extern void mapLoad(tFile *file);
 #define MAP_WATER_FLAG   0b1000
 #define MAP_COAST_FLAG  0b10000
 
+static inline UBYTE mapGetTileAt(UBYTE x, UBYTE y) {
+    return g_Map.m_ubPathmapXY[x][y];
+}
+
 static inline UBYTE tileIsWalkable(UBYTE tile) {
     return !(tile & MAP_UNWALKABLE_FLAG);
 }
@@ -61,6 +65,10 @@ static inline UBYTE tileIsHarvestable(UBYTE tile) {
 
 static inline UBYTE mapIsHarvestable(UBYTE x, UBYTE y) {
     return tileIsHarvestable(g_Map.m_ubPathmapXY[x][y]);
+}
+
+static inline UBYTE mapIsGround(UBYTE x, UBYTE y) {
+    return g_Map.m_ubPathmapXY[x][y] == MAP_GROUND_FLAG;
 }
 
 static inline void mapMarkTileOccupied(UBYTE x, UBYTE y) {

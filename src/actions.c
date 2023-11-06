@@ -35,7 +35,7 @@ enum __attribute__((__packed__)) HarvestState {
 #define RETRY_FINDING_HARVEST 2
 
 void actionHarvestAt(Unit *unit, tUbCoordYX goal) {
-    UBYTE tile = g_Map.m_ubPathmapXY[goal.ubX][goal.ubY];
+    UBYTE tile = mapGetTileAt(goal.ubX, goal.ubY);
     unit->nextAction.harvest.lastHarvestLocation = goal;
     unit->nextAction.harvest.u4State = HarvestMoveToHarvest;
     unit->nextAction.harvest.ubWait = 0;
@@ -49,8 +49,7 @@ void actionHarvestAt(Unit *unit, tUbCoordYX goal) {
 }
 
 void actionAttackAt(Unit *, tUbCoordYX goal) {
-    UBYTE tile = g_Map.m_ubPathmapXY[goal.ubX][goal.ubY];
-    if (tileIsWalkable(tile)) {
+    if (mapIsWalkable(goal.ubX, goal.ubY)) {
         logWrite("attack move\n");
     } else {
         logWrite("attack unit\n");

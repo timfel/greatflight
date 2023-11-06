@@ -135,7 +135,7 @@ UBYTE buildingCanBeAt(BuildingTypeIndex type, tUbCoordYX loc, UBYTE ignoreOrigin
             if (ignoreOrigin && x == 0 && y == 0) {
                 continue;
             }
-            if (g_Map.m_ubPathmapXY[loc.ubX + x][loc.ubY + y] != MAP_GROUND_FLAG) {
+            if (!mapIsGround(loc.ubX + x, loc.ubY + y)) {
                 return 0;
             }
         }

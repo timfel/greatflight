@@ -256,7 +256,7 @@ UBYTE unitPlace(Unit *unit, tUbCoordYX loc) {
     return 0;
 }
 
-void loadUnit(tFile *map, UBYTE owner) {
+static void loadUnit(tFile *map, UBYTE owner) {
     UBYTE type, x, y;
     fileRead(map, &type, 1);
     Unit *unit = unitNew(type, owner);

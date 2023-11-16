@@ -1,6 +1,7 @@
 #include "include/buildings.h"
 #include "include/icons.h"
 #include "include/actions.h"
+#include "include/player.h"
 #include "game.h"
 
 tBuildingManager g_BuildingManager;
@@ -126,6 +127,16 @@ BuildingType BuildingTypes[] = {
             .hpIncrease = 5,
         }
     },
+    [BUILDING_GOLD_MINE] = {
+        .name = "Gold Mine",
+        .iconIdx = 0,
+        .tileIdx = 50,
+        .size = 4,
+        .stats = {
+            .hpShift = 11,
+            .baseHp = HP_20
+        },
+    }
 };
 
 UBYTE buildingCanBeAt(BuildingTypeIndex type, tUbCoordYX loc, UBYTE ignoreOrigin) {
@@ -143,9 +154,9 @@ UBYTE buildingCanBeAt(BuildingTypeIndex type, tUbCoordYX loc, UBYTE ignoreOrigin
     return 1;
 }
 
-UBYTE buildingNew(BuildingTypeIndex typeIdx, tUbCoordYX loc, UBYTE owner) {
+Building *buildingNew(BuildingTypeIndex typeIdx, tUbCoordYX loc, UBYTE owner) {
     if (g_BuildingManager.count >= MAX_BUILDINGS) {
-        return -1;
+        return NULL;
     }
     BuildingType *type = &BuildingTypes[typeIdx];
     UBYTE id = g_BuildingManager.freeStack[g_BuildingManager.count++];
@@ -161,7 +172,7 @@ UBYTE buildingNew(BuildingTypeIndex typeIdx, tUbCoordYX loc, UBYTE owner) {
     UBYTE sz = type->size;
     UBYTE buildingTileIdx = sz == 2 ? TILEINDEX_CONSTRUCTION_SMALL : TILEINDEX_CONSTRUCTION_LARGE;
     mapSetBuildingGraphics(id, owner, loc.ubX, loc.ubY, sz, buildingTileIdx);
-    return id;
+    return building;
 }
 
 void buildingDestroy(Building *building) {
@@ -239,4 +250,48 @@ Building *buildingManagerBuildingAt(tUbCoordYX tile) {
         return building;
     }
     return NULL;
+}
+
+static void loadBuilding(tFile *map, UBYTE owner) {
+    UBYTE type, x, y;
+    Building *building = NULL;
+    fileRead(map, &type, 1);
+    fileRead(map, &x, 1);
+    fileRead(map, &y, 1);
+    for (; x < MAP_SIZE; ++x) {
+        for (UBYTE ny = y; ny < MAP_SIZE; ++ny) {
+            if (buildingCanBeAt(type, (tUbCoordYX){.ubX = x, .ubY = ny}, 0)) {
+                building = buildingNew(type, (tUbCoordYX){.ubX = x, .ubY = ny}, owner);
+                if (!building) {
+                    logWrite("FATAL: Too many buildings");
+                } else {
+                    goto ok;
+                }
+            }
+        }
+    }
+    logWrite("FATAL: Could not place building '%s' for player %d at %d:%d", BuildingTypes[type].name, owner, x, y);
+    return;
+
+ok:
+    fileRead(map, &building->action, 1);
+    fileRead(map, &building->action.ubActionDataA, 1);
+    fileRead(map, &building->action.ubActionDataB, 1);
+    fileRead(map, &building->action.ubActionDataC, 1);
+    fileRead(map, &building->action.ubActionDataD, 1);
+    fileRead(map, &building->hp, 2);
+    if (building->hp == 0) {
+        building->hp = buildingTypeMaxHealth(&BuildingTypes[building->type]);
+    }
+}
+
+void buildingsLoad(tFile *map) {
+    for (UBYTE i = 0; i <= sizeof(g_pPlayers) / sizeof(Player); ++i) {
+        // max player + 1 is neutral buildings
+        UBYTE count;
+        fileRead(map, &count, 1);
+        for (UBYTE unit = 0; unit < count; ++unit) {
+            loadBuilding(map, i);
+        }
+    }
 }

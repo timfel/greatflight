@@ -43,5 +43,14 @@
             *([[peasant, 8, 3, *unit_defaults]] * 20),
         ],
         [],
-    ]
+    ],
+    "buildings": [
+        [
+            [townhall, 15, 15, *building_defaults],
+        ],
+        [],
+        [
+            [goldmine, 18, 18, *building_defaults],
+        ]
+    ],
 }

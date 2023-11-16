@@ -85,7 +85,13 @@ typedef struct __attribute__((__packed__)) {
             unsigned u4State:4;
             unsigned u4Direction:4;
             UBYTE ubWait;
-            tUbCoordYX lastHarvestLocation;
+            union {
+                tUbCoordYX lastHarvestLocation;
+                struct {
+                    UBYTE lastMineId;
+                    UBYTE lastDepotId;
+                };
+            };
         } harvest;
     };
     ActionType action;

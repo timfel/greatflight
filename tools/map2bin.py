@@ -4,13 +4,23 @@ from typing import Any
 
 # convenience globals, to be kept in sync with the loadUnit function
 mapglobals = dict(
+    # units
     peasant=1,
     peon=2,
+    # buildings
+    townhall=1,
+    goldmine=9,
+    # defaults
     unit_defaults=[
         0, # action
         0, 0, 0, 0, # action data
         0, # hp (default)
         0, # mana (default)
+    ],
+    building_defaults=[
+        0, # action
+        0, 0, 0, 0, # action data
+        0, # hp (default)
     ],
 )
 
@@ -30,3 +40,10 @@ with open(sys.argv[2], "wb") as output:
             output.write(bytearray([len(units)]))
             for unit in units:
                 output.write(bytearray(unit))
+        for buildings in mapdict["buildings"]:
+            output.write(bytearray([len(buildings)]))
+            for b in buildings:
+                hp = b[-1]
+                b[-1] = hp & 0xff
+                b.append((hp >> 8) & 0xff)
+                output.write(bytearray(b))

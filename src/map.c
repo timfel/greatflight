@@ -93,8 +93,13 @@ static void setFlags(UBYTE tileIndex, UBYTE x, UBYTE y) {
             g_Map.m_ubPathmapXY[x + 1][y + 1] = MAP_GROUND_FLAG | MAP_COAST_FLAG;
             g_Map.m_ubPathmapXY[x][y + 1] = MAP_WATER_FLAG | MAP_UNWALKABLE_FLAG;
             break;
-        // buildings or decorations
-        default:
+        case 50: case 51: case 52: case 53: // goldmine
+            g_Map.m_ubPathmapXY[x][y] = MAP_UNWALKABLE_FLAG | MAP_BUILDING_FLAG | MAP_GOLDMINE_FLAG;
+            g_Map.m_ubPathmapXY[x + 1][y] = MAP_UNWALKABLE_FLAG | MAP_BUILDING_FLAG | MAP_GOLDMINE_FLAG;
+            g_Map.m_ubPathmapXY[x + 1][y + 1] = MAP_UNWALKABLE_FLAG | MAP_BUILDING_FLAG | MAP_GOLDMINE_FLAG;
+            g_Map.m_ubPathmapXY[x][y + 1] = MAP_UNWALKABLE_FLAG | MAP_BUILDING_FLAG | MAP_GOLDMINE_FLAG;
+            break;
+        default: // buildings or decorations
             g_Map.m_ubPathmapXY[x][y] = MAP_UNWALKABLE_FLAG | MAP_BUILDING_FLAG;
             g_Map.m_ubPathmapXY[x + 1][y] = MAP_UNWALKABLE_FLAG | MAP_BUILDING_FLAG;
             g_Map.m_ubPathmapXY[x + 1][y + 1] = MAP_UNWALKABLE_FLAG | MAP_BUILDING_FLAG;
@@ -155,13 +160,13 @@ void mapSetGraphicTileSquare(UBYTE topLeftX, UBYTE topLeftY, UBYTE size, UBYTE t
     }
 }
 
-void mapSetBuildingGraphics(UBYTE id, UBYTE owner, UBYTE topLeftX, UBYTE topLeftY, UBYTE size, UBYTE tileIndex) {
+void mapSetBuildingGraphics(UBYTE id, UBYTE extraFlags, UBYTE topLeftX, UBYTE topLeftY, UBYTE size, UBYTE tileIndex) {
     topLeftX = topLeftX / TILE_SIZE_FACTOR;
     topLeftY = topLeftY / TILE_SIZE_FACTOR;
     size = size / TILE_SIZE_FACTOR;
     UBYTE maxX = topLeftX + size;
     UBYTE maxY = topLeftY + size;
-    UBYTE pathFlag = MAP_UNWALKABLE_FLAG | MAP_BUILDING_FLAG | (owner ? MAP_OWNER_BIT : 0);
+    UBYTE pathFlag = MAP_UNWALKABLE_FLAG | MAP_BUILDING_FLAG | extraFlags;
     for (UBYTE y = topLeftY; y < maxY; ++y) {
         for (UBYTE x = topLeftX; x < maxX; ++x) {
             g_Map.m_ulTilemapXY[x][y] = tileIndexToTileBitmapOffset(tileIndex);

@@ -48,7 +48,11 @@ extern void mapLoad(tFile *file);
 #define MAP_WATER_FLAG      (1 << 3)
 #define MAP_COAST_FLAG      (1 << 4)
 #define MAP_BUILDING_FLAG   (1 << 5)
-#define MAP_OWNER_BIT       (1 << 6)
+#define MAP_GOLDMINE_FLAG   (1 << 6)
+#define MAP_OWNER_BIT       (1 << 7)
+
+// for now we only support two players, so it's 1 bit
+#define MAP_OWNER_FLAGS(owner) ((owner) ? MAP_OWNER_BIT : 0)
 
 static inline UBYTE mapGetTileAt(UBYTE x, UBYTE y) {
     return g_Map.m_ubPathmapXY[x][y];

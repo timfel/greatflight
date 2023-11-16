@@ -574,7 +574,7 @@ void actionBeingBuilt(Building *building) {
             g_Screen.m_ubBottomPanelDirty = 1;
         }
         tUbCoordYX loc = building->loc;
-        mapSetBuildingGraphics(building->id, building->owner, loc.ubX, loc.ubY, type->size, type->tileIdx);
+        mapSetBuildingGraphics(building->id, MAP_OWNER_FLAGS(building->owner), loc.ubX, loc.ubY, type->size, type->tileIdx);
     }
 }
 

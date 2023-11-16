@@ -171,7 +171,11 @@ Building *buildingNew(BuildingTypeIndex typeIdx, tUbCoordYX loc, UBYTE owner) {
     // place construction site
     UBYTE sz = type->size;
     UBYTE buildingTileIdx = sz == 2 ? TILEINDEX_CONSTRUCTION_SMALL : TILEINDEX_CONSTRUCTION_LARGE;
-    mapSetBuildingGraphics(id, owner, loc.ubX, loc.ubY, sz, buildingTileIdx);
+    if (typeIdx == BUILDING_GOLD_MINE) {
+        mapSetBuildingGraphics(id, MAP_GOLDMINE_FLAG, loc.ubX, loc.ubY, sz, buildingTileIdx);
+    } else {
+        mapSetBuildingGraphics(id, MAP_OWNER_FLAGS(owner), loc.ubX, loc.ubY, sz, buildingTileIdx);
+    }
     return building;
 }
 
@@ -252,7 +256,7 @@ Building *buildingManagerBuildingAt(tUbCoordYX tile) {
     return NULL;
 }
 
-static void loadBuilding(tFile *map, UBYTE owner) {
+static Building *loadBuilding(tFile *map, UBYTE owner) {
     UBYTE type, x, y;
     Building *building = NULL;
     fileRead(map, &type, 1);
@@ -271,7 +275,7 @@ static void loadBuilding(tFile *map, UBYTE owner) {
         }
     }
     logWrite("FATAL: Could not place building '%s' for player %d at %d:%d", BuildingTypes[type].name, owner, x, y);
-    return;
+    return NULL;
 
 ok:
     fileRead(map, &building->action, 1);
@@ -283,15 +287,24 @@ ok:
     if (building->hp == 0) {
         building->hp = buildingTypeMaxHealth(&BuildingTypes[building->type]);
     }
+    return building;
 }
 
 void buildingsLoad(tFile *map) {
-    for (UBYTE i = 0; i <= sizeof(g_pPlayers) / sizeof(Player); ++i) {
+    for (UBYTE owner = 0; owner < sizeof(g_pPlayers) / sizeof(Player); ++owner) {
         // max player + 1 is neutral buildings
         UBYTE count;
         fileRead(map, &count, 1);
         for (UBYTE unit = 0; unit < count; ++unit) {
-            loadBuilding(map, i);
+            loadBuilding(map, owner == 1 ? 1 : 0);
+        }
+    }
+    {
+        // neutral buildings
+        UBYTE count;
+        fileRead(map, &count, 1);
+        for (UBYTE unit = 0; unit < count; ++unit) {
+            loadBuilding(map, 0);
         }
     }
 }

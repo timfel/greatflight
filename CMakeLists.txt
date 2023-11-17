@@ -119,6 +119,16 @@ convertTileset(
   PALETTE ${PROJECT_BINARY_DIR}/resources/palettes/for.plt
 )
 
+convertBitmaps(
+       INTERLEAVED
+       TARGET ${GAME_LINKED}
+       PALETTE ${PROJECT_BINARY_DIR}/resources/palettes/for.plt
+       MASK_COLOR "#000000"
+       SOURCES ${PROJECT_SOURCE_DIR}/resources/Tiles/fow.png
+       DESTINATIONS ${PROJECT_BINARY_DIR}/resources/tilesets/fow.bm
+       MASKS ${PROJECT_BINARY_DIR}/resources/tilesets/fow.msk
+)
+
 # Human UI
 convertPalette(${GAME_LINKED} ${PROJECT_SOURCE_DIR}/resources/Palettes/HumanGUI.gpl ${PROJECT_BINARY_DIR}/resources/palettes/hgui.plt)
 

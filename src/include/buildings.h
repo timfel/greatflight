@@ -71,6 +71,8 @@ static inline UWORD buildingTypeMaxHealth(BuildingType *type) {
     return type->stats.baseHp << type->stats.hpShift;
 }
 
+void buildingFinishBuilding(Building *building);
+
 void buildingManagerInitialize(void);
 void buildingManagerProcess(void);
 void buildingManagerDestroy(void);

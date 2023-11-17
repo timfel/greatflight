@@ -171,16 +171,9 @@ Building *buildingNew(BuildingTypeIndex typeIdx, tUbCoordYX loc, UBYTE owner) {
     // place construction site
     UBYTE sz = type->size;
     UBYTE buildingTileIdx = sz == 2 ? TILEINDEX_CONSTRUCTION_SMALL : TILEINDEX_CONSTRUCTION_LARGE;
-    if (typeIdx == BUILDING_GOLD_MINE) {
-        mapSetBuildingGraphics(id, MAP_GOLDMINE_FLAG, loc.ubX, loc.ubY, sz, buildingTileIdx);
-    } else {
-        mapSetBuildingGraphics(id, MAP_OWNER_FLAGS(owner), loc.ubX, loc.ubY, sz, buildingTileIdx);
-    }
+    mapSetBuildingGraphics(id, MAP_OWNER_FLAGS(owner), loc.ubX, loc.ubY, sz, buildingTileIdx);
     if (owner == g_ubThisPlayer) {
-        mapMarkUnitSight(loc.ubX, loc.ubY, 1);
-        if (sz != 2) { // larger building, sight from bottom right, too
-            mapMarkUnitSight(loc.ubX + 1, loc.ubY + 1, 1);
-        }
+        mapMarkUnitSight(loc.ubX, loc.ubY, sz == 2 ? SIGHT_ADJACENT : SIGHT_ADJACENT_BIG_HOUSE);
     }
     return building;
 }
@@ -262,6 +255,17 @@ Building *buildingManagerBuildingAt(tUbCoordYX tile) {
     return NULL;
 }
 
+void buildingFinishBuilding(Building *building) {
+    BuildingType *type = &BuildingTypes[building->type];
+    tUbCoordYX loc = building->loc;
+    UBYTE sz = type->size;
+    mapSetBuildingGraphics(building->id, MAP_OWNER_FLAGS(building->owner), loc.ubX, loc.ubY, sz, type->tileIdx);
+    if (building->owner == g_ubThisPlayer) {
+        mapUnmarkUnitSight(loc.ubX, loc.ubY, sz == 2 ? SIGHT_ADJACENT : SIGHT_ADJACENT_BIG_HOUSE);
+        mapMarkUnitSight(loc.ubX, loc.ubY, sz == 2 ? SIGHT_ADJACENT : SIGHT_ADJACENT_BIG_HOUSE);
+    }
+}
+
 static Building *loadBuilding(tFile *map, UBYTE owner) {
     UBYTE type, x, y;
     Building *building = NULL;
@@ -293,6 +297,7 @@ ok:
     if (building->hp == 0) {
         building->hp = buildingTypeMaxHealth(&BuildingTypes[building->type]);
     }
+    buildingFinishBuilding(building);
     return building;
 }
 
@@ -310,7 +315,7 @@ void buildingsLoad(tFile *map) {
         UBYTE count;
         fileRead(map, &count, 1);
         for (UBYTE unit = 0; unit < count; ++unit) {
-            loadBuilding(map, 0);
+            loadBuilding(map, 2);
         }
     }
 }

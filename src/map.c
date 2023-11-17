@@ -170,7 +170,6 @@ void mapSetBuildingGraphics(UBYTE id, UBYTE extraFlags, UBYTE topLeftX, UBYTE to
     for (UBYTE y = topLeftY; y < maxY; ++y) {
         for (UBYTE x = topLeftX; x < maxX; ++x) {
             g_Map.m_ubTilemapXY[x][y] = tileIndex;
-            // g_Map.m_ulVisibleMapXY[x][y] = tileIndexToTileBitmapOffset(tileIndex);
             UBYTE pathX = x * TILE_SIZE_FACTOR;
             UBYTE pathY = y * TILE_SIZE_FACTOR;
             g_Map.m_ubPathmapXY[pathX][pathY] = pathFlag;

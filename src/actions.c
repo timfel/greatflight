@@ -170,7 +170,7 @@ void actionMove(Unit *unit) {
             return;
         }
         mapUnmarkTileOccupied(tilePos.ubX, tilePos.ubY);
-        mapUnmarkUnitSight(tilePos.ubX, tilePos.ubY, 6);
+        mapUnmarkUnitSight(tilePos.ubX, tilePos.ubY, SIGHT_MEDIUM);
         if (vectorX) {
             unit->loc.ubX += vectorX;
             unit->IX = -vectorX * (PATHMAP_TILE_SIZE - speed);
@@ -181,7 +181,7 @@ void actionMove(Unit *unit) {
         }
         tilePos = unitGetTilePosition(unit);
         mapMarkTileOccupied(unit->id, unit->owner, tilePos.ubX, tilePos.ubY);
-        mapMarkUnitSight(tilePos.ubX, tilePos.ubY, 6);
+        mapMarkUnitSight(tilePos.ubX, tilePos.ubY, SIGHT_MEDIUM);
     }
     if (unit->action.move.u4Wait) {
         --unit->action.move.u4Wait;
@@ -575,8 +575,7 @@ void actionBeingBuilt(Building *building) {
         if (g_Screen.m_pSelectedBuilding == building) {
             g_Screen.m_ubBottomPanelDirty = 1;
         }
-        tUbCoordYX loc = building->loc;
-        mapSetBuildingGraphics(building->id, MAP_OWNER_FLAGS(building->owner), loc.ubX, loc.ubY, type->size, type->tileIdx);
+        buildingFinishBuilding(building);
     }
 }
 

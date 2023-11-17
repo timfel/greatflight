@@ -40,17 +40,17 @@
     ],
     "units": [
         [
-            *([[peasant, 8, 3, *unit_defaults]] * 1),
+            *([[peasant, 8, 3, *unit_defaults]] * 4),
         ],
         [],
     ],
     "buildings": [
         [
-            # [townhall, 15, 15, *building_defaults],
+            [townhall, 15, 15, *building_defaults],
         ],
         [],
         [
-            # [goldmine, 18, 18, *building_defaults],
+            [goldmine, 18, 18, *building_defaults],
         ]
     ],
 }

@@ -480,7 +480,7 @@ void drawAllTiles(void) {
 	UWORD uwBlitWords = TILE_SIZE_WORDS;
 	UWORD uwHeight = TILE_SIZE * BPP;
 	UWORD uwBltCon0 = USEA|USED|MINTERM_A;
-    UWORD uwBltCon0NotA = USEA|USED|0x0F;
+    UWORD uwBltCon0Fog = USED;
 	UWORD uwBltsize = (uwHeight << 6) | uwBlitWords;
 
     // Figure out which tiles to actually draw, depending on the
@@ -507,41 +507,47 @@ void drawAllTiles(void) {
     for (UBYTE x = ubStartX; x < ubEndX; x++) {
         // manually unrolled loop to draw (MAP_BUFFER_HEIGHT / TILE_SIZE) tiles
         ULONG *pTileBitmapOffset = &(g_Map.m_ulVisibleMapXY[x][ubStartY]);
-        uwBltCon0Used = IS_TILE_UNCOVERED(pTileBitmapOffset) ? uwBltCon0 : uwBltCon0NotA;
+        APTR apt = (APTR)*pTileBitmapOffset;
+        uwBltCon0Used = IS_TILE_UNCOVERED(apt) ? uwBltCon0 : uwBltCon0Fog;
         blitWait();
         g_pCustom->bltcon0 = uwBltCon0Used;
         g_pCustom->bltdpt = pDstPlane;
-        g_pCustom->bltapt = (APTR)*pTileBitmapOffset;
+        g_pCustom->bltapt = apt;
         g_pCustom->bltsize = uwBltsize;
         ++pTileBitmapOffset;
-        uwBltCon0Used = IS_TILE_UNCOVERED(pTileBitmapOffset) ? uwBltCon0 : uwBltCon0NotA;
+        apt = (APTR)*pTileBitmapOffset;
+        uwBltCon0Used = IS_TILE_UNCOVERED(apt) ? uwBltCon0 : uwBltCon0Fog;
         blitWait();
         g_pCustom->bltcon0 = uwBltCon0Used;
-        g_pCustom->bltapt = (APTR)*pTileBitmapOffset;
+        g_pCustom->bltapt = apt;
         g_pCustom->bltsize = uwBltsize;
         ++pTileBitmapOffset;
-        uwBltCon0Used = IS_TILE_UNCOVERED(pTileBitmapOffset) ? uwBltCon0 : uwBltCon0NotA;
+        apt = (APTR)*pTileBitmapOffset;
+        uwBltCon0Used = IS_TILE_UNCOVERED(apt) ? uwBltCon0 : uwBltCon0Fog;
         blitWait();
         g_pCustom->bltcon0 = uwBltCon0Used;
-        g_pCustom->bltapt = (APTR)*pTileBitmapOffset;
+        g_pCustom->bltapt = apt;
         g_pCustom->bltsize = uwBltsize;
         ++pTileBitmapOffset;
-        uwBltCon0Used = IS_TILE_UNCOVERED(pTileBitmapOffset) ? uwBltCon0 : uwBltCon0NotA;
+        apt = (APTR)*pTileBitmapOffset;
+        uwBltCon0Used = IS_TILE_UNCOVERED(apt) ? uwBltCon0 : uwBltCon0Fog;
         blitWait();
         g_pCustom->bltcon0 = uwBltCon0Used;
-        g_pCustom->bltapt = (APTR)*pTileBitmapOffset;
+        g_pCustom->bltapt = apt;
         g_pCustom->bltsize = uwBltsize;
         ++pTileBitmapOffset;
-        uwBltCon0Used = IS_TILE_UNCOVERED(pTileBitmapOffset) ? uwBltCon0 : uwBltCon0NotA;
+        apt = (APTR)*pTileBitmapOffset;
+        uwBltCon0Used = IS_TILE_UNCOVERED(apt) ? uwBltCon0 : uwBltCon0Fog;
         blitWait();
         g_pCustom->bltcon0 = uwBltCon0Used;
-        g_pCustom->bltapt = (APTR)*pTileBitmapOffset;
+        g_pCustom->bltapt = apt;
         g_pCustom->bltsize = uwBltsize;
         ++pTileBitmapOffset;
-        uwBltCon0Used = IS_TILE_UNCOVERED(pTileBitmapOffset) ? uwBltCon0 : uwBltCon0NotA;
+        apt = (APTR)*pTileBitmapOffset;
+        uwBltCon0Used = IS_TILE_UNCOVERED(apt) ? uwBltCon0 : uwBltCon0Fog;
         blitWait();
         g_pCustom->bltcon0 = uwBltCon0Used;
-        g_pCustom->bltapt = (APTR)*pTileBitmapOffset;
+        g_pCustom->bltapt = apt;
         g_pCustom->bltsize = uwBltsize;
         pDstPlane += TILE_SIZE_BYTES;
     }

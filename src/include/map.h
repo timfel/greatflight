@@ -56,7 +56,7 @@ extern void mapLoad(tFile *file);
 #define MAP_OWNER_BIT       (1 << 7)
 
 // for now we only support two players, so it's 1 bit
-#define MAP_OWNER_FLAGS(owner) ((owner) ? MAP_OWNER_BIT : 0)
+#define MAP_OWNER_FLAGS(owner) ((owner) == 2 ? MAP_GOLDMINE_FLAG : ((owner) ? MAP_OWNER_BIT : 0))
 
 #define IS_TILE_UNCOVERED(x) ((LONG)(x) & 0xFF000000)
 
@@ -105,35 +105,203 @@ static inline void mapUnmarkTileOccupied(UBYTE x, UBYTE y) {
     g_Map.m_ubPathmapXY[x][y] &= ~(MAP_UNWALKABLE_FLAG | MAP_OWNER_BIT);
 }
 
-static inline void mapMarkUnitSight(UBYTE x, UBYTE y, UBYTE range) {
-    // XXX: see mapUnmarkUnitSight
-    UBYTE yMin = CLAMP((y - range) >> 1, 0, MAP_SIZE);
-    UBYTE yMax = CLAMP((y + range) >> 1, 0, MAP_SIZE);
-    UBYTE xMin = CLAMP((x - range) >> 1, 0, MAP_SIZE);
-    UBYTE xMax = CLAMP((x + range) >> 1, 0, MAP_SIZE);
-    for (UBYTE tileY = yMin; tileY <= yMax; ++tileY) {
-        for (UBYTE tileX = xMin; tileX <= xMax; ++tileX) {
-            ULONG tile = tileIndexToTileBitmapOffset(g_Map.m_ubTilemapXY[tileX][tileY]);
-            UBYTE visCount = (UBYTE)(g_Map.m_ulVisibleMapXY[tileX][tileY] >> 24) + 1;
-            g_Map.m_ulVisibleMapXY[tileX][tileY] = (tile & 0x00FFFFFF) | (visCount << 24);
+typedef enum {
+    SIGHT_SELF,
+    SIGHT_ADJACENT,
+    SIGHT_ADJACENT_BIG_HOUSE,
+    SIGHT_NEAR,
+    SIGHT_MEDIUM,
+    SIGHT_FAR
+} SightRange;
+
+static inline void __incVisCount(UBYTE tileX, UBYTE tileY) {
+    ULONG tile = tileIndexToTileBitmapOffset(g_Map.m_ubTilemapXY[tileX][tileY]);
+    UBYTE visCount = (UBYTE)(g_Map.m_ulVisibleMapXY[tileX][tileY] >> 24) + 1;
+    g_Map.m_ulVisibleMapXY[tileX][tileY] = (tile & 0x00FFFFFF) | (visCount << 24);
+}
+
+static inline void __decVisCount(UBYTE tileX, UBYTE tileY) {
+    ULONG tile = g_Map.m_ulVisibleMapXY[tileX][tileY];
+    UBYTE visCount = (UBYTE)(tile >> 24) - 1;
+    g_Map.m_ulVisibleMapXY[tileX][tileY] = (tile & 0x00FFFFFF) | (visCount << 24);
+}
+
+typedef void(*visFunc)(UBYTE, UBYTE);
+
+static inline void mapChangeUnitSight(UBYTE x, UBYTE y, SightRange range, visFunc func) {
+    // XXX: this hardcodes that our tilemap tiles are twice the size of our pathmap tiles,
+    // so we only update unit sights when moving
+    switch (range) {
+        case SIGHT_SELF: {
+            func(x >> 1, y >> 1);
+            return;
+        case SIGHT_ADJACENT:
+            UBYTE tileY = y >> 1;
+            UBYTE tileX = x >> 1;
+            for (BYTE cY = tileY - 1; cY <= tileY + 1; ++cY) {
+                if (cY < 0) {
+                    continue;
+                }
+                if (cY > MAP_SIZE) {
+                    break;
+                }
+                for (BYTE cX = tileX - 1; cX <= tileX + 1; ++cX) {
+                    if (cX < 0) {
+                        continue;
+                    }
+                    if (cX > MAP_SIZE) {
+                        break;
+                    }
+                    func(cX, cY);
+                }
+            }
+            return;
+        case SIGHT_ADJACENT_BIG_HOUSE: {
+            UBYTE tileY = y >> 1;
+            UBYTE tileX = x >> 1;
+            for (BYTE cY = tileY - 1; cY <= tileY + 2; ++cY) {
+                if (cY < 0) {
+                    continue;
+                }
+                if (cY > MAP_SIZE) {
+                    break;
+                }
+                for (BYTE cX = tileX - 1; cX <= tileX + 2; ++cX) {
+                    if (cX < 0) {
+                        continue;
+                    }
+                    if (cX > MAP_SIZE) {
+                        break;
+                    }
+                    func(cX, cY);
+                }
+            }
+            return;
+        }
+        case SIGHT_NEAR: {
+            UBYTE tileY = y >> 1;
+            UBYTE tileX = x >> 1;
+            if ((BYTE)(tileY - 2) >= 0) {
+                func(tileX, tileY - 2);
+            }
+            if ((BYTE)(tileX - 2) >= 0) {
+                func(tileX - 2, tileY);
+            }
+            for (BYTE cY = tileY - 1; cY <= tileY + 1; ++cY) {
+                if (cY < 0) {
+                    continue;
+                }
+                if (cY > MAP_SIZE) {
+                    break;
+                }
+                for (BYTE cX = tileX - 1; cX <= tileX + 1; ++cX) {
+                    if (cX < 0) {
+                        continue;
+                    }
+                    if (cX > MAP_SIZE) {
+                        break;
+                    }
+                    func(cX, cY);
+                }
+            }
+            if ((BYTE)(tileX + 2) < MAP_SIZE) {
+                func(tileX + 2, tileY);
+            }
+            if ((BYTE)(tileY + 2) < MAP_SIZE) {
+                func(tileX, tileY + 2);
+            }
+            return;
+        }
+        case SIGHT_MEDIUM: {
+            UBYTE tileY = y >> 1;
+            UBYTE tileX = x >> 1;
+            if ((BYTE)(tileY - 3) >= 0) {
+                func(tileX, tileY - 3);
+            }
+            if ((BYTE)(tileX - 3) >= 0) {
+                func(tileX - 3, tileY);
+            }
+            if ((BYTE)(tileY - 2) >= 0) {
+                for (BYTE cX = tileX - 1; cX <= tileX + 1; ++cX) {
+                    if (cX < 0) {
+                        continue;
+                    }
+                    if (cX > MAP_SIZE) {
+                        break;
+                    }
+                    func(cX, tileY - 2);
+                }
+            }
+            if ((BYTE)(tileX - 2) >= 0) {
+                for (BYTE cY = tileY - 1; cY <= tileY + 1; ++cY) {
+                    if (cY < 0) {
+                        continue;
+                    }
+                    if (cY > MAP_SIZE) {
+                        break;
+                    }
+                    func(tileX - 2, cY);
+                }
+            }
+            for (BYTE cY = tileY - 1; cY <= tileY + 1; ++cY) {
+                if (cY < 0) {
+                    continue;
+                }
+                if (cY > MAP_SIZE) {
+                    break;
+                }
+                for (BYTE cX = tileX - 1; cX <= tileX + 1; ++cX) {
+                    if (cX < 0) {
+                        continue;
+                    }
+                    if (cX > MAP_SIZE) {
+                        break;
+                    }
+                    func(cX, cY);
+                }
+            }
+            if ((BYTE)(tileY + 2) >= 0) {
+                for (BYTE cX = tileX - 1; cX <= tileX + 1; ++cX) {
+                    if (cX < 0) {
+                        continue;
+                    }
+                    if (cX > MAP_SIZE) {
+                        break;
+                    }
+                    func(cX, tileY + 2);
+                }
+            }
+            if ((BYTE)(tileX + 2) >= 0) {
+                for (BYTE cY = tileY - 1; cY <= tileY + 1; ++cY) {
+                    if (cY < 0) {
+                        continue;
+                    }
+                    if (cY > MAP_SIZE) {
+                        break;
+                    }
+                    func(tileX + 2, cY);
+                }
+            }
+            if ((BYTE)(tileX + 3) < MAP_SIZE) {
+                func(tileX + 3, tileY);
+            }
+            if ((BYTE)(tileY + 3) < MAP_SIZE) {
+                func(tileX, tileY + 2);
+            }
+            return;
+        }
+        case SIGHT_FAR:
+            return;
         }
     }
 }
 
-static inline void mapUnmarkUnitSight(UBYTE x, UBYTE y, UBYTE range) {
-    // XXX: this hardcodes that our tilemap tiles are twice the size of our pathmap tiles,
-    // so we only update unit sights when moving
-    UBYTE yMin = CLAMP((y - range) >> 1, 0, MAP_SIZE);
-    UBYTE yMax = CLAMP((y + range) >> 1, 0, MAP_SIZE);
-    UBYTE xMin = CLAMP((x - range) >> 1, 0, MAP_SIZE);
-    UBYTE xMax = CLAMP((x + range) >> 1, 0, MAP_SIZE);
-    for (UBYTE tileY = yMin; tileY <= yMax; ++tileY) {
-        for (UBYTE tileX = xMin; tileX <= xMax; ++tileX) {
-            ULONG tile = g_Map.m_ulVisibleMapXY[tileX][tileY];
-            UBYTE visCount = (UBYTE)(tile >> 24) - 1;
-            g_Map.m_ulVisibleMapXY[tileX][tileY] = (tile & 0x00FFFFFF) | (visCount << 24);
-        }
-    }
+static inline void mapMarkUnitSight(UBYTE x, UBYTE y, SightRange range) {
+    mapChangeUnitSight(x, y, range, &__incVisCount);
+}
+
+static inline void mapUnmarkUnitSight(UBYTE x, UBYTE y, SightRange range) {
+    mapChangeUnitSight(x, y, range, &__decVisCount);
 }
 
 static inline UBYTE tileGetOwner(UBYTE tile) {

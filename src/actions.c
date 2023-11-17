@@ -170,6 +170,7 @@ void actionMove(Unit *unit) {
             return;
         }
         mapUnmarkTileOccupied(tilePos.ubX, tilePos.ubY);
+        mapUnmarkUnitSight(tilePos.ubX, tilePos.ubY, 6);
         if (vectorX) {
             unit->loc.ubX += vectorX;
             unit->IX = -vectorX * (PATHMAP_TILE_SIZE - speed);
@@ -180,6 +181,7 @@ void actionMove(Unit *unit) {
         }
         tilePos = unitGetTilePosition(unit);
         mapMarkTileOccupied(unit->id, unit->owner, tilePos.ubX, tilePos.ubY);
+        mapMarkUnitSight(tilePos.ubX, tilePos.ubY, 6);
     }
     if (unit->action.move.u4Wait) {
         --unit->action.move.u4Wait;

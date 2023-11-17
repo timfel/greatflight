@@ -176,6 +176,12 @@ Building *buildingNew(BuildingTypeIndex typeIdx, tUbCoordYX loc, UBYTE owner) {
     } else {
         mapSetBuildingGraphics(id, MAP_OWNER_FLAGS(owner), loc.ubX, loc.ubY, sz, buildingTileIdx);
     }
+    if (owner == g_ubThisPlayer) {
+        mapMarkUnitSight(loc.ubX, loc.ubY, 1);
+        if (sz != 2) { // larger building, sight from bottom right, too
+            mapMarkUnitSight(loc.ubX + 1, loc.ubY + 1, 1);
+        }
+    }
     return building;
 }
 

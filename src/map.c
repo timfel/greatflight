@@ -115,14 +115,12 @@ void mapLoad(tFile *file) {
     g_Screen.m_map.m_pTilemap = bitmapCreateFromFile(g_Map.m_pTileset, 0);
 
     for (int x = 0; x < MAP_SIZE; x++) {
-        UBYTE *ubColumn = (UBYTE*)(g_Map.m_ulTilemapXY[x]);
+        UBYTE *ubColumn = (UBYTE*)(g_Map.m_ubTilemapXY[x]);
         // reads MAP_SIZE bytes into the first half of the column
-        fileRead(file, ubColumn, MAP_SIZE);
-        // we store MAP_SIZE words with the direct offsets into the tilemap,
-        // so fill from the back the actual offsets
+        fileRead(file, ubColumn, MAP_SIZE);        
         for (int y = MAP_SIZE - 1; y >= 0; --y) {
             UBYTE tileIndex = ubColumn[y]; // map tile index
-            g_Map.m_ulTilemapXY[x][y] = tileIndexToTileBitmapOffset(tileIndex);
+            g_Map.m_ulVisibleMapXY[x][y] = tileIndexToTileBitmapOffset(tileIndex);
             setFlags(tileIndex, x * TILE_SIZE_FACTOR, y * TILE_SIZE_FACTOR);
         }
     }
@@ -137,11 +135,12 @@ ULONG tileIndexToTileBitmapOffset(UBYTE index) {
 }
 
 UBYTE mapGetGraphicTileAt(UBYTE x, UBYTE y) {
-    return tileBitmapOffsetToTileIndex(g_Map.m_ulTilemapXY[x / TILE_SIZE_FACTOR][y / TILE_SIZE_FACTOR]);
+    return g_Map.m_ubTilemapXY[x / TILE_SIZE_FACTOR][y / TILE_SIZE_FACTOR];
 }
 
 void mapSetGraphicTileAt(UBYTE x, UBYTE y, UBYTE tileIndex) {
-    g_Map.m_ulTilemapXY[x / TILE_SIZE_FACTOR][y / TILE_SIZE_FACTOR] = tileIndexToTileBitmapOffset(tileIndex);
+    g_Map.m_ubTilemapXY[x / TILE_SIZE_FACTOR][y / TILE_SIZE_FACTOR] = tileIndex;
+    // g_Map.m_ulVisibleMapXY[x / TILE_SIZE_FACTOR][y / TILE_SIZE_FACTOR] = tileIndexToTileBitmapOffset(tileIndex);
     setFlags(tileIndex, x / TILE_SIZE_FACTOR * TILE_SIZE_FACTOR, y / TILE_SIZE_FACTOR * TILE_SIZE_FACTOR);
 }
 
@@ -151,10 +150,11 @@ void mapSetGraphicTileSquare(UBYTE topLeftX, UBYTE topLeftY, UBYTE size, UBYTE t
     size = size / TILE_SIZE_FACTOR;
     UBYTE maxX = topLeftX + size;
     UBYTE maxY = topLeftY + size;
-    ULONG tileOffset = tileIndexToTileBitmapOffset(tileIndex);
+    // ULONG tileOffset = tileIndexToTileBitmapOffset(tileIndex);
     for (UBYTE y = topLeftY; y < maxY; ++y) {
         for (UBYTE x = topLeftX; x < maxX; ++x) {
-            g_Map.m_ulTilemapXY[x][y] = tileOffset;
+            g_Map.m_ubTilemapXY[x][y] = tileIndex;
+            // g_Map.m_ulVisibleMapXY[x][y] = tileOffset;
             setFlags(tileIndex, x * TILE_SIZE_FACTOR, y * TILE_SIZE_FACTOR);
         }
     }
@@ -169,7 +169,8 @@ void mapSetBuildingGraphics(UBYTE id, UBYTE extraFlags, UBYTE topLeftX, UBYTE to
     UBYTE pathFlag = MAP_UNWALKABLE_FLAG | MAP_BUILDING_FLAG | extraFlags;
     for (UBYTE y = topLeftY; y < maxY; ++y) {
         for (UBYTE x = topLeftX; x < maxX; ++x) {
-            g_Map.m_ulTilemapXY[x][y] = tileIndexToTileBitmapOffset(tileIndex);
+            g_Map.m_ubTilemapXY[x][y] = tileIndex;
+            // g_Map.m_ulVisibleMapXY[x][y] = tileIndexToTileBitmapOffset(tileIndex);
             UBYTE pathX = x * TILE_SIZE_FACTOR;
             UBYTE pathY = y * TILE_SIZE_FACTOR;
             g_Map.m_ubPathmapXY[pathX][pathY] = pathFlag;
@@ -187,12 +188,14 @@ void mapSetBuildingGraphics(UBYTE id, UBYTE extraFlags, UBYTE topLeftX, UBYTE to
 
 void mapIncGraphicTileAt(UBYTE x, UBYTE y) {
     UBYTE newTile = mapGetGraphicTileAt(x, y) + 1;
-    g_Map.m_ulTilemapXY[x / TILE_SIZE_FACTOR][y / TILE_SIZE_FACTOR] += TILE_FRAME_BYTES;
+    g_Map.m_ubTilemapXY[x / TILE_SIZE_FACTOR][y / TILE_SIZE_FACTOR] += 1;
+    // g_Map.m_ulVisibleMapXY[x / TILE_SIZE_FACTOR][y / TILE_SIZE_FACTOR] += TILE_FRAME_BYTES;
     setFlags(newTile, x / TILE_SIZE_FACTOR * TILE_SIZE_FACTOR, y / TILE_SIZE_FACTOR * TILE_SIZE_FACTOR);
 }
 
 void mapDecGraphicTileAt(UBYTE x, UBYTE y) {
     UBYTE newTile = mapGetGraphicTileAt(x, y) - 1;
-    g_Map.m_ulTilemapXY[x / TILE_SIZE_FACTOR][y / TILE_SIZE_FACTOR] -= TILE_FRAME_BYTES;
+    g_Map.m_ubTilemapXY[x / TILE_SIZE_FACTOR][y / TILE_SIZE_FACTOR] -= 1;
+    // g_Map.m_ulVisibleMapXY[x / TILE_SIZE_FACTOR][y / TILE_SIZE_FACTOR] -= TILE_FRAME_BYTES;
     setFlags(newTile, x / TILE_SIZE_FACTOR * TILE_SIZE_FACTOR, y / TILE_SIZE_FACTOR * TILE_SIZE_FACTOR);
 }

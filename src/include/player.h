@@ -11,6 +11,7 @@ typedef struct _player {
 } Player;
 
 extern Player g_pPlayers[2];
+extern UBYTE g_ubThisPlayer;
 
 void playersLoad(tFile *map);
 void savePlayerInfo(tFile *map);

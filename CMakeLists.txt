@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.6)
 project(AceProject C)
 
 # Lowercase project name for binaries and packaging

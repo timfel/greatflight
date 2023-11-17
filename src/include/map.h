@@ -1,7 +1,10 @@
 #ifndef MAP_H
 #define MAP_H
 
+#include "limits.h"
 #include "ace/types.h"
+#include "ace/macros.h"
+#include "ace/managers/log.h"
 #include "ace/utils/file.h"
 
 #define MAPDIR "resources/maps/"
@@ -20,7 +23,8 @@
 struct Map {
     const char *m_pName;
     const char *m_pTileset;
-    ULONG m_ulTilemapXY[MAP_SIZE][MAP_SIZE];
+    UBYTE m_ubTilemapXY[MAP_SIZE][MAP_SIZE];
+    ULONG m_ulVisibleMapXY[MAP_SIZE][MAP_SIZE];
     UBYTE m_ubPathmapXY[PATHMAP_SIZE][PATHMAP_SIZE];
     UBYTE m_ubUnitCacheXY[PATHMAP_SIZE][PATHMAP_SIZE];
 };
@@ -53,6 +57,12 @@ extern void mapLoad(tFile *file);
 
 // for now we only support two players, so it's 1 bit
 #define MAP_OWNER_FLAGS(owner) ((owner) ? MAP_OWNER_BIT : 0)
+
+#define IS_TILE_UNCOVERED(x) ((LONG)(x) & 0xFF000000)
+
+ULONG tileIndexToTileBitmapOffset(UBYTE index);
+
+UBYTE tileBitmapOffsetToTileIndex(ULONG offset);
 
 static inline UBYTE mapGetTileAt(UBYTE x, UBYTE y) {
     return g_Map.m_ubPathmapXY[x][y];
@@ -93,6 +103,37 @@ static inline void mapMarkTileOccupied(UBYTE id, UBYTE owner, UBYTE x, UBYTE y) 
 
 static inline void mapUnmarkTileOccupied(UBYTE x, UBYTE y) {
     g_Map.m_ubPathmapXY[x][y] &= ~(MAP_UNWALKABLE_FLAG | MAP_OWNER_BIT);
+}
+
+static inline void mapMarkUnitSight(UBYTE x, UBYTE y, UBYTE range) {
+    // XXX: see mapUnmarkUnitSight
+    UBYTE yMin = CLAMP((y - range) >> 1, 0, MAP_SIZE);
+    UBYTE yMax = CLAMP((y + range) >> 1, 0, MAP_SIZE);
+    UBYTE xMin = CLAMP((x - range) >> 1, 0, MAP_SIZE);
+    UBYTE xMax = CLAMP((x + range) >> 1, 0, MAP_SIZE);
+    for (UBYTE tileY = yMin; tileY <= yMax; ++tileY) {
+        for (UBYTE tileX = xMin; tileX <= xMax; ++tileX) {
+            ULONG tile = tileIndexToTileBitmapOffset(g_Map.m_ubTilemapXY[tileX][tileY]);
+            UBYTE visCount = (UBYTE)(g_Map.m_ulVisibleMapXY[tileX][tileY] >> 24) + 1;
+            g_Map.m_ulVisibleMapXY[tileX][tileY] = (tile & 0x00FFFFFF) | (visCount << 24);
+        }
+    }
+}
+
+static inline void mapUnmarkUnitSight(UBYTE x, UBYTE y, UBYTE range) {
+    // XXX: this hardcodes that our tilemap tiles are twice the size of our pathmap tiles,
+    // so we only update unit sights when moving
+    UBYTE yMin = CLAMP((y - range) >> 1, 0, MAP_SIZE);
+    UBYTE yMax = CLAMP((y + range) >> 1, 0, MAP_SIZE);
+    UBYTE xMin = CLAMP((x - range) >> 1, 0, MAP_SIZE);
+    UBYTE xMax = CLAMP((x + range) >> 1, 0, MAP_SIZE);
+    for (UBYTE tileY = yMin; tileY <= yMax; ++tileY) {
+        for (UBYTE tileX = xMin; tileX <= xMax; ++tileX) {
+            ULONG tile = g_Map.m_ulVisibleMapXY[tileX][tileY];
+            UBYTE visCount = (UBYTE)(tile >> 24) - 1;
+            g_Map.m_ulVisibleMapXY[tileX][tileY] = (tile & 0x00FFFFFF) | (visCount << 24);
+        }
+    }
 }
 
 static inline UBYTE tileGetOwner(UBYTE tile) {
@@ -146,9 +187,5 @@ void mapIncGraphicTileAt(UBYTE x, UBYTE y);
  * Decrement the tile at the pathmap position by 1.
  */
 void mapDecGraphicTileAt(UBYTE x, UBYTE y);
-
-ULONG tileIndexToTileBitmapOffset(UBYTE index);
-
-UBYTE tileBitmapOffsetToTileIndex(ULONG offset);
 
 #endif

@@ -71,6 +71,7 @@ struct Screen {
     // tiles are expected to be one after the other
     struct {
         PLANEPTR pFirstTile;
+        UBYTE ubFirstTile;
         UBYTE ubCount;
     } m_cursorBobs;
 

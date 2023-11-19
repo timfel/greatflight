@@ -481,7 +481,7 @@ void drawAllTiles(void) {
 	UWORD uwBlitWords = TILE_SIZE_WORDS;
 	UWORD uwHeight = TILE_SIZE * BPP;
 	UWORD uwBltCon0 = USEA|USED|MINTERM_A;
-    UWORD uwBltCon0Fog = USEA|USEB|USED|0b11000000; // use B as deleting mask
+    UWORD uwBltCon0Fog = USEA|USED|0b11000000; // use B as deleting mask
 	UWORD uwBltsize = (uwHeight << 6) | uwBlitWords;
 
     // Figure out which tiles to actually draw, depending on the
@@ -492,7 +492,6 @@ void drawAllTiles(void) {
 
     // Get pointer to start of drawing area
     PLANEPTR pDstPlane = g_Screen.m_map.m_pBuffer->pBack->Planes[0];
-    PLANEPTR pFogPlane = g_Screen.m_map.m_pFogOfWarMask->Planes[0];
 
     // setup blitter registers that won't change
     systemSetDmaBit(DMAB_BLITHOG, 1);
@@ -504,7 +503,7 @@ void drawAllTiles(void) {
 	g_pCustom->bltamod = wSrcModulo;
     g_pCustom->bltbmod = 0;
 	g_pCustom->bltdmod = wDstModulo;
-    g_pCustom->bltbpt = pFogPlane;
+    g_pCustom->bltbdat = 0xAAAA;
 
     // draw as fast as we can
     UWORD uwBltCon0Used;
@@ -517,7 +516,6 @@ void drawAllTiles(void) {
         g_pCustom->bltcon0 = uwBltCon0Used;
         g_pCustom->bltdpt = pDstPlane;
         g_pCustom->bltapt = apt;
-        g_pCustom->bltbpt = pFogPlane;
         g_pCustom->bltsize = uwBltsize;
         ++pTileBitmapOffset;
         apt = (APTR)*pTileBitmapOffset;
@@ -525,7 +523,6 @@ void drawAllTiles(void) {
         blitWait();
         g_pCustom->bltcon0 = uwBltCon0Used;
         g_pCustom->bltapt = apt;
-        g_pCustom->bltbpt = pFogPlane;
         g_pCustom->bltsize = uwBltsize;
         ++pTileBitmapOffset;
         apt = (APTR)*pTileBitmapOffset;
@@ -533,7 +530,6 @@ void drawAllTiles(void) {
         blitWait();
         g_pCustom->bltcon0 = uwBltCon0Used;
         g_pCustom->bltapt = apt;
-        g_pCustom->bltbpt = pFogPlane;
         g_pCustom->bltsize = uwBltsize;
         ++pTileBitmapOffset;
         apt = (APTR)*pTileBitmapOffset;
@@ -541,7 +537,6 @@ void drawAllTiles(void) {
         blitWait();
         g_pCustom->bltcon0 = uwBltCon0Used;
         g_pCustom->bltapt = apt;
-        g_pCustom->bltbpt = pFogPlane;
         g_pCustom->bltsize = uwBltsize;
         ++pTileBitmapOffset;
         apt = (APTR)*pTileBitmapOffset;
@@ -549,7 +544,6 @@ void drawAllTiles(void) {
         blitWait();
         g_pCustom->bltcon0 = uwBltCon0Used;
         g_pCustom->bltapt = apt;
-        g_pCustom->bltbpt = pFogPlane;
         g_pCustom->bltsize = uwBltsize;
         ++pTileBitmapOffset;
         apt = (APTR)*pTileBitmapOffset;
@@ -557,7 +551,6 @@ void drawAllTiles(void) {
         blitWait();
         g_pCustom->bltcon0 = uwBltCon0Used;
         g_pCustom->bltapt = apt;
-        g_pCustom->bltbpt = pFogPlane;
         g_pCustom->bltsize = uwBltsize;
         pDstPlane += TILE_SIZE_BYTES;
     }

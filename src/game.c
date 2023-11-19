@@ -481,7 +481,7 @@ void drawAllTiles(void) {
 	UWORD uwBlitWords = TILE_SIZE_WORDS;
 	UWORD uwHeight = TILE_SIZE * BPP;
 	UWORD uwBltCon0 = USEA|USED|MINTERM_A;
-    UWORD uwBltCon0Fog = USEA|USEC|USED|0b10100000; // use C as deleting mask
+    UWORD uwBltCon0Fog = USEA|USEB|USED|0b11000000; // use B as deleting mask
 	UWORD uwBltsize = (uwHeight << 6) | uwBlitWords;
 
     // Figure out which tiles to actually draw, depending on the

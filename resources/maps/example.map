@@ -42,7 +42,9 @@
         [
             *([[peasant, 8, 3, *unit_defaults]] * 4),
         ],
-        [],
+        [
+            *([[peasant, 12, 1, *unit_defaults]] * 1),
+        ],
     ],
     "buildings": [
         [

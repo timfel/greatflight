@@ -173,10 +173,10 @@ Building *buildingNew(BuildingTypeIndex typeIdx, tUbCoordYX loc, UBYTE owner) {
     UBYTE buildingTileIdx = sz == 2 ? TILEINDEX_CONSTRUCTION_SMALL : TILEINDEX_CONSTRUCTION_LARGE;
     mapSetBuildingGraphics(id, MAP_OWNER_FLAGS(owner), loc.ubX, loc.ubY, sz, buildingTileIdx);
     if (owner == g_ubThisPlayer) {
-        mapMarkUnitSight(loc.ubX, loc.ubY, sz == 2 ? SIGHT_ADJACENT : SIGHT_ADJACENT_BIG_HOUSE);
+        mapMarkUnitSight(loc.ubX, loc.ubY, sz == 2 ? SIGHT_SELF : SIGHT_ADJACENT_BIG_HOUSE);
     }
     return building;
-}
+}   
 
 void buildingDestroy(Building *building) {
     BuildingType *type = &BuildingTypes[building->type];

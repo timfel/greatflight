@@ -181,7 +181,9 @@ void actionMove(Unit *unit) {
         }
         tilePos = unitGetTilePosition(unit);
         mapMarkTileOccupied(unit->id, unit->owner, tilePos.ubX, tilePos.ubY);
-        mapMarkUnitSight(tilePos.ubX, tilePos.ubY, SIGHT_MEDIUM);
+        if (unit->owner == g_ubThisPlayer) {
+            mapMarkUnitSight(tilePos.ubX, tilePos.ubY, SIGHT_MEDIUM);
+        }
     }
     if (unit->action.move.u4Wait) {
         --unit->action.move.u4Wait;

@@ -139,22 +139,19 @@ static inline void unitDraw(Unit *self, tUbCoordYX viewportTopLeft) {
     g_pCustom->bltsize = uwBlitSize;
 }
 
-static inline void unitOffscreen(Unit *self) {
-    self->bob.sPos.uwX = UWORD_MAX;
-}
-
 void unitManagerProcessUnits(tUbCoordYX viewportTopLeft, tUbCoordYX viewportBottomRight) {
     for (UBYTE i = 0; i < g_UnitManager.unitCount; ++i) {
         Unit *unit = &g_UnitManager.units[i];
         actionDo(unit);
         tUbCoordYX loc = unitGetTilePosition(unit);
-        if (loc.ubX >= viewportTopLeft.ubX
-                && loc.ubY >= viewportTopLeft.ubY
-                && loc.ubX <= viewportBottomRight.ubX
-                && loc.ubY <= viewportBottomRight.ubY) {
-            unitDraw(unit, viewportTopLeft);
-        } else {
-            unitOffscreen(unit);
+        if (unit->owner == g_ubThisPlayer
+            || IS_TILE_UNCOVERED(g_Map.m_ulVisibleMapXY[loc.ubX / TILE_SIZE_FACTOR][loc.ubY / TILE_SIZE_FACTOR])) {
+            if (loc.ubX >= viewportTopLeft.ubX
+                    && loc.ubY >= viewportTopLeft.ubY
+                    && loc.ubX <= viewportBottomRight.ubX
+                    && loc.ubY <= viewportBottomRight.ubY) {
+                unitDraw(unit, viewportTopLeft);
+            }
         }
     }
 }
@@ -224,7 +221,9 @@ UBYTE unitPlace(Unit *unit, tUbCoordYX loc) {
                     unit->x = actualX;
                     unit->y = actualY;
                     mapMarkTileOccupied(unit->id, unit->owner, actualX, actualY);
-                    mapMarkUnitSight(actualX, actualY, SIGHT_MEDIUM);
+                    if (unit->owner == g_ubThisPlayer) {
+                        mapMarkUnitSight(actualX, actualY, SIGHT_MEDIUM);
+                    }
                     return 1;
                 }
                 actualY = y - yoff;
@@ -232,7 +231,9 @@ UBYTE unitPlace(Unit *unit, tUbCoordYX loc) {
                     unit->x = actualX;
                     unit->y = actualY;
                     mapMarkTileOccupied(unit->id, unit->owner, actualX, actualY);
-                    mapMarkUnitSight(actualX, actualY, SIGHT_MEDIUM);
+                    if (unit->owner == g_ubThisPlayer) {
+                        mapMarkUnitSight(actualX, actualY, SIGHT_MEDIUM);
+                    }
                     return 1;
                 }
             }
@@ -243,7 +244,9 @@ UBYTE unitPlace(Unit *unit, tUbCoordYX loc) {
                     unit->x = actualX;
                     unit->y = actualY;
                     mapMarkTileOccupied(unit->id, unit->owner, actualX, actualY);
-                    mapMarkUnitSight(actualX, actualY, SIGHT_MEDIUM);
+                    if (unit->owner == g_ubThisPlayer) {
+                        mapMarkUnitSight(actualX, actualY, SIGHT_MEDIUM);
+                    }
                     return 1;
                 }
                 actualY = y - yoff;
@@ -251,7 +254,9 @@ UBYTE unitPlace(Unit *unit, tUbCoordYX loc) {
                     unit->x = actualX;
                     unit->y = actualY;
                     mapMarkTileOccupied(unit->id, unit->owner, actualX, actualY);
-                    mapMarkUnitSight(actualX, actualY, SIGHT_MEDIUM);
+                    if (unit->owner == g_ubThisPlayer) {
+                        mapMarkUnitSight(actualX, actualY, SIGHT_MEDIUM);
+                    }
                     return 1;
                 }
             }

@@ -575,7 +575,7 @@ void minimapUpdate(void) {
         pMinimap2 = g_Screen.m_panels.m_pMainPanelBuffer->pBack->Planes[1] + (MINIMAP_OFFSET_X / 8) + (MINIMAP_OFFSET_Y * MINIMAP_MODULO);
         pMinimap3 = g_Screen.m_panels.m_pMainPanelBuffer->pBack->Planes[2] + (MINIMAP_OFFSET_X / 8) + (MINIMAP_OFFSET_Y * MINIMAP_MODULO);
     }
-    UBYTE end = y + (PATHMAP_SIZE / 4);
+    UBYTE end = y + (PATHMAP_SIZE / 8);
     for (; y < end; ++y) {
         for (UBYTE x = 0; x < PATHMAP_SIZE;) {
             UBYTE minimapStatePixels = 0;
@@ -585,54 +585,67 @@ void minimapUpdate(void) {
                 minimapStatePixels <<= 1;
                 minimapStatePixels2 <<= 1;
                 minimapStatePixels3 <<= 1;
-                if (IS_TILE_UNCOVERED(g_Map.m_ulVisibleMapXY[x / TILE_SIZE_FACTOR][y / TILE_SIZE_FACTOR])) {
-                    UWORD tile = g_Map.m_ubPathmapXY[x][y];
-                    switch (tile) {
-                        case MAP_GROUND_FLAG: // 0b0011 -> light green
-                            minimapStatePixels  |= 0b1;
-                            minimapStatePixels2 |= 0b1;
-                            minimapStatePixels3 |= 0b0;
-                            break;
-                        case MAP_GROUND_FLAG | MAP_COAST_FLAG: // 0b0100 -> lightBrown
-                            minimapStatePixels  |= 0b0;
-                            minimapStatePixels2 |= 0b0;
-                            minimapStatePixels3 |= 0b1;
-                            break;
-                        case MAP_FOREST_FLAG | MAP_UNWALKABLE_FLAG: // 0b0010 -> dark green
-                            minimapStatePixels  |= 0b0;
-                            minimapStatePixels2 |= 0b1;
-                            minimapStatePixels3 |= 0b0;
-                            break;
-                        case MAP_WATER_FLAG | MAP_UNWALKABLE_FLAG: // 0b0111 -> lightBlue
-                            minimapStatePixels  |= 0b1;
-                            minimapStatePixels2 |= 0b1;
-                            minimapStatePixels3 |= 0b1;
-                            break;
-                        case MAP_UNWALKABLE_FLAG | MAP_BUILDING_FLAG | MAP_GOLDMINE_FLAG: // 0b0110 -> darkBrown
-                            minimapStatePixels  |= 0b0;
-                            minimapStatePixels2 |= 0b1;
-                            minimapStatePixels3 |= 0b1;
-                            break;
-                        case MAP_GROUND_FLAG | MAP_UNWALKABLE_FLAG | MAP_OWNER_BIT:
-                        case MAP_GROUND_FLAG | MAP_COAST_FLAG | MAP_UNWALKABLE_FLAG | MAP_OWNER_BIT:
-                        case MAP_UNWALKABLE_FLAG | MAP_BUILDING_FLAG | MAP_OWNER_BIT: // 0b0000 -> black, enemy unit
-                            minimapStatePixels  |= 0b0;
-                            minimapStatePixels2 |= 0b0;
-                            minimapStatePixels3 |= 0b0;
-                            break;
-                        case MAP_GROUND_FLAG | MAP_UNWALKABLE_FLAG:
-                        case MAP_GROUND_FLAG | MAP_COAST_FLAG | MAP_UNWALKABLE_FLAG:
-                        case MAP_BUILDING_FLAG | MAP_UNWALKABLE_FLAG: // 0b0001 -> white, friendly unit
-                            minimapStatePixels  |= 0b1;
-                            minimapStatePixels2 |= 0b0;
-                            minimapStatePixels3 |= 0b0;
-                            break;
-                        default:
-                            minimapStatePixels  |= 0b0;
-                            minimapStatePixels2 |= 0b1;
-                            minimapStatePixels3 |= 0b1;
-                            break;
+                UWORD pathTile;
+                ULONG mapTile = g_Map.m_ulVisibleMapXY[x / TILE_SIZE_FACTOR][y / TILE_SIZE_FACTOR];
+                if (IS_TILE_UNCOVERED(mapTile)) {
+                    pathTile = g_Map.m_ubPathmapXY[x][y];
+                } else {
+                    BYTE mapTileIndex = tileBitmapOffsetToTileIndex(mapTile);
+                    if ((mapTileIndex -= 6) < 0) {
+                        pathTile = MAP_GROUND_FLAG;
+                    } else if ((mapTileIndex -= 3) < 0) {
+                        pathTile = MAP_FOREST_FLAG | MAP_UNWALKABLE_FLAG;
+                    } else if ((mapTileIndex -= 12) < 0) {
+                        pathTile = MAP_WATER_FLAG | MAP_UNWALKABLE_FLAG;
+                    } else {
+                        pathTile = MAP_UNWALKABLE_FLAG | MAP_BUILDING_FLAG | MAP_GOLDMINE_FLAG;
                     }
+                }
+                switch (pathTile) {
+                    case MAP_UNWALKABLE_FLAG | MAP_BUILDING_FLAG | MAP_GOLDMINE_FLAG: // 0b0001 -> white
+                        minimapStatePixels  |= 0b1;
+                        minimapStatePixels2 |= 0b0;
+                        minimapStatePixels3 |= 0b0;
+                        break;
+                    case MAP_FOREST_FLAG | MAP_UNWALKABLE_FLAG: // 0b0010 -> dark green
+                        minimapStatePixels  |= 0b0;
+                        minimapStatePixels2 |= 0b1;
+                        minimapStatePixels3 |= 0b0;
+                        break;
+                    case MAP_GROUND_FLAG: // 0b0011 -> light green
+                        minimapStatePixels  |= 0b1;
+                        minimapStatePixels2 |= 0b1;
+                        minimapStatePixels3 |= 0b0;
+                        break;
+                    case MAP_GROUND_FLAG | MAP_COAST_FLAG: // 0b0100 -> lightBrown
+                        minimapStatePixels  |= 0b0;
+                        minimapStatePixels2 |= 0b0;
+                        minimapStatePixels3 |= 0b1;
+                        break;
+                    case MAP_GROUND_FLAG | MAP_UNWALKABLE_FLAG | MAP_OWNER_BIT:
+                    case MAP_GROUND_FLAG | MAP_COAST_FLAG | MAP_UNWALKABLE_FLAG | MAP_OWNER_BIT:
+                    case MAP_UNWALKABLE_FLAG | MAP_BUILDING_FLAG | MAP_OWNER_BIT: // 0b0101 -> red, enemy unit
+                        minimapStatePixels  |= 0b1;
+                        minimapStatePixels2 |= 0b0;
+                        minimapStatePixels3 |= 0b1;
+                        break;
+                    case MAP_GROUND_FLAG | MAP_UNWALKABLE_FLAG:
+                    case MAP_GROUND_FLAG | MAP_COAST_FLAG | MAP_UNWALKABLE_FLAG:
+                    case MAP_BUILDING_FLAG | MAP_UNWALKABLE_FLAG: // 0b0110 -> , friendly unit
+                        minimapStatePixels  |= 0b0;
+                        minimapStatePixels2 |= 0b1;
+                        minimapStatePixels3 |= 0b1;
+                        break;
+                    case MAP_WATER_FLAG | MAP_UNWALKABLE_FLAG: // 0b0111 -> lightBlue
+                        minimapStatePixels  |= 0b1;
+                        minimapStatePixels2 |= 0b1;
+                        minimapStatePixels3 |= 0b1;
+                        break;
+                    default: // black
+                        minimapStatePixels  |= 0b0;
+                        minimapStatePixels2 |= 0b0;
+                        minimapStatePixels3 |= 0b1;
+                        break;
                 }
                 x++;
             }
@@ -742,7 +755,7 @@ void handleLeftMouseUp(tUwCoordYX lmbDown, tUwCoordYX mousePos) {
         while (xcur <= x2) {
             tUbCoordYX tile = (tUbCoordYX){.ubX = xcur, .ubY = y1};
             Unit *unit = unitManagerUnitAt(tile);
-            if (unit) {
+            if (unit && unit->owner == g_ubThisPlayer) {
                 for(UBYTE idx = 0; idx < g_Screen.m_ubSelectedUnitCount; ++idx) {
                     if (g_Screen.m_pSelectedUnit[idx] == unit) {
                         goto outer;

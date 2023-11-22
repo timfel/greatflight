@@ -121,7 +121,7 @@ void mapLoad(tFile *file) {
         fileRead(file, ubColumn, MAP_SIZE);        
         for (int y = MAP_SIZE - 1; y >= 0; --y) {
             UBYTE tileIndex = ubColumn[y]; // map tile index
-            g_Map.m_ulVisibleMapXY[x][y] = tileIndexToTileBitmapOffset(tileIndex);
+            g_Map.m_ulVisibleMapXY[x][y] = 0;
             setFlags(tileIndex, x * TILE_SIZE_FACTOR, y * TILE_SIZE_FACTOR);
         }
     }

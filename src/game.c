@@ -481,7 +481,8 @@ void drawAllTiles(void) {
 	UWORD uwBlitWords = TILE_SIZE_WORDS;
 	UWORD uwHeight = TILE_SIZE * BPP;
 	UWORD uwBltCon0 = USEA|USED|MINTERM_A;
-    UWORD uwBltCon0Fog = USEA|USED|0b11000000; // use B as deleting mask
+    UWORD uwBltCon0Fog = USEA|USEB|USED|0b11000000; // use B as deleting mask
+    UWORD uwBltCon0Dark = USED;
 	UWORD uwBltsize = (uwHeight << 6) | uwBlitWords;
 
     // Figure out which tiles to actually draw, depending on the
@@ -492,6 +493,7 @@ void drawAllTiles(void) {
 
     // Get pointer to start of drawing area
     PLANEPTR pDstPlane = g_Screen.m_map.m_pBuffer->pBack->Planes[0];
+    PLANEPTR pFogPlane = g_Screen.m_map.m_pFogOfWarMask->Planes[0];
 
     // setup blitter registers that won't change
     systemSetDmaBit(DMAB_BLITHOG, 1);
@@ -503,7 +505,7 @@ void drawAllTiles(void) {
 	g_pCustom->bltamod = wSrcModulo;
     g_pCustom->bltbmod = 0;
 	g_pCustom->bltdmod = wDstModulo;
-    g_pCustom->bltbdat = 0xAAAA;
+    g_pCustom->bltbpt = pFogPlane;
 
     // draw as fast as we can
     UWORD uwBltCon0Used;
@@ -511,46 +513,52 @@ void drawAllTiles(void) {
         // manually unrolled loop to draw (MAP_BUFFER_HEIGHT / TILE_SIZE) tiles
         ULONG *pTileBitmapOffset = &(g_Map.m_ulVisibleMapXY[x][ubStartY]);
         APTR apt = (APTR)*pTileBitmapOffset;
-        uwBltCon0Used = IS_TILE_UNCOVERED(apt) ? uwBltCon0 : uwBltCon0Fog;
+        uwBltCon0Used = apt ? (IS_TILE_UNCOVERED(apt) ? uwBltCon0 : uwBltCon0Fog) : uwBltCon0Dark;
         blitWait();
         g_pCustom->bltcon0 = uwBltCon0Used;
         g_pCustom->bltdpt = pDstPlane;
         g_pCustom->bltapt = apt;
+        g_pCustom->bltbpt = pFogPlane;
         g_pCustom->bltsize = uwBltsize;
         ++pTileBitmapOffset;
         apt = (APTR)*pTileBitmapOffset;
-        uwBltCon0Used = IS_TILE_UNCOVERED(apt) ? uwBltCon0 : uwBltCon0Fog;
+        uwBltCon0Used = apt ? (IS_TILE_UNCOVERED(apt) ? uwBltCon0 : uwBltCon0Fog) : uwBltCon0Dark;
         blitWait();
         g_pCustom->bltcon0 = uwBltCon0Used;
         g_pCustom->bltapt = apt;
+        g_pCustom->bltbpt = pFogPlane;
         g_pCustom->bltsize = uwBltsize;
         ++pTileBitmapOffset;
         apt = (APTR)*pTileBitmapOffset;
-        uwBltCon0Used = IS_TILE_UNCOVERED(apt) ? uwBltCon0 : uwBltCon0Fog;
+        uwBltCon0Used = apt ? (IS_TILE_UNCOVERED(apt) ? uwBltCon0 : uwBltCon0Fog) : uwBltCon0Dark;
         blitWait();
         g_pCustom->bltcon0 = uwBltCon0Used;
         g_pCustom->bltapt = apt;
+        g_pCustom->bltbpt = pFogPlane;
         g_pCustom->bltsize = uwBltsize;
         ++pTileBitmapOffset;
         apt = (APTR)*pTileBitmapOffset;
-        uwBltCon0Used = IS_TILE_UNCOVERED(apt) ? uwBltCon0 : uwBltCon0Fog;
+        uwBltCon0Used = apt ? (IS_TILE_UNCOVERED(apt) ? uwBltCon0 : uwBltCon0Fog) : uwBltCon0Dark;
         blitWait();
         g_pCustom->bltcon0 = uwBltCon0Used;
         g_pCustom->bltapt = apt;
+        g_pCustom->bltbpt = pFogPlane;
         g_pCustom->bltsize = uwBltsize;
         ++pTileBitmapOffset;
         apt = (APTR)*pTileBitmapOffset;
-        uwBltCon0Used = IS_TILE_UNCOVERED(apt) ? uwBltCon0 : uwBltCon0Fog;
+        uwBltCon0Used = apt ? (IS_TILE_UNCOVERED(apt) ? uwBltCon0 : uwBltCon0Fog) : uwBltCon0Dark;
         blitWait();
         g_pCustom->bltcon0 = uwBltCon0Used;
         g_pCustom->bltapt = apt;
+        g_pCustom->bltbpt = pFogPlane;
         g_pCustom->bltsize = uwBltsize;
         ++pTileBitmapOffset;
         apt = (APTR)*pTileBitmapOffset;
-        uwBltCon0Used = IS_TILE_UNCOVERED(apt) ? uwBltCon0 : uwBltCon0Fog;
+        uwBltCon0Used = apt ? (IS_TILE_UNCOVERED(apt) ? uwBltCon0 : uwBltCon0Fog) : uwBltCon0Dark;
         blitWait();
         g_pCustom->bltcon0 = uwBltCon0Used;
         g_pCustom->bltapt = apt;
+        g_pCustom->bltbpt = pFogPlane;
         g_pCustom->bltsize = uwBltsize;
         pDstPlane += TILE_SIZE_BYTES;
     }
@@ -562,9 +570,6 @@ void logicLoop(void) {
 }
 
 void minimapUpdate(void) {
-    if (GameCycle && (GameCycle & 15) != 15) {
-        return;
-    }
     static UBYTE y = 0;
     static UBYTE *pMinimap = 0;
     static UBYTE *pMinimap2 = 0;
@@ -575,21 +580,20 @@ void minimapUpdate(void) {
         pMinimap2 = g_Screen.m_panels.m_pMainPanelBuffer->pBack->Planes[1] + (MINIMAP_OFFSET_X / 8) + (MINIMAP_OFFSET_Y * MINIMAP_MODULO);
         pMinimap3 = g_Screen.m_panels.m_pMainPanelBuffer->pBack->Planes[2] + (MINIMAP_OFFSET_X / 8) + (MINIMAP_OFFSET_Y * MINIMAP_MODULO);
     }
-    UBYTE end = y + (PATHMAP_SIZE / 8);
-    for (; y < end; ++y) {
-        for (UBYTE x = 0; x < PATHMAP_SIZE;) {
-            UBYTE minimapStatePixels = 0;
-            UBYTE minimapStatePixels2 = 0;
-            UBYTE minimapStatePixels3 = 0;
-            for (UBYTE bit = 0; bit < 8; ++bit) {
-                minimapStatePixels <<= 1;
-                minimapStatePixels2 <<= 1;
-                minimapStatePixels3 <<= 1;
-                UWORD pathTile;
-                ULONG mapTile = g_Map.m_ulVisibleMapXY[x / TILE_SIZE_FACTOR][y / TILE_SIZE_FACTOR];
-                if (IS_TILE_UNCOVERED(mapTile)) {
-                    pathTile = g_Map.m_ubPathmapXY[x][y];
-                } else {
+    for (UBYTE x = 0; x < PATHMAP_SIZE;) {
+        UBYTE minimapStatePixels = 0;
+        UBYTE minimapStatePixels2 = 0;
+        UBYTE minimapStatePixels3 = 0;
+        for (UBYTE bit = 0; bit < 8; ++bit) {
+            minimapStatePixels <<= 1;
+            minimapStatePixels2 <<= 1;
+            minimapStatePixels3 <<= 1;
+            UWORD pathTile;
+            ULONG mapTile = g_Map.m_ulVisibleMapXY[x / TILE_SIZE_FACTOR][y / TILE_SIZE_FACTOR];
+            if (IS_TILE_UNCOVERED(mapTile)) {
+                pathTile = g_Map.m_ubPathmapXY[x][y];
+            } else {
+                if (mapTile) {
                     BYTE mapTileIndex = tileBitmapOffsetToTileIndex(mapTile);
                     if ((mapTileIndex -= 6) < 0) {
                         pathTile = MAP_GROUND_FLAG;
@@ -597,69 +601,75 @@ void minimapUpdate(void) {
                         pathTile = MAP_FOREST_FLAG | MAP_UNWALKABLE_FLAG;
                     } else if ((mapTileIndex -= 12) < 0) {
                         pathTile = MAP_WATER_FLAG | MAP_UNWALKABLE_FLAG;
+                    } else if ((mapTileIndex -= 29) < 0) {
+                        // invisible building must belong to enemy
+                        pathTile = MAP_UNWALKABLE_FLAG | MAP_BUILDING_FLAG | MAP_OWNER_BIT;
                     } else {
                         pathTile = MAP_UNWALKABLE_FLAG | MAP_BUILDING_FLAG | MAP_GOLDMINE_FLAG;
                     }
+                } else {
+                    pathTile = 0;
                 }
-                switch (pathTile) {
-                    case MAP_UNWALKABLE_FLAG | MAP_BUILDING_FLAG | MAP_GOLDMINE_FLAG: // 0b0001 -> white
-                        minimapStatePixels  |= 0b1;
-                        minimapStatePixels2 |= 0b0;
-                        minimapStatePixels3 |= 0b0;
-                        break;
-                    case MAP_FOREST_FLAG | MAP_UNWALKABLE_FLAG: // 0b0010 -> dark green
-                        minimapStatePixels  |= 0b0;
-                        minimapStatePixels2 |= 0b1;
-                        minimapStatePixels3 |= 0b0;
-                        break;
-                    case MAP_GROUND_FLAG: // 0b0011 -> light green
-                        minimapStatePixels  |= 0b1;
-                        minimapStatePixels2 |= 0b1;
-                        minimapStatePixels3 |= 0b0;
-                        break;
-                    case MAP_GROUND_FLAG | MAP_COAST_FLAG: // 0b0100 -> lightBrown
-                        minimapStatePixels  |= 0b0;
-                        minimapStatePixels2 |= 0b0;
-                        minimapStatePixels3 |= 0b1;
-                        break;
-                    case MAP_GROUND_FLAG | MAP_UNWALKABLE_FLAG | MAP_OWNER_BIT:
-                    case MAP_GROUND_FLAG | MAP_COAST_FLAG | MAP_UNWALKABLE_FLAG | MAP_OWNER_BIT:
-                    case MAP_UNWALKABLE_FLAG | MAP_BUILDING_FLAG | MAP_OWNER_BIT: // 0b0101 -> red, enemy unit
-                        minimapStatePixels  |= 0b1;
-                        minimapStatePixels2 |= 0b0;
-                        minimapStatePixels3 |= 0b1;
-                        break;
-                    case MAP_GROUND_FLAG | MAP_UNWALKABLE_FLAG:
-                    case MAP_GROUND_FLAG | MAP_COAST_FLAG | MAP_UNWALKABLE_FLAG:
-                    case MAP_BUILDING_FLAG | MAP_UNWALKABLE_FLAG: // 0b0110 -> , friendly unit
-                        minimapStatePixels  |= 0b0;
-                        minimapStatePixels2 |= 0b1;
-                        minimapStatePixels3 |= 0b1;
-                        break;
-                    case MAP_WATER_FLAG | MAP_UNWALKABLE_FLAG: // 0b0111 -> lightBlue
-                        minimapStatePixels  |= 0b1;
-                        minimapStatePixels2 |= 0b1;
-                        minimapStatePixels3 |= 0b1;
-                        break;
-                    default: // black
-                        minimapStatePixels  |= 0b0;
-                        minimapStatePixels2 |= 0b0;
-                        minimapStatePixels3 |= 0b1;
-                        break;
-                }
-                x++;
             }
-            *pMinimap = minimapStatePixels;
-            *pMinimap2 = minimapStatePixels2;
-            *pMinimap3 = minimapStatePixels3;
-            ++pMinimap;
-            ++pMinimap2;
-            ++pMinimap3;
+            switch (pathTile) {
+                case MAP_UNWALKABLE_FLAG | MAP_BUILDING_FLAG | MAP_GOLDMINE_FLAG: // 0b0001 -> white
+                    minimapStatePixels  |= 0b1;
+                    minimapStatePixels2 |= 0b0;
+                    minimapStatePixels3 |= 0b0;
+                    break;
+                case MAP_FOREST_FLAG | MAP_UNWALKABLE_FLAG: // 0b0010 -> dark green
+                    minimapStatePixels  |= 0b0;
+                    minimapStatePixels2 |= 0b1;
+                    minimapStatePixels3 |= 0b0;
+                    break;
+                case MAP_GROUND_FLAG: // 0b0011 -> light green
+                    minimapStatePixels  |= 0b1;
+                    minimapStatePixels2 |= 0b1;
+                    minimapStatePixels3 |= 0b0;
+                    break;
+                case MAP_GROUND_FLAG | MAP_COAST_FLAG: // 0b0100 -> lightBrown
+                    minimapStatePixels  |= 0b0;
+                    minimapStatePixels2 |= 0b0;
+                    minimapStatePixels3 |= 0b1;
+                    break;
+                case MAP_GROUND_FLAG | MAP_UNWALKABLE_FLAG | MAP_OWNER_BIT:
+                case MAP_GROUND_FLAG | MAP_COAST_FLAG | MAP_UNWALKABLE_FLAG | MAP_OWNER_BIT:
+                case MAP_UNWALKABLE_FLAG | MAP_BUILDING_FLAG | MAP_OWNER_BIT: // 0b0101 -> red, enemy unit
+                    minimapStatePixels  |= 0b1;
+                    minimapStatePixels2 |= 0b0;
+                    minimapStatePixels3 |= 0b1;
+                    break;
+                case MAP_GROUND_FLAG | MAP_UNWALKABLE_FLAG:
+                case MAP_GROUND_FLAG | MAP_COAST_FLAG | MAP_UNWALKABLE_FLAG:
+                case MAP_BUILDING_FLAG | MAP_UNWALKABLE_FLAG: // 0b0110 -> , friendly unit
+                    minimapStatePixels  |= 0b0;
+                    minimapStatePixels2 |= 0b1;
+                    minimapStatePixels3 |= 0b1;
+                    break;
+                case MAP_WATER_FLAG | MAP_UNWALKABLE_FLAG: // 0b0111 -> lightBlue
+                    minimapStatePixels  |= 0b1;
+                    minimapStatePixels2 |= 0b1;
+                    minimapStatePixels3 |= 0b1;
+                    break;
+                default: // black
+                    minimapStatePixels  |= 0b0;
+                    minimapStatePixels2 |= 0b0;
+                    minimapStatePixels3 |= 0b0;
+                    break;
+            }
+            x++;
         }
-        pMinimap += (MINIMAP_MODULO - (MINIMAP_WIDTH / 8));
-        pMinimap2 += (MINIMAP_MODULO - (MINIMAP_WIDTH / 8));
-        pMinimap3 += (MINIMAP_MODULO - (MINIMAP_WIDTH / 8));
+        *pMinimap = minimapStatePixels;
+        *pMinimap2 = minimapStatePixels2;
+        *pMinimap3 = minimapStatePixels3;
+        ++pMinimap;
+        ++pMinimap2;
+        ++pMinimap3;
     }
+    pMinimap += (MINIMAP_MODULO - (MINIMAP_WIDTH / 8));
+    pMinimap2 += (MINIMAP_MODULO - (MINIMAP_WIDTH / 8));
+    pMinimap3 += (MINIMAP_MODULO - (MINIMAP_WIDTH / 8));
+    ++y;
 }
 
 void handleLeftMouseUp(tUwCoordYX lmbDown, tUwCoordYX mousePos) {
@@ -1109,6 +1119,8 @@ void updateDisplay(void) {
 
 void displayLoop(void) {
     minimapUpdate();
+    minimapUpdate(); // update 2 lines of minimap
+
     handleInput();
     colorCycle();
     fowUpdate();

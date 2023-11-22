@@ -272,8 +272,8 @@ static Building *loadBuilding(tFile *map, UBYTE owner) {
     fileRead(map, &type, 1);
     fileRead(map, &x, 1);
     fileRead(map, &y, 1);
-    for (; x < MAP_SIZE; ++x) {
-        for (UBYTE ny = y; ny < MAP_SIZE; ++ny) {
+    for (; x < PATHMAP_SIZE; ++x) {
+        for (UBYTE ny = y; ny < PATHMAP_SIZE; ++ny) {
             if (buildingCanBeAt(type, (tUbCoordYX){.ubX = x, .ubY = ny}, 0)) {
                 building = buildingNew(type, (tUbCoordYX){.ubX = x, .ubY = ny}, owner);
                 if (!building) {

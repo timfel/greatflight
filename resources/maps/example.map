@@ -48,11 +48,13 @@
     ],
     "buildings": [
         [
-            [townhall, 15, 15, *building_defaults],
+            [townhall, 28, 28, *building_defaults],
         ],
-        [],
         [
-            [goldmine, 18, 18, *building_defaults],
+            [townhall, 48, 48, *building_defaults],
+        ],
+        [
+            [goldmine, 36, 36, *building_defaults],
         ]
     ],
 }

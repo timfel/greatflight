@@ -71,9 +71,7 @@ static inline UBYTE unitManagerUnitIsActive(Unit *unit) {
 void unitManagerInitialize(void) {
     g_UnitManager.unitCount = 0;
     for (UBYTE i = 0; i < MAX_UNITS; ++i) {
-#ifdef ACE_DEBUG
         g_UnitManager.units[i].loc = UNIT_FREE_TILE_POSITION;
-#endif
         g_UnitManager.units[i].id = i;
         g_UnitManager.freeUnitsStack[i] = i;
     }
@@ -140,19 +138,25 @@ static inline void unitDraw(Unit *self, tUbCoordYX viewportTopLeft) {
 }
 
 void unitManagerProcessUnits(tUbCoordYX viewportTopLeft, tUbCoordYX viewportBottomRight) {
-    for (UBYTE i = 0; i < g_UnitManager.unitCount; ++i) {
-        Unit *unit = &g_UnitManager.units[i];
+    Unit *unit = g_UnitManager.units;
+    UBYTE count = MAX_UNITS;
+    while (count--) {
         actionDo(unit);
         tUbCoordYX loc = unitGetTilePosition(unit);
-        if (unit->owner == g_ubThisPlayer
-            || IS_TILE_UNCOVERED(g_Map.m_ulVisibleMapXY[loc.ubX / TILE_SIZE_FACTOR][loc.ubY / TILE_SIZE_FACTOR])) {
-            if (loc.ubX >= viewportTopLeft.ubX
-                    && loc.ubY >= viewportTopLeft.ubY
-                    && loc.ubX <= viewportBottomRight.ubX
-                    && loc.ubY <= viewportBottomRight.ubY) {
-                unitDraw(unit, viewportTopLeft);
+        if ((BYTE)loc.ubX >= 0) {
+            if (unit->owner == g_ubThisPlayer
+                || IS_TILE_UNCOVERED(g_Map.m_ulVisibleMapXY[loc.ubX / TILE_SIZE_FACTOR][loc.ubY / TILE_SIZE_FACTOR])) {
+                if (loc.ubX >= viewportTopLeft.ubX
+                        && loc.ubY >= viewportTopLeft.ubY
+                        && loc.ubX <= viewportBottomRight.ubX
+                        && loc.ubY <= viewportBottomRight.ubY) {
+                    unitDraw(unit, viewportTopLeft);
+                } else {
+                    unit->bob.sPos.uwX = UWORD_MAX;
+                }
             }
         }
+        unit++;
     }
 }
 
@@ -196,8 +200,8 @@ void unitDelete(Unit *unit) {
     if (!unitManagerUnitIsActive(unit)) {
         logWrite("Deleting inactive unit!!!");
     }
-    unit->loc = UNIT_FREE_TILE_POSITION;
 #endif
+    unit->loc = UNIT_FREE_TILE_POSITION;
     g_UnitManager.unitCount--;
     g_UnitManager.freeUnitsStack[g_UnitManager.unitCount] = unit->id;
 }

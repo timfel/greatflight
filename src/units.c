@@ -141,9 +141,9 @@ void unitManagerProcessUnits(tUbCoordYX viewportTopLeft, tUbCoordYX viewportBott
     Unit *unit = g_UnitManager.units;
     UBYTE count = MAX_UNITS;
     while (count--) {
-        actionDo(unit);
         tUbCoordYX loc = unitGetTilePosition(unit);
         if ((BYTE)loc.ubX >= 0) {
+            actionDo(unit);
             if (unit->owner == g_ubThisPlayer
                 || IS_TILE_UNCOVERED(g_Map.m_ulVisibleMapXY[loc.ubX / TILE_SIZE_FACTOR][loc.ubY / TILE_SIZE_FACTOR])) {
                 if (loc.ubX >= viewportTopLeft.ubX

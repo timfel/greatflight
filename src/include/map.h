@@ -25,7 +25,7 @@ struct Map {
     const char *m_pTileset;
     UBYTE m_ubTilemapXY[MAP_SIZE][MAP_SIZE];
     ULONG m_ulVisibleMapXY[MAP_SIZE][MAP_SIZE];
-    UBYTE m_ubPathmapXY[PATHMAP_SIZE][PATHMAP_SIZE];
+    UBYTE m_ubPathmapYX[PATHMAP_SIZE][PATHMAP_SIZE];
     UBYTE m_ubUnitCacheXY[PATHMAP_SIZE][PATHMAP_SIZE];
 };
 
@@ -65,7 +65,7 @@ ULONG tileIndexToTileBitmapOffset(UBYTE index);
 UBYTE tileBitmapOffsetToTileIndex(ULONG offset);
 
 static inline UBYTE mapGetTileAt(UBYTE x, UBYTE y) {
-    return g_Map.m_ubPathmapXY[x][y];
+    return g_Map.m_ubPathmapYX[y][x];
 }
 
 static inline UBYTE tileIsWalkable(UBYTE tile) {
@@ -73,7 +73,7 @@ static inline UBYTE tileIsWalkable(UBYTE tile) {
 }
 
 static inline UBYTE mapIsWalkable(UBYTE x, UBYTE y) {
-    return x < PATHMAP_SIZE && y < PATHMAP_SIZE && tileIsWalkable(g_Map.m_ubPathmapXY[x][y]);
+    return x < PATHMAP_SIZE && y < PATHMAP_SIZE && tileIsWalkable(g_Map.m_ubPathmapYX[y][x]);
 }
 
 static inline UBYTE tileIsBuilding(UBYTE tile) {
@@ -81,7 +81,7 @@ static inline UBYTE tileIsBuilding(UBYTE tile) {
 }
 
 static inline UBYTE mapIsBuilding(UBYTE x, UBYTE y) {
-    return tileIsBuilding(g_Map.m_ubPathmapXY[x][y]);
+    return tileIsBuilding(g_Map.m_ubPathmapYX[y][x]);
 }
 
 static inline UBYTE tileIsHarvestable(UBYTE tile) {
@@ -89,20 +89,20 @@ static inline UBYTE tileIsHarvestable(UBYTE tile) {
 }
 
 static inline UBYTE mapIsHarvestable(UBYTE x, UBYTE y) {
-    return tileIsHarvestable(g_Map.m_ubPathmapXY[x][y]);
+    return tileIsHarvestable(g_Map.m_ubPathmapYX[y][x]);
 }
 
 static inline UBYTE mapIsGround(UBYTE x, UBYTE y) {
-    return g_Map.m_ubPathmapXY[x][y] == MAP_GROUND_FLAG;
+    return g_Map.m_ubPathmapYX[y][x] == MAP_GROUND_FLAG;
 }
 
 static inline void mapMarkTileOccupied(UBYTE id, UBYTE owner, UBYTE x, UBYTE y) {
-    g_Map.m_ubPathmapXY[x][y] |= (MAP_UNWALKABLE_FLAG | (owner ? MAP_OWNER_BIT : 0));
+    g_Map.m_ubPathmapYX[y][x] |= (MAP_UNWALKABLE_FLAG | (owner ? MAP_OWNER_BIT : 0));
     g_Map.m_ubUnitCacheXY[x][y] = id;
 }
 
 static inline void mapUnmarkTileOccupied(UBYTE x, UBYTE y) {
-    g_Map.m_ubPathmapXY[x][y] &= ~(MAP_UNWALKABLE_FLAG | MAP_OWNER_BIT);
+    g_Map.m_ubPathmapYX[y][x] &= ~(MAP_UNWALKABLE_FLAG | MAP_OWNER_BIT);
 }
 
 typedef enum {
@@ -309,11 +309,11 @@ static inline UBYTE tileGetOwner(UBYTE tile) {
 }
 
 static inline UBYTE mapGetOwnerAt(UBYTE x, UBYTE y) {
-    return tileGetOwner(g_Map.m_ubPathmapXY[x][y]);
+    return tileGetOwner(g_Map.m_ubPathmapYX[y][x]);
 }
 
 static inline UBYTE mapGetUnitAt(UBYTE x, UBYTE y) {
-    UBYTE tile = g_Map.m_ubPathmapXY[x][y];
+    UBYTE tile = g_Map.m_ubPathmapYX[y][x];
     if (tileIsWalkable(tile) || tileIsBuilding(tile)) {
         return -1;
     }

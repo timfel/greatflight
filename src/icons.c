@@ -39,6 +39,7 @@ void iconSetSource(tIcon *icon, tBitMap *iconTileMap, IconIdx iconIdx) {
 #ifdef ACE_DEBUG
     assert(iconTileMap->Depth == icon->bpp, "ERROR: Icons bpp need to match src and dst");
 #endif
+    icon->iconIdx = iconIdx;
     if (iconIdx == ICON_NONE) {
         icon->iconSrcPtr = iconTileMap->Planes[0];
     } else {
@@ -195,10 +196,10 @@ void iconActionBuildBasic(Unit **, UBYTE) {
     iconRectSpritesUpdate(0, 0);
 }
 
-IconDefinitions g_UnitIconDefinitions[unitTypeCount] = {
-    [dead] = {},
-    [peasant] = {.icons = {ICON_HARVEST, ICON_BUILD_BASIC}, .unitActions = {&iconActionHarvest, &iconActionBuildBasic}},
-    [peon] = {.icons = {ICON_HARVEST, ICON_BUILD_BASIC}, .unitActions = {&iconActionHarvest, &iconActionBuildBasic}},
+IconDefinitions g_UnitIconDefinitions[UNIT_MAX] = {
+    [UNIT_DEAD] = {},
+    [UNIT_PEASANT] = {.icons = {ICON_HARVEST, ICON_BUILD_BASIC}, .unitActions = {&iconActionHarvest, &iconActionBuildBasic}},
+    [UNIT_PEON] = {.icons = {ICON_HARVEST, ICON_BUILD_BASIC}, .unitActions = {&iconActionHarvest, &iconActionBuildBasic}},
 };
 
 void iconActionCancelBuild(Building *building) {
@@ -216,16 +217,16 @@ void iconActionCancelBuild(Building *building) {
 void iconBuildPeasant(Building *building) {
     if (building->action.action == ActionTrain) {
         if (!building->action.train.u5UnitType2) {
-            building->action.train.u5UnitType2 = peasant;
+            building->action.train.u5UnitType2 = UNIT_PEASANT;
         } else if (!building->action.train.u5UnitType3) {
-            building->action.train.u5UnitType3 = peasant;
+            building->action.train.u5UnitType3 = UNIT_PEASANT;
         } else {
             logMessage(MSG_TRAINING_QUEUE_FULL);
             return;
         }
     } else {
         building->action.action = ActionTrain;
-        building->action.train.u5UnitType1 = peasant;
+        building->action.train.u5UnitType1 = UNIT_PEASANT;
         building->action.train.uwTimeLeft = 0;
     }
     iconRectSpritesUpdate(0, 0);

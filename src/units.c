@@ -10,8 +10,8 @@
 tUnitManager g_UnitManager;
 
 UnitType UnitTypes[] = {
-    [dead] = {},
-    [peasant] = {
+    [UNIT_DEAD] = {},
+    [UNIT_PEASANT] = {
         .name = "Peasant",
         .spritesheetPath = "resources/units/peasant.bm",
         .maskPath = "resources/units/peasant.msk",
@@ -36,26 +36,8 @@ UnitType UnitTypes[] = {
             .wait = 2,
         },
     },
-    [peon] = {},
-    [footman] = {},
-    [grunt] = {},
-    [archer] = {},
-    [spearman] = {},
-    [catapult] = {},
-    [knight] = {},
-    [raider] = {},
-    [cleric] = {},
-    [necrolyte] = {},
-    [conjurer] = {},
-    [warlock] = {},
-    [spider] = {},
-    [daemon] = {},
-    [elemental] = {},
-    [ogre] = {},
-    [slime] = {},
-    [thief] = {}
 };
-_Static_assert(sizeof(UnitTypes) == unitTypeCount * sizeof(UnitType));
+_Static_assert(sizeof(UnitTypes) <= UNIT_MAX * sizeof(UnitType));
 
 typedef struct _unitmanager {
     Unit units[MAX_UNITS];

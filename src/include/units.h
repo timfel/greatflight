@@ -81,28 +81,28 @@ typedef struct {
 } UnitType;
 
 typedef enum __attribute__((__packed__)) {
-    dead = 0,
+    UNIT_DEAD = 0,
     //
-    peasant,
-    peon,
-    footman,
-    grunt,
-    archer,
-    spearman,
-    catapult,
-    knight,
-    raider,
-    cleric,
-    necrolyte,
-    conjurer,
-    warlock,
-    spider,
-    daemon,
-    elemental,
-    ogre,
-    slime,
-    thief,
-    unitTypeCount
+    UNIT_PEASANT,
+    UNIT_PEON,
+    UNIT_FOOTMAN,
+    UNIT_GRUNT,
+    UNIT_ARCHER,
+    UNIT_SPEARMAN,
+    UNIT_CATAPULT,
+    UNIT_KNIGHT,
+    UNIT_RAIDER,
+    UNIT_CLERIC,
+    UNIT_NECROLYTE,
+    UNIT_CONJURER,
+    UNIT_WARLOCK,
+    UNIT_SPIDER,
+    UNIT_DAEMON,
+    UNIT_ELEMENTAL,
+    UNIT_OGRE,
+    UNIT_SLIME,
+    UNIT_THIEF,
+    UNIT_MAX
 } UnitTypeIndex;
 
 typedef struct {

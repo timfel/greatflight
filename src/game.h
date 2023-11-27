@@ -3,6 +3,8 @@
 
 #include "include/icons.h"
 #include "include/sprites.h"
+#include "include/units.h"
+#include "include/buildings.h"
 
 #include <ace/generic/screen.h>
 #include <ace/managers/copper.h>
@@ -52,8 +54,13 @@ enum Messages {
     MSG_NOT_ENOUGH_RESOURCES,
     MSG_TOO_MANY_BUILDINGS,
     MSG_TRAINING_QUEUE_FULL,
+    MSG_MENU_BUTTON,
     //
-    MSG_COUNT,
+    MSG_HOVER_ICON,
+    MSG_HOVER_UNIT = MSG_HOVER_ICON + ICON_MAX,
+    MSG_HOVER_BUILDING = MSG_HOVER_UNIT + UNIT_MAX,
+    //
+    MSG_COUNT = MSG_HOVER_BUILDING + BUILDING_TYPE_COUNT,
 };
 struct Screen {
     tView *m_pView; // View containing all the viewports

@@ -44,6 +44,7 @@ typedef struct {
     UWORD *healthValue;
     UBYTE healthShift;
     UBYTE healthBase;
+    IconIdx iconIdx;
 #ifdef ACE_DEBUG
     UBYTE bpp;
 #endif

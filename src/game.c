@@ -852,13 +852,79 @@ void handleLeftMouseUp(tUwCoordYX lmbDown, tUwCoordYX mousePos) {
     }
 }
 
+void showToolTip(void) {
+    if (s_mouseY >= TOP_PANEL_HEIGHT + MAP_HEIGHT + MINIMAP_OFFSET_Y) {
+        // Bottom panel
+        if (s_mouseX >= 211) {
+            // Action icon area
+            UWORD line = s_mouseY - (TOP_PANEL_HEIGHT + MAP_HEIGHT + 24);
+            if (line <= 18) {
+                line = 0;
+            } else if (line >= 23 && line <= 23 + 18) {
+                line = 1;
+            } else {
+                return;
+            }
+            UWORD column = s_mouseX - 211;
+            if (column <= 26) {
+                column = 0;
+            } else if (column >= (26 + 7) && column <= (26 + 7) + 26) {
+                column = 1;
+            } else if (column >= (26 + 7) * 2 && column <= (26 + 7) * 2 + 26) {
+                column = 2;
+            } else {
+                return;
+            }
+            IconIdx icon = g_Screen.m_pActionIcons[column + line * 3].iconIdx;
+            if (icon != ICON_NONE) {
+                logMessage(icon + MSG_HOVER_ICON);
+                return;
+            }
+        }
+        // TODO other areas
+        return;
+    }
+    
+    // menu button
+    if (s_mouseY <= TOP_PANEL_HEIGHT && s_mouseX <= 60) {
+        // TODO: menu. also extract constant here and in drawMenuButton
+        logMessage(MSG_MENU_BUTTON);
+        return;
+    }
+
+    // If we're on the map, select units
+    tUbCoordYX tile = screenPosToTile((tUwCoordYX){.uwX = s_mouseX, .uwY = s_mouseY});
+    Unit *unit = unitManagerUnitAt(tile);
+    if (unit) {
+        logMessage(unit->type + MSG_HOVER_UNIT);
+        return;
+    } else {
+        Building *b = buildingManagerBuildingAt(tile);
+        if (b) {
+            logMessage(b->type + MSG_HOVER_BUILDING);
+            return;
+        }
+    }
+
+    logMessage(MSG_COUNT);
+}
+
 void handleInput() {
     s_mouseX = mouseGetX(MOUSE_PORT_1);
     s_mouseY = mouseGetY(MOUSE_PORT_1);
     static tUwCoordYX lmbDown = {.ulYX = 0};
-    
-    tUwCoordYX mousePos = {.uwX = s_mouseX, .uwY = s_mouseY};
+    static tUwCoordYX lastMousePosition = {.ulYX = 0};
+    static UBYTE framesWithoutMouseMove = 0;
 
+    tUwCoordYX mousePos = {.uwX = s_mouseX, .uwY = s_mouseY};
+    if (lastMousePosition.ulYX != mousePos.ulYX) {
+        lastMousePosition.ulYX = mousePos.ulYX;
+        framesWithoutMouseMove = 0;
+    } else {
+        ++framesWithoutMouseMove;
+    }
+
+#ifdef ACE_DEBUG
     if (s_Mode == edit) {
         if (keyCheck(KEY_RBRACKET) && !(GameCycle % 4)) {
             SelectedTile++;
@@ -914,13 +980,16 @@ void handleInput() {
         g_Screen.m_cursorBobs.pFirstTile = g_Screen.m_map.m_pTilemap->Planes[0] + (SelectedTile * TILE_FRAME_BYTES);
         return;
     }
+#endif
 
     if (keyCheck(KEY_ESCAPE)) {
         gameExit();
+#ifdef ACE_DEBUG
     } else if (keyCheck(KEY_C)) {
         copDumpBfr(g_Screen.m_pView->pCopList->pBackBfr);
     } else if (keyCheck(KEY_E)) {
         s_Mode = edit;  
+#endif
     } else if (keyCheck(KEY_UP)) {
         cameraMoveBy(g_Screen.m_map.m_pCamera, 0, -CAMERA_MOVE_DELTA);
         g_Screen.m_map.m_pBuffer->pCamera->uPos.uwY = g_Screen.m_map.m_pCamera->uPos.uwY % TILE_SIZE;
@@ -985,7 +1054,7 @@ void handleInput() {
         for(UBYTE idx = 0; idx < g_Screen.m_ubSelectedUnitCount; ++idx) {
             Unit *unit = g_Screen.m_pSelectedUnit[idx];
             if (unit) {
-                UBYTE worker = unit->type == peon || unit->type == peasant;
+                UBYTE worker = unit->type == UNIT_PEON || unit->type == UNIT_PEASANT;
                 if (mayBeHarvested && worker) {
                     actionHarvestTile(unit, tile);
                 } else if (buildingTarget) {
@@ -1011,6 +1080,9 @@ void handleInput() {
                 break;
             }
         }
+    } else if (framesWithoutMouseMove > 15) {
+        framesWithoutMouseMove = 0;
+        showToolTip();
     }
 }
 
@@ -1243,12 +1315,65 @@ void logMessage(enum Messages msg) {
         "Not enough resources",
         "Too many buildings already",
         "Training queue is full",
+        "Open main menu",
+        //
+        [MSG_HOVER_ICON + ICON_NONE] = "",
+        [MSG_HOVER_ICON + ICON_FRAME] = "",
+        [MSG_HOVER_ICON + ICON_STOP] = "Stop",
+        [MSG_HOVER_ICON + ICON_HFARM] = "Human Farm",
+        [MSG_HOVER_ICON + ICON_HBARRACKS] = "Human Barracks",
+        [MSG_HOVER_ICON + ICON_HLUMBERMILL] = "Human Lumbermill",
+        [MSG_HOVER_ICON + ICON_HSMITHY] = "Human Smithy",
+        [MSG_HOVER_ICON + ICON_HHALL] = "Human Townhall",
+        [MSG_HOVER_ICON + ICON_HARVEST] = "Harvest or Repair",
+        [MSG_HOVER_ICON + ICON_CANCEL] = "Cancel",
+        [MSG_HOVER_ICON + ICON_SHIELD1] = "Shield",
+        [MSG_HOVER_ICON + ICON_PEASANT] = "Peasant",
+        [MSG_HOVER_ICON + ICON_MOVE] = "Move",
+        [MSG_HOVER_ICON + ICON_ATTACK] = "Attack",
+        [MSG_HOVER_ICON + ICON_UNUSED2] = "Unused",
+        [MSG_HOVER_ICON + ICON_BUILD_BASIC] = "Build basic structure",
+        //
+        [MSG_HOVER_UNIT + UNIT_PEASANT] = "A Human Peasant",
+        [MSG_HOVER_UNIT + UNIT_PEON] = "",
+        [MSG_HOVER_UNIT + UNIT_FOOTMAN] = "",
+        [MSG_HOVER_UNIT + UNIT_GRUNT] = "",
+        [MSG_HOVER_UNIT + UNIT_ARCHER] = "",
+        [MSG_HOVER_UNIT + UNIT_SPEARMAN] = "",
+        [MSG_HOVER_UNIT + UNIT_CATAPULT] = "",
+        [MSG_HOVER_UNIT + UNIT_KNIGHT] = "",
+        [MSG_HOVER_UNIT + UNIT_RAIDER] = "",
+        [MSG_HOVER_UNIT + UNIT_CLERIC] = "",
+        [MSG_HOVER_UNIT + UNIT_NECROLYTE] = "",
+        [MSG_HOVER_UNIT + UNIT_CONJURER] = "",
+        [MSG_HOVER_UNIT + UNIT_WARLOCK] = "",
+        [MSG_HOVER_UNIT + UNIT_SPIDER] = "",
+        [MSG_HOVER_UNIT + UNIT_DAEMON] = "",
+        [MSG_HOVER_UNIT + UNIT_ELEMENTAL] = "",
+        [MSG_HOVER_UNIT + UNIT_OGRE] = "",
+        [MSG_HOVER_UNIT + UNIT_SLIME] = "",
+        [MSG_HOVER_UNIT + UNIT_THIEF] = "",
+        //
+        [MSG_HOVER_BUILDING + BUILDING_HUMAN_TOWNHALL] = "A Human Townhall",
+        [MSG_HOVER_BUILDING + BUILDING_HUMAN_FARM] = "A Human Farm",
+        [MSG_HOVER_BUILDING + BUILDING_HUMAN_BARRACKS] = "A Human Barracks",
+        [MSG_HOVER_BUILDING + BUILDING_HUMAN_LUMBERMILL] = "A Human Lumbermill",
+        [MSG_HOVER_BUILDING + BUILDING_HUMAN_SMITHY] = "",
+        [MSG_HOVER_BUILDING + BUILDING_HUMAN_STABLES] = "",
+        [MSG_HOVER_BUILDING + BUILDING_HUMAN_CHURCH] = "",
+        [MSG_HOVER_BUILDING + BUILDING_HUMAN_TOWER] = "",
+        [MSG_HOVER_BUILDING + BUILDING_GOLD_MINE] = ""
     };
 
+    blitCopyAligned(g_Screen.m_panels.m_pMainPanelBackground, 96, 6, g_Screen.m_panels.m_pMainPanelBuffer->pBack, 96, 6, 256 - 96, 10);
+    if (msg == MSG_COUNT) {
+        return;
+    }
     tTextBitMap *bmp = g_Screen.m_pMessageBitmaps[msg];
     if (!bmp->pBitMap) {
-        bmp = g_Screen.m_pMessageBitmaps[msg] = fontCreateTextBitMapFromStr(g_Screen.m_fonts.m_pNormalFont, str[msg]);
+        const char * const m = str[msg];
+        assert(m, "Missing message");
+        bmp = g_Screen.m_pMessageBitmaps[msg] = fontCreateTextBitMapFromStr(g_Screen.m_fonts.m_pNormalFont, m);
     }
-    blitCopyAligned(g_Screen.m_panels.m_pMainPanelBackground, 96, 6, g_Screen.m_panels.m_pMainPanelBuffer->pBack, 96, 6, 256, 10);
     fontDrawTextBitMap(g_Screen.m_panels.m_pMainPanelBuffer->pBack, bmp, 96, 6, 1, 0);
 }

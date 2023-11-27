@@ -20,7 +20,9 @@ typedef enum __attribute__ ((__packed__)) {
     ActionStill,
     ActionStop,
     ActionAttackMove,
-    ActionAttackTarget,
+    ActionAttackUnit,
+    ActionAttackBuilding,
+    ActionFollow,
     ActionHarvestTerrain,
     ActionHarvestMine,
     ActionCast,
@@ -52,9 +54,8 @@ typedef struct __attribute__((__packed__)) {
         } still;
         struct __attribute__((__packed__)) {
             tUbCoordYX target;
+            UBYTE ubRetries;
             unsigned u4Wait:4;
-            unsigned u4Retries:4;
-            UBYTE unused;
         } move;
         struct __attribute__((__packed__)) {
             UBYTE ubState;
@@ -93,6 +94,22 @@ typedef struct __attribute__((__packed__)) {
                 };
             };
         } harvest;
+        struct __attribute__((__packed__)) {
+            union {
+                UBYTE ubUnitId;
+                UBYTE ubBuildingId;
+                tUbCoordYX goal;
+            };
+            UBYTE ubWait;
+        } attack;
+        struct __attribute__((__packed__)) {
+            UBYTE ubUnitId;
+            UBYTE ubWait;
+        } follow;
+        struct __attribute__((__packed__)) {
+            UBYTE ubBuildingId;
+            UBYTE ubWait;
+        } repair;
     };
     ActionType action;
 } Action;
@@ -106,7 +123,13 @@ void actionMoveTo(Unit *unit, tUbCoordYX goal);
 void actionStop(Unit *unit);
 void actionBuildAt(Unit *unit, tUbCoordYX goal, UBYTE tileType);
 void actionHarvestAt(Unit *unit, tUbCoordYX goal);
+void actionHarvestTile(Unit *unit, tUbCoordYX goal);
+void actionHarvestMine(Unit *unit, Building *mine);
 void actionAttackAt(Unit *unit, tUbCoordYX goal);
+void actionAttackUnit(Unit *unit, Unit *target);
+void actionAttackBuilding(Unit *unit, Building *target);
+void actionFollow(Unit *unit, Unit *target);
+void actionRepair(Unit *unit, Building *target);
 
 void buildingDo(Building *building);
 

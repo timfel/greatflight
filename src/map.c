@@ -108,6 +108,11 @@ static void setFlags(UBYTE tileIndex, UBYTE x, UBYTE y) {
     }
 }
 
+void mapInitialize() {
+    memset(&g_Map, 0, sizeof(struct Map));
+    memset(g_Map.m_ubUnitCacheXY, -1, sizeof(g_Map.m_ubUnitCacheXY));
+}
+
 void mapLoad(tFile *file) {
     g_Map.m_pTileset = TILESETDIR "xxx.bm";
     fileRead(file, (char*)(g_Map.m_pTileset + strlen(TILESETDIR)), 3);

@@ -2,6 +2,7 @@
 #include "include/icons.h"
 #include "include/actions.h"
 #include "include/player.h"
+#include "include/utils.h"
 #include "game.h"
 
 tBuildingManager g_BuildingManager;
@@ -189,13 +190,14 @@ void buildingDestroy(Building *building) {
 
     // make sure it is skipped in action loop
     building->action.action = ActionStill;
-    building->type = BUILDING_NONE;
+    building->owner = -1;
 }
 
 void buildingManagerInitialize(void) {
     g_BuildingManager.count = 0;
     for (UBYTE i = 0; i < MAX_BUILDINGS; ++i) {
         g_BuildingManager.building[i].id = i;
+        g_BuildingManager.building[i].owner = -1;
         g_BuildingManager.freeStack[i] = i;
     }
 }
@@ -210,19 +212,11 @@ void buildingManagerProcess(void) {
     Building *building = g_BuildingManager.building;
     UBYTE count = MAX_BUILDINGS;
     while (count--) {
-        buildingDo(building);
+        if (building->owner >= 0) {
+            buildingDo(building);
+        }
         building++;
     }
-}
-
-UBYTE fast2dDistance(tUbCoordYX a, tUbCoordYX b) {
-    // assumes that actual values are maximum 64
-    BYTE x = ABS((BYTE)a.ubX - (BYTE)b.ubX);
-    BYTE y = ABS((BYTE)a.ubY - (BYTE)b.ubY);
-    // this function computes the distance from 0,0 to x,y with 3.5% error
-    // found here: https://www.reddit.com/r/askmath/comments/ekzurn/understanding_a_fast_distance_calculation/
-    int mn = MIN(x, y);
-    return (x + y - (mn / (2 << 1)) - (mn / (2 << 2)) + (mn / (2 << 4)));
 }
 
 Building *buildingManagerFindBuildingByTypeAndPlayerAndLocation(BuildingTypeIndex typeIdx, UBYTE ownerIdx, tUbCoordYX loc) {
@@ -232,8 +226,10 @@ Building *buildingManagerFindBuildingByTypeAndPlayerAndLocation(BuildingTypeInde
     UBYTE dist = 0xFF;
     while (count--) {
         if (building->owner == ownerIdx && building->type == typeIdx) {
-            if (fast2dDistance(building->loc, loc) < dist) {
+            UBYTE nextDist = fast2dDistance(building->loc, loc);
+            if (nextDist < dist) {
                 bestBuilding = building;
+                dist = nextDist;
             }
         }
         building++;
@@ -245,11 +241,7 @@ Building *buildingManagerBuildingAt(tUbCoordYX tile) {
     UBYTE id = mapGetBuildingAt(tile.ubX, tile.ubY);
     if (id < MAX_BUILDINGS) {
         Building *building = &g_BuildingManager.building[id];
-#ifdef ACE_DEBUG
-        if (building->type == BUILDING_NONE) {
-            logWrite("FATAL: Found inactive building in cache!!!");
-        }
-#endif
+        assert(building->owner >= 0, "FATAL: Found inactive building in cache!!!");
         return building;
     }
     return NULL;
@@ -276,15 +268,12 @@ static Building *loadBuilding(tFile *map, UBYTE owner) {
         for (UBYTE ny = y; ny < PATHMAP_SIZE; ++ny) {
             if (buildingCanBeAt(type, (tUbCoordYX){.ubX = x, .ubY = ny}, 0)) {
                 building = buildingNew(type, (tUbCoordYX){.ubX = x, .ubY = ny}, owner);
-                if (!building) {
-                    logWrite("FATAL: Too many buildings");
-                } else {
-                    goto ok;
-                }
+                assert(building, "FATAL: Too many buildings");
+                goto ok;
             }
         }
     }
-    logWrite("FATAL: Could not place building '%s' for player %d at %d:%d", BuildingTypes[type].name, owner, x, y);
+    assert(0, "FATAL: Could not place building '%s' for player %d at %d:%d", BuildingTypes[type].name, owner, x, y);
     return NULL;
 
 ok:
@@ -318,4 +307,8 @@ void buildingsLoad(tFile *map) {
             loadBuilding(map, 2);
         }
     }
+}
+
+Building *buildingById(UBYTE id) {
+    return &g_BuildingManager.building[id];
 }

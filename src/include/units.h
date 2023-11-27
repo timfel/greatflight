@@ -114,7 +114,7 @@ typedef struct _unitmanager tUnitManager;
 
 typedef struct _unit {
     UBYTE type;
-    UBYTE owner;
+    BYTE owner;
     UBYTE id;
     union {
         struct {
@@ -202,6 +202,8 @@ _Static_assert(MAP_SIZE * TILE_SIZE < 0xfff, "map is small enough to fit locatio
 tUbCoordYX unitGetTilePosition(Unit *self);
 
 UBYTE unitPlace(Unit *unit, tUbCoordYX loc);
+
+Unit *unitById(UBYTE id);
 
 void unitSetOffMap(Unit *self);
 

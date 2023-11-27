@@ -8,8 +8,8 @@ mapglobals = dict(
     peasant=1,
     peon=2,
     # buildings
-    townhall=1,
-    goldmine=9,
+    townhall=0,
+    goldmine=8,
     # defaults
     unit_defaults=[
         0, # action

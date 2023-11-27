@@ -6,7 +6,6 @@
 #include <ace/types.h>
 
 typedef enum __attribute__((__packed__)) {
-    BUILDING_NONE,
     BUILDING_HUMAN_TOWNHALL,
     BUILDING_HUMAN_FARM,
     BUILDING_HUMAN_BARRACKS,
@@ -43,7 +42,7 @@ typedef struct _building {
     UWORD hp;
     tUbCoordYX rallyPoint;
     UBYTE id;
-    UBYTE owner;
+    BYTE owner;
 } Building;
 
 extern BuildingType BuildingTypes[];
@@ -76,6 +75,8 @@ void buildingFinishBuilding(Building *building);
 void buildingManagerInitialize(void);
 void buildingManagerProcess(void);
 void buildingManagerDestroy(void);
+
+Building *buildingById(UBYTE id);
 
 Building *buildingManagerFindBuildingByTypeAndPlayerAndLocation(BuildingTypeIndex typeIdx, UBYTE ownerIdx, tUbCoordYX loc);
 

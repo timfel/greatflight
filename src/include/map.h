@@ -44,7 +44,8 @@ enum __attribute__((__packed__)) TileIndices {
  */
 extern struct Map g_Map;
 
-extern void mapLoad(tFile *file);
+void mapInitialize();
+void mapLoad(tFile *file);
 
 #define MAP_UNWALKABLE_FLAG (1 << 0)
 #define MAP_GROUND_FLAG     (1 << 1)
@@ -76,6 +77,10 @@ static inline UBYTE mapIsWalkable(UBYTE x, UBYTE y) {
     return x < PATHMAP_SIZE && y < PATHMAP_SIZE && tileIsWalkable(g_Map.m_ubPathmapYX[y][x]);
 }
 
+static inline ULONG mapIsUncovered(UBYTE x, UBYTE y) {
+    return IS_TILE_UNCOVERED(g_Map.m_ulVisibleMapXY[x / TILE_SIZE_FACTOR][y / TILE_SIZE_FACTOR]);
+}
+
 static inline UBYTE tileIsBuilding(UBYTE tile) {
     return tile & MAP_BUILDING_FLAG;
 }
@@ -89,7 +94,7 @@ static inline UBYTE tileIsHarvestable(UBYTE tile) {
 }
 
 static inline UBYTE mapIsHarvestable(UBYTE x, UBYTE y) {
-    return tileIsHarvestable(g_Map.m_ubPathmapYX[y][x]);
+    return x < PATHMAP_SIZE && y < PATHMAP_SIZE && tileIsHarvestable(g_Map.m_ubPathmapYX[y][x]);
 }
 
 static inline UBYTE mapIsGround(UBYTE x, UBYTE y) {
@@ -103,6 +108,7 @@ static inline void mapMarkTileOccupied(UBYTE id, UBYTE owner, UBYTE x, UBYTE y) 
 
 static inline void mapUnmarkTileOccupied(UBYTE x, UBYTE y) {
     g_Map.m_ubPathmapYX[y][x] &= ~(MAP_UNWALKABLE_FLAG | MAP_OWNER_BIT);
+    g_Map.m_ubUnitCacheXY[x][y] = 0xFF;
 }
 
 typedef enum {

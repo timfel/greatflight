@@ -2,22 +2,58 @@
 #include "include/units.h"
 #include "include/buildings.h"
 #include "include/player.h"
+#include "include/utils.h"
 #include "game.h"
 
 #include <ace/utils/custom.h>
 #include <ace/managers/log.h>
 
+#define WAIT_AT_FOREST 255
+#define WAIT_IN_MINE 25 * 4
+#define WAIT_AT_DEPOT 25 * 3
+#define RETRY_FINDING_HARVEST 200
+#define CARRIED_RESOURCE_AMOUNT 100
+#define HARVEST_SEARCH_RANGE 8
+#define WAIT_AT_BUILDING 1
+#define WAIT_UNTIL_FOLLOW 25
+#define RETRY_PATHING 255
+#define RETRY_FINDING_HARVEST 200
+
+void actionRepair(Unit *unit, Building *target) {
+    unit->nextAction.repair.ubBuildingId = target->id;
+    unit->nextAction.repair.ubWait = 0;
+    unit->nextAction.action = ActionRepair;
+}
+
+void actionAttackUnit(Unit *unit, Unit *target) {
+    unit->nextAction.attack.ubUnitId = target->id;
+    unit->nextAction.attack.ubWait = 0;
+    unit->nextAction.action = ActionAttackUnit;
+}
+
+void actionAttackBuilding(Unit *unit, Building *target) {
+    unit->nextAction.attack.ubUnitId = target->id;
+    unit->nextAction.attack.ubWait = 0;
+    unit->nextAction.action = ActionAttackBuilding;
+}
+
+void actionFollow(Unit *unit, Unit *target) {
+    unit->nextAction.follow.ubUnitId = target->id;
+    unit->nextAction.follow.ubWait = WAIT_UNTIL_FOLLOW;
+    unit->nextAction.action = ActionFollow;
+}
+
 void actionMoveTo(Unit *unit, tUbCoordYX goal) {
     unit->nextAction.move.target = goal;
     unit->nextAction.move.u4Wait = 0;
-    unit->nextAction.move.u4Retries = 15;
+    unit->nextAction.move.ubRetries = RETRY_PATHING;
     unit->nextAction.action = ActionMove;
 }
 
 void actionMoveToNow(Unit *unit, tUbCoordYX goal) {
     unit->action.move.target = goal;
     unit->action.move.u4Wait = 0;
-    unit->action.move.u4Retries = 15;
+    unit->action.move.ubRetries = 1;
     unit->action.action = ActionMove;
 }
 
@@ -30,43 +66,48 @@ enum __attribute__((__packed__)) HarvestState {
     HarvestWaitAtDepot,
 };
 
-#define WAIT_AT_FOREST 255
-#define WAIT_IN_MINE 25 * 4
-#define WAIT_AT_DEPOT 25 * 3
-#define RETRY_FINDING_HARVEST 2
-#define CARRIED_RESOURCE_AMOUNT 100
-
 void actionHarvestAt(Unit *unit, tUbCoordYX goal) {
-    UBYTE tile = mapGetTileAt(goal.ubX, goal.ubY);
     unit->nextAction.harvest.ubWait = 0;
-    if (tileIsHarvestable(tile)) {
-        unit->nextAction.harvest.u4State = HarvestMoveToForest;
-        unit->nextAction.action = ActionHarvestTerrain;
-        unit->nextAction.harvest.lastHarvestLocation = goal;
+    if (mapIsHarvestable(goal.ubX, goal.ubY)) {
+        actionHarvestTile(unit, goal);
         return;
     }
     Building *building = buildingManagerBuildingAt(goal);
     if (building && building->type == BUILDING_GOLD_MINE) {
-        unit->nextAction.harvest.u4State = HarvestMoveToMine;
-        unit->nextAction.action = ActionHarvestMine;
-        unit->nextAction.harvest.lastMineId = building->id;
+        actionHarvestMine(unit, building);
         return;
     }
-    logWrite("nothing to harvest there\n");
+    logMessage(MSG_NO_HARVEST);
+}
+
+void actionHarvestTile(Unit *unit, tUbCoordYX goal) {
+    unit->nextAction.harvest.u4State = HarvestMoveToForest;
+    unit->nextAction.action = ActionHarvestTerrain;
+    unit->nextAction.harvest.ubWait = RETRY_FINDING_HARVEST;
+    unit->nextAction.harvest.lastHarvestLocation = goal;
+}
+
+void actionHarvestMine(Unit *unit, Building *mine) {
+    unit->nextAction.harvest.u4State = HarvestMoveToMine;
+    unit->nextAction.action = ActionHarvestMine;
+    unit->nextAction.harvest.ubWait = RETRY_FINDING_HARVEST;
+    unit->nextAction.harvest.lastMineId = mine->id;
 }
 
 void actionAttackAt(Unit *self, tUbCoordYX goal) {
     Unit *unit = unitManagerUnitAt(goal);
     if (unit && unit != self) {
-        logWrite("attack '%s'#%d (Player %d)\n", UnitTypes[unit->type].name, unit->id, unit->owner);
+        actionAttackUnit(self, unit);
         return;
     }
     Building *building = buildingManagerBuildingAt(goal);
     if (building) {
-        logWrite("attack '%s'#%d (Player %d)\n", BuildingTypes[building->type].name, building->id, building->owner);
+        actionAttackBuilding(self, building);
         return;
     }
-    logWrite("attack move\n");
+    unit->nextAction.attack.goal = goal;
+    unit->nextAction.attack.ubWait = 0;
+    unit->nextAction.action = ActionAttackMove;
 }
 
 enum __attribute__((__packed__)) BuildState {
@@ -141,14 +182,25 @@ void actionMove(Unit *unit) {
             }
             return;
         }
-        if (vectorX) {
+        if (vectorX && vectorY) {
+            vectorX = vectorX > 0 ? 1 : -1;
+            vectorY = vectorY > 0 ? 1 : -1;
+            if (!mapIsWalkable(tilePos.ubX + vectorX, tilePos.ubY + vectorY)) {
+                if (mapIsWalkable(tilePos.ubX + vectorX, tilePos.ubY)) {
+                    vectorY = 0;
+                } else if (mapIsWalkable(tilePos.ubX, tilePos.ubY + vectorY)) {
+                    vectorX = 0;
+                } else {
+                    vectorX = vectorY = 0;
+                }
+            }
+        } else if (vectorX) {
             vectorX = vectorX > 0 ? 1 : -1;
             if (!mapIsWalkable(tilePos.ubX + vectorX, tilePos.ubY)) {
                 // unwalkable tile horizontal
                 vectorX = 0;
             }
-        }
-        if (vectorY) {
+        } else if (vectorY) {
             vectorY = vectorY > 0 ? 1 : -1;
             if (!mapIsWalkable(tilePos.ubX + vectorX, tilePos.ubY + vectorY)) {
                 // unwalkable tile vertical
@@ -158,7 +210,7 @@ void actionMove(Unit *unit) {
         if (!vectorX && !vectorY) {
             // unreachable step, wait a little?
             unitSetFrame(unit, 0);
-            if (--unit->action.move.u4Retries == 0) {
+            if (--unit->action.move.ubRetries == 0) {
                 // done trying
                 if (actionStill(unit)) {
                     // there's another action queued now, store the last move target for it to consume
@@ -252,7 +304,6 @@ static inline UWORD findHarvestSpotAround(UBYTE actualX, UBYTE actualY) {
     return 0;
 }
 
-#define HARVEST_SEARCH_RANGE 8
 UWORD findHarvestSpotNear(tUbCoordYX loc) {
     UBYTE actualX, actualY;
     UBYTE x = loc.ubX;
@@ -319,8 +370,9 @@ void actionHarvest(Unit *unit) {
                     unit->action.harvest.ubWait = WAIT_IN_MINE;
                     unitSetOffMap(unit);
                     return;
-                } else if (++unit->action.harvest.ubWait > RETRY_FINDING_HARVEST) {
+                } else if (--unit->action.harvest.ubWait == 0) {
                     unit->action.action = ActionStill;
+                    return;
                 }
             }
             unit->nextAction.action = ACTION_AFTER_MOVE(action);
@@ -334,6 +386,7 @@ void actionHarvest(Unit *unit) {
                 if (result) {
                     // reached a harvest spot, start harvesting
                     unit->action.harvest.u4State = HarvestWaitAtForest;
+                    unit->action.harvest.ubWait = WAIT_AT_FOREST;
                     UWORD direction = result - unit->loc.uwYX;
                     // result is 1 tile away in x and/or y, so if we substract the packed locations,
                     // we get the direction with a single sub
@@ -363,15 +416,14 @@ void actionHarvest(Unit *unit) {
                             unit->action.harvest.u4Direction = DIRECTION_SOUTH;
                             break;
                     }
-                    unit->action.harvest.ubWait = 0;
                     return;
                 }
-                if (++unit->action.harvest.ubWait < RETRY_FINDING_HARVEST) {
-                    // else we have found nothing to harvest here anymore, find a new spot nearby
-                    unit->action.harvest.lastHarvestLocation = unit->loc;
-                } else {
+                if (--unit->action.harvest.ubWait == 0) {
                     unit->action.action = ActionStill;
                     return;
+                } else {
+                    // else we have found nothing to harvest here (anymore?), find a new spot nearby
+                    // unit->action.harvest.lastHarvestLocation = unit->loc;
                 }
             }
             // we are not in the right location to harvest, find a spot and start moving
@@ -381,7 +433,7 @@ void actionHarvest(Unit *unit) {
                 unit->nextAction.harvest.u4State = HarvestMoveToForest;
                 actionMoveToNow(unit, (tUbCoordYX){.uwYX = loc});
             } else {
-                logWrite("Could not find tile to harvest from\n");
+                logMessage(MSG_NO_MORE_TREES);
                 unit->action.action = ActionStill;
             }
             return;
@@ -401,13 +453,14 @@ void actionHarvest(Unit *unit) {
                 UBYTE nextFrame = ((unitGetFrame(unit) / DIRECTIONS + 1) % type->anim.attack + type->anim.walk + 1) * DIRECTIONS;
                 unitSetFrame(unit, nextFrame + unit->action.harvest.u4Direction);
             }
-            if (++unit->action.harvest.ubWait < WAIT_AT_FOREST) {
+            if (--unit->action.harvest.ubWait) {
                 return;
             }
             mapDecGraphicTileAt((tUbCoordYX){.uwYX = result}.ubX, (tUbCoordYX){.uwYX = result}.ubY);
 
             unit->action.action = ACTION_WITHOUT_MOVE(action);
             unit->action.harvest.u4State = HarvestMoveToDepot;
+            unit->action.harvest.ubWait = RETRY_FINDING_HARVEST;
             return;
         }
         case HarvestWaitInMine: {
@@ -417,6 +470,7 @@ void actionHarvest(Unit *unit) {
             unitPlace(unit, g_BuildingManager.building[unit->action.harvest.lastMineId].loc);
             unit->action.action = ACTION_WITHOUT_MOVE(action);
             unit->action.harvest.u4State = HarvestMoveToDepot;
+            unit->action.harvest.ubWait = RETRY_FINDING_HARVEST;
             return;
         }
         case HarvestMoveToDepot: {
@@ -426,23 +480,24 @@ void actionHarvest(Unit *unit) {
                     unitSetOffMap(unit);
                     unit->action.harvest.u4State = HarvestWaitAtDepot;
                     unit->action.harvest.ubWait = WAIT_AT_DEPOT;
-                } else {
+                    return;
+                } else if (--unit->action.harvest.ubWait == 0) {
                     // just give up
                     unit->action.action = ActionStill;
+                    return;
                 }
+            }
+            UWORD loc = 0;
+            if ((loc = findNearestDepot(unit))) {
+                unit->nextAction.action = ACTION_AFTER_MOVE(action);
+                unit->nextAction.harvest.u4State = HarvestMoveToDepot;
+                if (ACTION_WITHOUT_MOVE(action) == ActionHarvestTerrain) {
+                    unit->nextAction.harvest.lastHarvestLocation = unit->loc;
+                }
+                actionMoveToNow(unit, (tUbCoordYX){.uwYX = loc});
             } else {
-                UWORD loc = 0;
-                if ((loc = findNearestDepot(unit))) {
-                    unit->nextAction.action = ACTION_AFTER_MOVE(action);
-                    unit->nextAction.harvest.u4State = HarvestMoveToDepot;
-                    if (ACTION_WITHOUT_MOVE(action) == ActionHarvestTerrain) {
-                        unit->nextAction.harvest.lastHarvestLocation = unit->loc;
-                    }
-                    actionMoveToNow(unit, (tUbCoordYX){.uwYX = loc});
-                } else {
-                    logWrite("Could not find depot\n");
-                    unit->action.action = ActionStill;
-                }
+                logMessage(MSG_NO_DEPOT);
+                unit->action.action = ActionStill;
             }
             return;
         }
@@ -462,6 +517,7 @@ void actionHarvest(Unit *unit) {
             } else {
                 unit->action.harvest.u4State = HarvestMoveToMine;
             }
+            unit->action.harvest.ubWait = RETRY_FINDING_HARVEST;
         }
     }
 };
@@ -474,7 +530,6 @@ void actionDie(Unit  __attribute__((__unused__)) *unit) {
     return;
 };
 
-#define WAIT_AT_BUILDING 1
 void actionBuild(Unit *unit) {
     switch (unit->action.build.ubState) {
         case BuildStateMoveToGoal:
@@ -488,14 +543,14 @@ void actionBuild(Unit *unit) {
             tUbCoordYX target = unit->nextAction.move.target;
             if (unit->loc.uwYX != target.uwYX) {
                 // could not reach goal, abort
-                logWrite("Could not reach goal");
+                logMessage(MSG_CANNOT_REACH_GOAL);
                 unit->action.action = ActionStill;
                 return;
             }
             UBYTE typeIdx = unit->action.build.ubBuildingType;
             if (!buildingCanBeAt(typeIdx, target, 1)) {
                 unit->action.action = ActionStill;
-                logWrite("Cannot build here");
+                logMessage(MSG_CANNOT_BUILD_HERE);
                 return;
             }
             BuildingType *type = &BuildingTypes[typeIdx];
@@ -506,14 +561,14 @@ void actionBuild(Unit *unit) {
                 owner->gold -= gold;
                 owner->lumber -= lumber;
             } else {
-                logWrite("Not enough resources\n");
+                logMessage(MSG_NOT_ENOUGH_RESOURCES);
                 unit->action.action = ActionStill;
                 return;
             }
             unitSetOffMap(unit);
             Building *b = buildingNew(typeIdx, target, unit->owner);
             if (!b) {
-                logWrite("Too many buildings\n");
+                logMessage(MSG_TOO_MANY_BUILDINGS);
                 unit->action.action = ActionStill;
                 return;
             }
@@ -545,6 +600,21 @@ void actionBuild(Unit *unit) {
     }
 }
 
+static void _actionFollow(Unit *self) {
+    tUbCoordYX loc = self->loc;
+    tUbCoordYX targetLoc = unitById(self->action.follow.ubUnitId)->loc;
+    if (fast2dDistance(loc, targetLoc) < 3) {
+        self->action.follow.ubWait = WAIT_UNTIL_FOLLOW;
+    } else if (--self->action.follow.ubWait) {
+        // wait
+    } else {
+        self->nextAction.action = ACTION_AFTER_MOVE(self->action.action);
+        self->nextAction.follow.ubUnitId = self->action.follow.ubUnitId;
+        self->nextAction.follow.ubWait = 1;
+        actionMoveToNow(self, targetLoc);
+    }
+}
+
 void actionDo(Unit *unit) {
     switch (ACTION_WITHOUT_MOVE(unit->action.action)) {
         case ActionStill:
@@ -562,6 +632,9 @@ void actionDo(Unit *unit) {
             return;
         case ActionBuild:
             actionBuild(unit);
+            return;
+        case ActionFollow:
+            _actionFollow(unit);
             return;
         default:
             return;
@@ -593,7 +666,7 @@ void actionTrain(Building *building) {
             owner->gold -= gold;
             owner->lumber -= lumber;
         } else {
-            logWrite("Not enough resources\n");
+            logMessage(MSG_NOT_ENOUGH_RESOURCES);
             return;
         }
         g_Screen.m_ubTopPanelDirty = 1;

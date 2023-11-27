@@ -1,6 +1,7 @@
 #include "include/actions.h"
 #include "include/units.h"
 #include "include/player.h"
+#include "include/utils.h"
 #include "game.h"
 #include "ace/types.h"
 #include "ace/macros.h"
@@ -62,16 +63,14 @@ typedef struct _unitmanager {
     UBYTE unitCount;
 } tUnitManager;
 
-#ifdef ACE_DEBUG
 static inline UBYTE unitManagerUnitIsActive(Unit *unit) {
-    return unitGetTilePosition(unit).uwYX != UNIT_FREE_TILE_POSITION.uwYX;
+    return unit->owner >= 0;
 }
-#endif
 
 void unitManagerInitialize(void) {
     g_UnitManager.unitCount = 0;
     for (UBYTE i = 0; i < MAX_UNITS; ++i) {
-        g_UnitManager.units[i].loc = UNIT_FREE_TILE_POSITION;
+        g_UnitManager.units[i].owner = -1;
         g_UnitManager.units[i].id = i;
         g_UnitManager.freeUnitsStack[i] = i;
     }
@@ -141,9 +140,9 @@ void unitManagerProcessUnits(tUbCoordYX viewportTopLeft, tUbCoordYX viewportBott
     Unit *unit = g_UnitManager.units;
     UBYTE count = MAX_UNITS;
     while (count--) {
-        tUbCoordYX loc = unitGetTilePosition(unit);
-        if ((BYTE)loc.ubX >= 0) {
+        if (unitManagerUnitIsActive(unit)) {
             actionDo(unit);
+            tUbCoordYX loc = unitGetTilePosition(unit);
             if (unit->owner == g_ubThisPlayer
                 || IS_TILE_UNCOVERED(g_Map.m_ulVisibleMapXY[loc.ubX / TILE_SIZE_FACTOR][loc.ubY / TILE_SIZE_FACTOR])) {
                 if (loc.ubX >= viewportTopLeft.ubX
@@ -164,14 +163,8 @@ Unit *unitManagerUnitAt(tUbCoordYX tile) {
     UBYTE id = mapGetUnitAt(tile.ubX, tile.ubY);
     if (id < MAX_UNITS) {
         Unit *unit = &g_UnitManager.units[id];
-#ifdef ACE_DEBUG
-        if (!unitManagerUnitIsActive(unit)) {
-            logWrite("FATAL: Found inactive unit in cache!!!");
-        }
-        if (unit->loc.uwYX != tile.uwYX) {
-            logWrite("FATAL: Found unit in cache at different location!!!");
-        }
-#endif
+        assert(unitManagerUnitIsActive(unit), "FATAL: Found inactive unit in cache!!!");
+        assert(unit->loc.uwYX == tile.uwYX, "FATAL: Found unit in cache at different location!!!");
         return unit;
     }
     return NULL;
@@ -195,12 +188,12 @@ Unit * unitNew(UnitTypeIndex typeIdx, UBYTE owner) {
     return unit;
 }
 
+Unit *unitById(UBYTE id) {
+    return &g_UnitManager.units[id];
+}
+
 void unitDelete(Unit *unit) {
-#ifdef ACE_DEBUG
-    if (!unitManagerUnitIsActive(unit)) {
-        logWrite("Deleting inactive unit!!!");
-    }
-#endif
+    assert(unitManagerUnitIsActive(unit), "Deleting inactive unit!!!");
     unit->loc = UNIT_FREE_TILE_POSITION;
     g_UnitManager.unitCount--;
     g_UnitManager.freeUnitsStack[g_UnitManager.unitCount] = unit->id;
@@ -276,7 +269,7 @@ static void loadUnit(tFile *map, UBYTE owner) {
     fileRead(map, &x, 1);
     fileRead(map, &y, 1);
     if (!unitPlace(unit, (tUbCoordYX){.ubX = x, .ubY = y})) {
-        logWrite("DANGER WILL ROBINSON! Could not place unit at %d:%d", x, y);
+        assert(0, "DANGER WILL ROBINSON! Could not place unit at %d:%d", x, y);
         unitDelete(unit);
         return;
     }

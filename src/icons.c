@@ -4,6 +4,7 @@
 #include "include/buildings.h"
 #include "include/sprites.h"
 #include "include/map.h"
+#include "include/utils.h"
 #include "game.h"
 
 #include <ace/utils/custom.h>
@@ -15,20 +16,12 @@ void iconInit(tIcon *icon,
     tBitMap *iconTileMap, IconIdx iconIdx,
     tBitMap *iconBuffer, tUwCoordYX iconPosition)
 {
+    assert(bitmapIsInterleaved(iconTileMap), "ERROR: Icons work only with interleaved bitmaps.");
+    assert(bitmapIsInterleaved(iconBuffer), "ERROR: Icons work only with interleaved bitmaps.");
+    assert(width % 16 == 0, "ERROR: Icons need to be multiples of 16.");
+    assert(iconPosition.uwX % 8 == 0, "ERROR: Icons need to be multiples of 8.");
 #ifdef ACE_DEBUG
-    if (!bitmapIsInterleaved(iconTileMap)) {
-        logWrite("ERROR: Icons work only with interleaved bitmaps.");
-    }
-    if (!bitmapIsInterleaved(iconBuffer)) {
-        logWrite("ERROR: Icons work only with interleaved bitmaps.");
-    }
     icon->bpp = iconBuffer->Depth;
-    if (width % 16) {
-        logWrite("ERROR: Icons need to be multiples of 16.");
-    }
-    if (iconPosition.uwX % 8) {
-        logWrite("ERROR: Icons need to be multiples of 8.");
-    }
 #endif
     UWORD blitWords = width >> 4;
     UWORD dstOffs = iconBuffer->BytesPerRow * iconPosition.uwY + (iconPosition.uwX >> 3);
@@ -44,9 +37,7 @@ void iconInit(tIcon *icon,
 
 void iconSetSource(tIcon *icon, tBitMap *iconTileMap, IconIdx iconIdx) {
 #ifdef ACE_DEBUG
-    if (iconTileMap->Depth != icon->bpp) {
-        logWrite("ERROR: Icons bpp need to match src and dst");
-    }
+    assert(iconTileMap->Depth == icon->bpp, "ERROR: Icons bpp need to match src and dst");
 #endif
     if (iconIdx == ICON_NONE) {
         icon->iconSrcPtr = iconTileMap->Planes[0];
@@ -59,12 +50,7 @@ void iconSetSource(tIcon *icon, tBitMap *iconTileMap, IconIdx iconIdx) {
 }
 
 void iconSetHealth(tIcon *icon, UWORD *value, UBYTE shift, UBYTE base) {
-#ifdef ACE_DEBUG
-    if (!(((ULONG)value) & 1) == 0) {
-        logWrite("UNALIGNED POINTER FOR HEALTH BAR!\n");
-        exit(1);
-    }
-#endif
+    assert((((ULONG)value) & 1) == 0, "UNALIGNED POINTER FOR HEALTH BAR!\n");
     icon->healthValue = value;
     icon->healthShift = shift;
     icon->healthBase = base;
@@ -138,7 +124,7 @@ void iconActionStop(Unit **unit, UBYTE unitc) {
 }
 
 void cannotBuild(void) {
-    logWrite("Cannot build here");
+    logMessage(MSG_CANNOT_BUILD_HERE);
 }
 
 static UBYTE *s_previousIcons[NUM_ACTION_ICONS];
@@ -234,7 +220,7 @@ void iconBuildPeasant(Building *building) {
         } else if (!building->action.train.u5UnitType3) {
             building->action.train.u5UnitType3 = peasant;
         } else {
-            logWrite("Training queue full\n");
+            logMessage(MSG_TRAINING_QUEUE_FULL);
             return;
         }
     } else {

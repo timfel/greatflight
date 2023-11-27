@@ -10,13 +10,13 @@ tStateManager *g_pGameStateManager = 0;
 tState *g_pGameState = 0;
 
 void genericCreate(void) {
-  logWrite("Hello, Amiga!\n");
   keyCreate(); // We'll use keyboard
   mouseCreate(MOUSE_PORT_1 | MOUSE_PORT_2);
   // Initialize gamestate
   g_pGameStateManager = stateManagerCreate();
 
   // TODO: these are filled by the menu UI
+  mapInitialize();
   g_Map.m_pName = "example";
 
   g_pGameState = stateCreate(gameGsCreate, gameGsLoop, gameGsDestroy, 0, 0, 0);
@@ -34,5 +34,4 @@ void genericDestroy(void) {
   stateManagerDestroy(g_pGameStateManager);
   stateDestroy(g_pGameState);
   keyDestroy();
-  logWrite("Goodbye, Amiga!\n");
 }

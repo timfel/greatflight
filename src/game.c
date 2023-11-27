@@ -1,6 +1,7 @@
 #include <limits.h>
 
 #include "game.h"
+#include "include/utils.h"
 #include "include/map.h"
 #include "include/player.h"
 #include "include/units.h"
@@ -72,9 +73,7 @@ void loadMap(const char* name, UWORD mapbufCoplistStart, UWORD mapColorsCoplistS
 
     snprintf(mapname + strlen(MAPDIR), strlen(LONGEST_MAPNAME) + 1, "%s.map", name);
     tFile *map = fileOpen(mapname, "r");
-    if (!map) {
-        logWrite("ERROR: Cannot open file %s!\n", mapname);
-    }
+    assert(map, "ERROR: Cannot open file %s!\n", mapname);
 
     mapLoad(map);
     playersLoad(map);
@@ -128,7 +127,6 @@ void loadUi(UWORD topPanelColorsPos, UWORD panelColorsPos, UWORD simplePosTop, U
         copSetMove(&pCmds[i].sMove, &g_pCustom->color[i], g_Screen.m_panels.m_pPalette[i]);
     }
 
-    logWrite("create panel viewport and simple buffer\n");
     g_Screen.m_panels.m_pTopPanelBuffer = simpleBufferCreate(0,
                                         TAG_SIMPLEBUFFER_VPORT, g_Screen.m_panels.m_pTopPanel,
                                         TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR | BMF_INTERLEAVED,
@@ -149,17 +147,17 @@ void loadUi(UWORD topPanelColorsPos, UWORD panelColorsPos, UWORD simplePosTop, U
 
     g_Screen.m_pIcons = bitmapCreateFromFile("resources/ui/icons.bm", 0);
     iconInit(&g_Screen.m_pActionIcons[0], 32, 18, 0xffff, 0xffff, g_Screen.m_pIcons, ICON_MOVE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 208, .uwY = 24});
-    iconInit(&g_Screen.m_pActionIcons[1], 32, 18, 0xffff, 0xffff, g_Screen.m_pIcons, ICON_STOP, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 241, .uwY = 24});
-    iconInit(&g_Screen.m_pActionIcons[2], 32, 18, 0xffff, 0xffff, g_Screen.m_pIcons, ICON_ATTACK, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 274, .uwY = 24});
+    iconInit(&g_Screen.m_pActionIcons[1], 32, 18, 0xffff, 0xffff, g_Screen.m_pIcons, ICON_STOP, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 240, .uwY = 24});
+    iconInit(&g_Screen.m_pActionIcons[2], 32, 18, 0xffff, 0xffff, g_Screen.m_pIcons, ICON_ATTACK, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 272, .uwY = 24});
     iconInit(&g_Screen.m_pActionIcons[3], 32, 18, 0xffff, 0xffff, g_Screen.m_pIcons, ICON_FRAME, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 208, .uwY = 46});
-    iconInit(&g_Screen.m_pActionIcons[4], 32, 18, 0xffff, 0xffff, g_Screen.m_pIcons, ICON_FRAME, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 241, .uwY = 46});
-    iconInit(&g_Screen.m_pActionIcons[5], 32, 18, 0xffff, 0xffff, g_Screen.m_pIcons, ICON_FRAME, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 274, .uwY = 46});
+    iconInit(&g_Screen.m_pActionIcons[4], 32, 18, 0xffff, 0xffff, g_Screen.m_pIcons, ICON_FRAME, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 240, .uwY = 46});
+    iconInit(&g_Screen.m_pActionIcons[5], 32, 18, 0xffff, 0xffff, g_Screen.m_pIcons, ICON_FRAME, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 272, .uwY = 46});
     iconInit(&g_Screen.m_pSelectionIcons[0], 32, 18, 0x1fff, 0xfffc, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 80, .uwY = 24});
-    iconInit(&g_Screen.m_pSelectionIcons[1], 32, 18, 0x1fff, 0xfffc, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 113, .uwY = 24});
-    iconInit(&g_Screen.m_pSelectionIcons[2], 32, 18, 0x1fff, 0xfffc, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 146, .uwY = 24});
+    iconInit(&g_Screen.m_pSelectionIcons[1], 32, 18, 0x1fff, 0xfffc, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 112, .uwY = 24});
+    iconInit(&g_Screen.m_pSelectionIcons[2], 32, 18, 0x1fff, 0xfffc, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 144, .uwY = 24});
     iconInit(&g_Screen.m_pSelectionIcons[3], 32, 18, 0x1fff, 0xfffc, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 80, .uwY = 46});
-    iconInit(&g_Screen.m_pSelectionIcons[4], 32, 18, 0x1fff, 0xfffc, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 113, .uwY = 46});
-    iconInit(&g_Screen.m_pSelectionIcons[5], 32, 18, 0x1fff, 0xfffc, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 146, .uwY = 46});
+    iconInit(&g_Screen.m_pSelectionIcons[4], 32, 18, 0x1fff, 0xfffc, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 112, .uwY = 46});
+    iconInit(&g_Screen.m_pSelectionIcons[5], 32, 18, 0x1fff, 0xfffc, g_Screen.m_pIcons, ICON_NONE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 144, .uwY = 46});
 }
 
 void screenInit(void) {
@@ -188,6 +186,12 @@ void screenDestroy(void) {
     fontDestroyTextBitMap(g_Screen.m_panels.m_pLumberTextBitmap);
     fontDestroyTextBitMap(g_Screen.m_panels.m_pUnitNameBitmap);
     fontDestroy(g_Screen.m_fonts.m_pNormalFont);
+
+    for (UBYTE i = 0; i < MSG_COUNT; ++i) {
+        if (g_Screen.m_pMessageBitmaps[i]->pBitMap) {
+            fontDestroyTextBitMap(g_Screen.m_pMessageBitmaps[i]);
+        }
+    }
 }
 
 void gameGsCreate(void) {
@@ -871,14 +875,11 @@ void handleInput() {
         } else if (keyCheck(KEY_RETURN)) {
             const char* mapname = MAPDIR "game.map";
             tFile *map = fileOpen(mapname, "w");
-            if (!map) {
-                logWrite("ERROR: Cannot open file %s!\n", mapname);
-            } else {
-                fileWrite(map, "for", 3);
-                for (int x = 0; x < MAP_SIZE; x++) {
-                    // TODO: fix file writing
-                    // fileWrite(map, s_ulTilemap[x], MAP_SIZE);
-                }
+            assert(map, "ERROR: Cannot open file %s!\n", mapname);
+            fileWrite(map, "for", 3);
+            for (int x = 0; x < MAP_SIZE; x++) {
+                // TODO: fix file writing
+                // fileWrite(map, s_ulTilemap[x], MAP_SIZE);
             }
         } else if (keyCheck(KEY_G)) {
             s_Mode = game;
@@ -966,10 +967,46 @@ void handleInput() {
         if (tile.ubX >= PATHMAP_SIZE) {
             return;
         }
+        // find potential things to act on at the target location
+        UBYTE mayBeHarvested = 0;
+        Unit *unitTarget = NULL;
+        Building *buildingTarget = NULL;
+        if (mapIsUncovered(tile.ubX, tile.ubY)) {
+            if (mapIsHarvestable(tile.ubX, tile.ubY)) {
+                mayBeHarvested = 1;
+            } else {
+                buildingTarget = buildingManagerBuildingAt(tile);
+                if (!buildingTarget) {
+                    unitTarget = unitManagerUnitAt(tile);
+                }
+            }
+        }
+        // trigger actions
         for(UBYTE idx = 0; idx < g_Screen.m_ubSelectedUnitCount; ++idx) {
             Unit *unit = g_Screen.m_pSelectedUnit[idx];
             if (unit) {
-                actionMoveTo(unit, tile);
+                UBYTE worker = unit->type == peon || unit->type == peasant;
+                if (mayBeHarvested && worker) {
+                    actionHarvestTile(unit, tile);
+                } else if (buildingTarget) {
+                    if (worker && buildingTarget->type == BUILDING_GOLD_MINE) {
+                        actionHarvestMine(unit, buildingTarget);
+                    } else if (buildingTarget->owner != g_ubThisPlayer) {
+                        actionAttackBuilding(unit, buildingTarget);
+                    } else if (worker && buildingTarget->hp < buildingTypeMaxHealth(&BuildingTypes[buildingTarget->type])) {
+                        actionRepair(unit, buildingTarget);
+                    } else {
+                        actionMoveTo(unit, tile);
+                    }
+                } else if (unitTarget) {
+                    if (unitTarget->owner != g_ubThisPlayer) {
+                        actionAttackUnit(unit, unitTarget);
+                    } else {
+                        actionFollow(unit, unitTarget);
+                    }
+                } else {
+                    actionMoveTo(unit, tile);
+                }
             } else {
                 break;
             }
@@ -1194,4 +1231,24 @@ void gameGsDestroy(void) {
     screenDestroy();
     unitManagerDestroy();
     buildingManagerDestroy();
+}
+
+void logMessage(enum Messages msg) {
+    static const char * const str[MSG_COUNT] = {
+        "Nothing to harvest there",
+        "Nothing more to harvest there",
+        "Cannot find a depot",
+        "Cannot reach my goal",
+        "Cannot build here",
+        "Not enough resources",
+        "Too many buildings already",
+        "Training queue is full",
+    };
+
+    tTextBitMap *bmp = g_Screen.m_pMessageBitmaps[msg];
+    if (!bmp->pBitMap) {
+        bmp = g_Screen.m_pMessageBitmaps[msg] = fontCreateTextBitMapFromStr(g_Screen.m_fonts.m_pNormalFont, str[msg]);
+    }
+    blitCopyAligned(g_Screen.m_panels.m_pMainPanelBackground, 96, 6, g_Screen.m_panels.m_pMainPanelBuffer->pBack, 96, 6, 256, 10);
+    fontDrawTextBitMap(g_Screen.m_panels.m_pMainPanelBuffer->pBack, bmp, 96, 6, 1, 0);
 }

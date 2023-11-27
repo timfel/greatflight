@@ -43,6 +43,18 @@
 #define NUM_UNIT_ICONS 6
 #define NUM_ACTION_ICONS 6
 
+enum Messages {
+    MSG_NO_HARVEST,
+    MSG_NO_MORE_TREES,
+    MSG_NO_DEPOT,
+    MSG_CANNOT_REACH_GOAL,
+    MSG_CANNOT_BUILD_HERE,
+    MSG_NOT_ENOUGH_RESOURCES,
+    MSG_TOO_MANY_BUILDINGS,
+    MSG_TRAINING_QUEUE_FULL,
+    //
+    MSG_COUNT,
+};
 struct Screen {
     tView *m_pView; // View containing all the viewports
 
@@ -66,6 +78,8 @@ struct Screen {
     struct {
         tFont *m_pNormalFont;
     } m_fonts;
+
+    tTextBitMap *m_pMessageBitmaps[MSG_COUNT];
 
     // either 1 or 4 tiles can be drawn under the cursor
     // tiles are expected to be one after the other
@@ -105,6 +119,8 @@ void screenInit(void);
 void screenDestroy(void);
 
 extern struct Screen g_Screen;
+
+void logMessage(enum Messages id);
 
 void gameGsCreate(void);
 void gameGsLoop(void);

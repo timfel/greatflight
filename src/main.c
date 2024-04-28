@@ -12,6 +12,14 @@ tState *g_pGameState = 0;
 void genericCreate(void) {
   keyCreate(); // We'll use keyboard
   mouseCreate(MOUSE_PORT_1 | MOUSE_PORT_2);
+  // mouse uses colors 17, 18
+  g_pCustom->color[17] = 0x0ccc;
+  g_pCustom->color[18] = 0x0888;
+  // everything else is a glowing green
+  for (int i = 19; i < 32; ++i) {
+    g_pCustom->color[i] = 0x02f4;
+  }
+
   // Initialize gamestate
   g_pGameStateManager = stateManagerCreate();
 

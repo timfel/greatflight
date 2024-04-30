@@ -34,7 +34,7 @@ void genericCreate(void) {
   mapInitialize();
   g_Map.m_pName = "example";
 
-  g_pGameState = stateCreate(gameGsCreate, gameGsLoop, gameGsDestroy, 0, 0, 0);
+  g_pGameState = stateCreate(gameGsCreate, gameGsLoop, gameGsDestroy, 0, 0);
 
   statePush(g_pGameStateManager, g_pGameState);
 }

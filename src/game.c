@@ -33,14 +33,14 @@ static UBYTE s_Mode = game;
 static UBYTE SelectedTile = 0x10;
 
 struct copOffsets_t {
-    UWORD spritePos;
-    UWORD selectionPos;
-    UWORD simplePosTop;
-    UWORD topPanelColorsPos;
-    UWORD mapbufCoplistStart;
-    UWORD mapColorsCoplistStart;
-    UWORD simplePosBottom;
-    UWORD panelColorsPos;
+    UWORD mouseSprite;
+    UWORD selectionSprites;
+    UWORD topPanelBitplanes;
+    UWORD topPanelColors;
+    UWORD mapBitplanes;
+    UWORD mapColors;
+    UWORD bottomPanelBitplanes;
+    UWORD bottomPanelColors;
     UWORD copListLength;
 };
 static struct copOffsets_t s_copOffsets;
@@ -68,7 +68,7 @@ void createViewports() {
                              TAG_END);
 }
 
-void loadMap(const char* name, UWORD mapbufCoplistStart, UWORD mapColorsCoplistStart) {
+void loadMap(const char* name, UWORD mapBitplanes, UWORD mapColors) {
     char* mapname = MAPDIR LONGEST_MAPNAME;
 
     snprintf(mapname + strlen(MAPDIR), strlen(LONGEST_MAPNAME) + 1, "%s.map", name);
@@ -85,11 +85,11 @@ void loadMap(const char* name, UWORD mapbufCoplistStart, UWORD mapColorsCoplistS
     char* palname = PALDIR "for.plt";
     strncpy(palname + strlen(PALDIR), g_Map.m_pTileset + strlen(TILESETDIR), 3);
     paletteLoad(palname, g_Screen.m_map.m_pPalette, COLORS + 1);
-    tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[mapColorsCoplistStart];
+    tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[mapColors];
     for (UBYTE i = 0; i < COLORS; i++) {
         copSetMove(&pCmds[i].sMove, &g_pCustom->color[i], g_Screen.m_map.m_pPalette[i]);
     }
-    pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[mapColorsCoplistStart];
+    pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[mapColors];
     for (UBYTE i = 0; i < COLORS; i++) {
         copSetMove(&pCmds[i].sMove, &g_pCustom->color[i], g_Screen.m_map.m_pPalette[i]);
     }
@@ -99,30 +99,30 @@ void loadMap(const char* name, UWORD mapbufCoplistStart, UWORD mapColorsCoplistS
                                     TAG_SIMPLEBUFFER_BOUND_WIDTH, MAP_BUFFER_WIDTH,
                                     TAG_SIMPLEBUFFER_BOUND_HEIGHT, MAP_BUFFER_HEIGHT,
                                     TAG_SIMPLEBUFFER_IS_DBLBUF, 1,
-                                    TAG_SIMPLEBUFFER_COPLIST_OFFSET, mapbufCoplistStart,
+                                    TAG_SIMPLEBUFFER_COPLIST_OFFSET, mapBitplanes,
                                     TAG_SIMPLEBUFFER_USE_X_SCROLLING, 1,
                                     TAG_END);
     g_Screen.m_map.m_pCamera = cameraCreate(g_Screen.m_map.m_pVPort, 0, 0, MAP_SIZE * TILE_SIZE, MAP_SIZE * TILE_SIZE, 0);
 }
 
-void loadUi(UWORD topPanelColorsPos, UWORD panelColorsPos, UWORD simplePosTop, UWORD simplePosBottom) {
+void loadUi(UWORD topPanelColors, UWORD bottomPanelColors, UWORD topPanelBitplanes, UWORD bottomPanelBitplanes) {
     // create panel area
     paletteLoad("resources/palettes/hgui.plt", g_Screen.m_panels.m_pPalette, COLORS);
 
-    tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[topPanelColorsPos];
+    tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[topPanelColors];
     for (UBYTE i = 0; i < COLORS; i++) {
         copSetMove(&pCmds[i].sMove, &g_pCustom->color[i], g_Screen.m_panels.m_pPalette[i]);
     }
-    pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[topPanelColorsPos];
+    pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[topPanelColors];
     for (UBYTE i = 0; i < COLORS; i++) {
         copSetMove(&pCmds[i].sMove, &g_pCustom->color[i], g_Screen.m_panels.m_pPalette[i]);
     }
 
-    pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[panelColorsPos];
+    pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[bottomPanelColors];
     for (UBYTE i = 0; i < COLORS; i++) {
         copSetMove(&pCmds[i].sMove, &g_pCustom->color[i], g_Screen.m_panels.m_pPalette[i]);
     }
-    pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[panelColorsPos];
+    pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[bottomPanelColors];
     for (UBYTE i = 0; i < COLORS; i++) {
         copSetMove(&pCmds[i].sMove, &g_pCustom->color[i], g_Screen.m_panels.m_pPalette[i]);
     }
@@ -131,7 +131,7 @@ void loadUi(UWORD topPanelColorsPos, UWORD panelColorsPos, UWORD simplePosTop, U
                                         TAG_SIMPLEBUFFER_VPORT, g_Screen.m_panels.m_pTopPanel,
                                         TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR | BMF_INTERLEAVED,
                                         TAG_SIMPLEBUFFER_IS_DBLBUF, 0,
-                                        TAG_SIMPLEBUFFER_COPLIST_OFFSET, simplePosTop,
+                                        TAG_SIMPLEBUFFER_COPLIST_OFFSET, topPanelBitplanes,
                                         TAG_END);
     g_Screen.m_panels.s_pTopPanelBackground = bitmapCreateFromFile("resources/ui/toppanel.bm", 0);
     bitmapLoadFromFile(g_Screen.m_panels.m_pTopPanelBuffer->pFront, "resources/ui/toppanel.bm", 0, 0);
@@ -140,7 +140,7 @@ void loadUi(UWORD topPanelColorsPos, UWORD panelColorsPos, UWORD simplePosTop, U
                                         TAG_SIMPLEBUFFER_VPORT, g_Screen.m_panels.m_pMainPanel,
                                         TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR | BMF_INTERLEAVED,
                                         TAG_SIMPLEBUFFER_IS_DBLBUF, 0,
-                                        TAG_SIMPLEBUFFER_COPLIST_OFFSET, simplePosBottom,
+                                        TAG_SIMPLEBUFFER_COPLIST_OFFSET, bottomPanelBitplanes,
                                         TAG_END);
     g_Screen.m_panels.m_pMainPanelBackground = bitmapCreateFromFile("resources/ui/bottompanel.bm", 0);
     bitmapLoadFromFile(g_Screen.m_panels.m_pMainPanelBuffer->pFront, "resources/ui/bottompanel.bm", 0, 0);
@@ -200,15 +200,15 @@ void gameGsCreate(void) {
     screenInit();
 
     // Calculate copperlist size
-    s_copOffsets.spritePos = 0;
-    s_copOffsets.selectionPos = s_copOffsets.spritePos + mouseSpriteGetRawCopplistInstructionCountLength();
-    s_copOffsets.simplePosTop = s_copOffsets.selectionPos + selectionSpritesGetRawCopplistInstructionCountLength();
-    s_copOffsets.topPanelColorsPos = s_copOffsets.simplePosTop + simpleBufferGetRawCopperlistInstructionCount(BPP);
-    s_copOffsets.mapbufCoplistStart = s_copOffsets.topPanelColorsPos + COLORS;
-    s_copOffsets.mapColorsCoplistStart = s_copOffsets.mapbufCoplistStart + simpleBufferGetRawCopperlistInstructionCount(BPP);
-    s_copOffsets.simplePosBottom = s_copOffsets.mapColorsCoplistStart + COLORS;
-    s_copOffsets.panelColorsPos = s_copOffsets.simplePosBottom + simpleBufferGetRawCopperlistInstructionCount(BPP);
-    s_copOffsets.copListLength = s_copOffsets.panelColorsPos + COLORS;
+    s_copOffsets.mouseSprite = 0;
+    s_copOffsets.selectionSprites = s_copOffsets.mouseSprite + mouseSpriteGetRawCopplistInstructionCountLength();
+    s_copOffsets.topPanelBitplanes = s_copOffsets.selectionSprites + selectionSpritesGetRawCopplistInstructionCountLength();
+    s_copOffsets.topPanelColors = s_copOffsets.topPanelBitplanes + simpleBufferGetRawCopperlistInstructionCount(BPP);
+    s_copOffsets.mapBitplanes = s_copOffsets.topPanelColors + COLORS;
+    s_copOffsets.mapColors = s_copOffsets.mapBitplanes + simpleBufferGetRawCopperlistInstructionCount(BPP);
+    s_copOffsets.bottomPanelBitplanes = s_copOffsets.mapColors + COLORS;
+    s_copOffsets.bottomPanelColors = s_copOffsets.bottomPanelBitplanes + simpleBufferGetRawCopperlistInstructionCount(BPP);
+    s_copOffsets.copListLength = s_copOffsets.bottomPanelColors + COLORS;
 
     // Create the game view
     g_Screen.m_pView = viewCreate(0,
@@ -219,10 +219,10 @@ void gameGsCreate(void) {
                          TAG_DONE);
 
     // setup mouse
-    mouseSpriteSetup(g_Screen.m_pView, s_copOffsets.spritePos);
+    mouseSpriteSetup(g_Screen.m_pView, s_copOffsets.mouseSprite);
 
     // setup selection rectangles
-    selectionSpritesSetup(g_Screen.m_pView, s_copOffsets.selectionPos);
+    selectionSpritesSetup(g_Screen.m_pView, s_copOffsets.selectionSprites);
 
     createViewports();
 
@@ -230,9 +230,9 @@ void gameGsCreate(void) {
     buildingManagerInitialize();
 
     // load map file
-    loadMap(g_Map.m_pName, s_copOffsets.mapbufCoplistStart, s_copOffsets.mapColorsCoplistStart);
+    loadMap(g_Map.m_pName, s_copOffsets.mapBitplanes, s_copOffsets.mapColors);
 
-    loadUi(s_copOffsets.topPanelColorsPos, s_copOffsets.panelColorsPos, s_copOffsets.simplePosTop, s_copOffsets.simplePosBottom);
+    loadUi(s_copOffsets.topPanelColors, s_copOffsets.bottomPanelColors, s_copOffsets.topPanelBitplanes, s_copOffsets.bottomPanelBitplanes);
 
     viewLoad(g_Screen.m_pView);
 
@@ -1090,20 +1090,20 @@ void colorCycle(void) {
     // if ((GameCycle & 31) == 31) {
     //     if (GameCycle & 32) {
     //         // XXX: hardcoded gpl indices
-    //         tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[s_copOffsets.mapColorsCoplistStart];
+    //         tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[s_copOffsets.mapColors];
     //         copSetMoveVal(&pCmds[12].sMove, g_Screen.m_map.m_pPalette[5]);
-    //         pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[s_copOffsets.mapColorsCoplistStart];
+    //         pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[s_copOffsets.mapColors];
     //         copSetMoveVal(&pCmds[12].sMove, g_Screen.m_map.m_pPalette[5]);
     //     } else if (GameCycle & 64) {
     //         // XXX: hardcoded gpl indices
-    //         tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[s_copOffsets.mapColorsCoplistStart];
+    //         tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[s_copOffsets.mapColors];
     //         copSetMoveVal(&pCmds[12].sMove, g_Screen.m_map.m_pPalette[3]);
-    //         pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[s_copOffsets.mapColorsCoplistStart];
+    //         pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[s_copOffsets.mapColors];
     //         copSetMoveVal(&pCmds[12].sMove, g_Screen.m_map.m_pPalette[3]);
     //     } else {
-    //         tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[s_copOffsets.mapColorsCoplistStart];
+    //         tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[s_copOffsets.mapColors];
     //         copSetMoveVal(&pCmds[12].sMove, g_Screen.m_map.m_pPalette[12]);
-    //         pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[s_copOffsets.mapColorsCoplistStart];
+    //         pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[s_copOffsets.mapColors];
     //         copSetMoveVal(&pCmds[12].sMove, g_Screen.m_map.m_pPalette[12]);
     //     }
     // }
@@ -1230,21 +1230,21 @@ void drawMenuButton(void) {
     static UBYTE blue3 = 9; static UWORD red3 = 0xd45;
     if (s_mouseY < TOP_PANEL_HEIGHT && s_mouseX <= 60) {
         topHighlight = 1;
-        tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[s_copOffsets.topPanelColorsPos];
+        tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[s_copOffsets.topPanelColors];
         copSetMoveVal(&pCmds[blue1].sMove, red1);
         copSetMoveVal(&pCmds[blue2].sMove, red2);
         copSetMoveVal(&pCmds[blue3].sMove, red3);
-        pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[s_copOffsets.topPanelColorsPos];
+        pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[s_copOffsets.topPanelColors];
         copSetMoveVal(&pCmds[blue1].sMove, red1);
         copSetMoveVal(&pCmds[blue2].sMove, red2);
         copSetMoveVal(&pCmds[blue3].sMove, red3);
     } else if (topHighlight) {
         topHighlight = 0;
-        tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[s_copOffsets.topPanelColorsPos];
+        tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[s_copOffsets.topPanelColors];
         copSetMoveVal(&pCmds[blue1].sMove, g_Screen.m_panels.m_pPalette[blue1]);
         copSetMoveVal(&pCmds[blue2].sMove, g_Screen.m_panels.m_pPalette[blue2]);
         copSetMoveVal(&pCmds[blue3].sMove, g_Screen.m_panels.m_pPalette[blue3]);
-        pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[s_copOffsets.topPanelColorsPos];
+        pCmds = &g_Screen.m_pView->pCopList->pFrontBfr->pList[s_copOffsets.topPanelColors];
         copSetMoveVal(&pCmds[blue1].sMove, g_Screen.m_panels.m_pPalette[blue1]);
         copSetMoveVal(&pCmds[blue2].sMove, g_Screen.m_panels.m_pPalette[blue2]);
         copSetMoveVal(&pCmds[blue3].sMove, g_Screen.m_panels.m_pPalette[blue3]);

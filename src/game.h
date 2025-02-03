@@ -14,6 +14,7 @@
 #include <ace/managers/viewport/camera.h>
 #include <ace/utils/bitmap.h>
 #include <ace/utils/custom.h>
+#include <ace/utils/disk_file.h>
 #include <ace/utils/extview.h>
 #include <ace/utils/file.h>
 #include <ace/utils/font.h>

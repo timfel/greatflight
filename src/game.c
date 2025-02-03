@@ -72,7 +72,7 @@ void loadMap(const char* name, UWORD mapBitplanes, UWORD mapColors) {
     char* mapname = MAPDIR LONGEST_MAPNAME;
 
     snprintf(mapname + strlen(MAPDIR), strlen(LONGEST_MAPNAME) + 1, "%s.map", name);
-    tFile *map = fileOpen(mapname, "r");
+    tFile *map = diskFileOpen(mapname, "r");
     assert(map, "ERROR: Cannot open file %s!\n", mapname);
 
     mapLoad(map);
@@ -84,7 +84,7 @@ void loadMap(const char* name, UWORD mapBitplanes, UWORD mapColors) {
     // now setup map viewport
     char* palname = PALDIR "for.plt";
     strncpy(palname + strlen(PALDIR), g_Map.m_pTileset + strlen(TILESETDIR), 3);
-    paletteLoad(palname, g_Screen.m_map.m_pPalette, COLORS + 1);
+    paletteLoadFromPath(palname, g_Screen.m_map.m_pPalette, COLORS + 1);
     tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[mapColors];
     for (UBYTE i = 0; i < COLORS; i++) {
         copSetMove(&pCmds[i].sMove, &g_pCustom->color[i], g_Screen.m_map.m_pPalette[i]);
@@ -107,7 +107,7 @@ void loadMap(const char* name, UWORD mapBitplanes, UWORD mapColors) {
 
 void loadUi(UWORD topPanelColors, UWORD bottomPanelColors, UWORD topPanelBitplanes, UWORD bottomPanelBitplanes) {
     // create panel area
-    paletteLoad("resources/palettes/hgui.plt", g_Screen.m_panels.m_pPalette, COLORS);
+    paletteLoadFromPath("resources/palettes/hgui.plt", g_Screen.m_panels.m_pPalette, COLORS);
 
     tCopCmd *pCmds = &g_Screen.m_pView->pCopList->pBackBfr->pList[topPanelColors];
     for (UBYTE i = 0; i < COLORS; i++) {
@@ -133,8 +133,8 @@ void loadUi(UWORD topPanelColors, UWORD bottomPanelColors, UWORD topPanelBitplan
                                         TAG_SIMPLEBUFFER_IS_DBLBUF, 0,
                                         TAG_SIMPLEBUFFER_COPLIST_OFFSET, topPanelBitplanes,
                                         TAG_END);
-    g_Screen.m_panels.s_pTopPanelBackground = bitmapCreateFromFile("resources/ui/toppanel.bm", 0);
-    bitmapLoadFromFile(g_Screen.m_panels.m_pTopPanelBuffer->pFront, "resources/ui/toppanel.bm", 0, 0);
+    g_Screen.m_panels.s_pTopPanelBackground = bitmapCreateFromPath("resources/ui/toppanel.bm", 0);
+    bitmapLoadFromPath(g_Screen.m_panels.m_pTopPanelBuffer->pFront, "resources/ui/toppanel.bm", 0, 0);
 
     g_Screen.m_panels.m_pMainPanelBuffer = simpleBufferCreate(0,
                                         TAG_SIMPLEBUFFER_VPORT, g_Screen.m_panels.m_pMainPanel,
@@ -142,10 +142,10 @@ void loadUi(UWORD topPanelColors, UWORD bottomPanelColors, UWORD topPanelBitplan
                                         TAG_SIMPLEBUFFER_IS_DBLBUF, 0,
                                         TAG_SIMPLEBUFFER_COPLIST_OFFSET, bottomPanelBitplanes,
                                         TAG_END);
-    g_Screen.m_panels.m_pMainPanelBackground = bitmapCreateFromFile("resources/ui/bottompanel.bm", 0);
-    bitmapLoadFromFile(g_Screen.m_panels.m_pMainPanelBuffer->pFront, "resources/ui/bottompanel.bm", 0, 0);
+    g_Screen.m_panels.m_pMainPanelBackground = bitmapCreateFromPath("resources/ui/bottompanel.bm", 0);
+    bitmapLoadFromPath(g_Screen.m_panels.m_pMainPanelBuffer->pFront, "resources/ui/bottompanel.bm", 0, 0);
 
-    g_Screen.m_pIcons = bitmapCreateFromFile("resources/ui/icons.bm", 0);
+    g_Screen.m_pIcons = bitmapCreateFromPath("resources/ui/icons.bm", 0);
     iconInit(&g_Screen.m_pActionIcons[0], 32, 18, 0xffff, 0xffff, g_Screen.m_pIcons, ICON_MOVE, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 208, .uwY = 24});
     iconInit(&g_Screen.m_pActionIcons[1], 32, 18, 0xffff, 0xffff, g_Screen.m_pIcons, ICON_STOP, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 240, .uwY = 24});
     iconInit(&g_Screen.m_pActionIcons[2], 32, 18, 0xffff, 0xffff, g_Screen.m_pIcons, ICON_ATTACK, g_Screen.m_panels.m_pMainPanelBuffer->pFront, (tUwCoordYX){.uwX = 272, .uwY = 24});
@@ -166,7 +166,7 @@ void screenInit(void) {
     g_Screen.m_ubTopPanelDirty = 1;
     g_Screen.m_ubBottomPanelDirty = 1;
 
-    g_Screen.m_fonts.m_pNormalFont = fontCreate("resources/ui/uni54.fnt");
+    g_Screen.m_fonts.m_pNormalFont = fontCreateFromPath("resources/ui/uni54.fnt");
     const char text[RESOURCE_DIGITS + 1] = "000000";
     g_Screen.m_panels.m_pGoldTextBitmap = fontCreateTextBitMapFromStr(g_Screen.m_fonts.m_pNormalFont, text);
     g_Screen.m_panels.m_pLumberTextBitmap = fontCreateTextBitMapFromStr(g_Screen.m_fonts.m_pNormalFont, text);
@@ -940,7 +940,7 @@ void handleInput() {
             }
         } else if (keyCheck(KEY_RETURN)) {
             const char* mapname = MAPDIR "game.map";
-            tFile *map = fileOpen(mapname, "w");
+            tFile *map = diskFileOpen(mapname, "w");
             assert(map, "ERROR: Cannot open file %s!\n", mapname);
             fileWrite(map, "for", 3);
             for (int x = 0; x < MAP_SIZE; x++) {

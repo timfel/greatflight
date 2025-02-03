@@ -117,8 +117,8 @@ void mapLoad(tFile *file) {
     g_Map.m_pTileset = TILESETDIR "xxx.bm";
     fileRead(file, (char*)(g_Map.m_pTileset + strlen(TILESETDIR)), 3);
 
-    g_Screen.m_map.m_pTilemap = bitmapCreateFromFile(g_Map.m_pTileset, 0);
-    g_Screen.m_map.m_pFogOfWarMask = bitmapCreateFromFile(TILESETDIR "fow.msk", 0);
+    g_Screen.m_map.m_pTilemap = bitmapCreateFromPath(g_Map.m_pTileset, 0);
+    g_Screen.m_map.m_pFogOfWarMask = bitmapCreateFromPath(TILESETDIR "fow.msk", 0);
 
     for (int x = 0; x < MAP_SIZE; x++) {
         UBYTE *ubColumn = (UBYTE*)(g_Map.m_ubTilemapXY[x]);

@@ -60,8 +60,8 @@ void unitManagerInitialize(void) {
     // TODO: lazy loading of spritesheets
     for (UWORD i = 0; i < sizeof(UnitTypes) / sizeof(UnitType); i++) {
         if (UnitTypes[i].spritesheetPath) {
-            tBitMap *bmp = bitmapCreateFromFile(UnitTypes[i].spritesheetPath, 0);
-            tBitMap *mask = bitmapCreateFromFile(UnitTypes[i].maskPath, 0);
+            tBitMap *bmp = bitmapCreateFromPath(UnitTypes[i].spritesheetPath, 0);
+            tBitMap *mask = bitmapCreateFromPath(UnitTypes[i].maskPath, 0);
             UnitTypes[i].spritesheet = bmp;
             UnitTypes[i].mask = mask;
         }

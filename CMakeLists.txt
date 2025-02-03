@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.22)
 project(AceProject C)
 
 # Lowercase project name for binaries and packaging
@@ -54,6 +54,22 @@ target_link_libraries(${GAME_LINKED} ace)
 execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/resources/maps)
 
 ## Helper functions
+file(GLOB HAMCONVERT ${PROJECT_SOURCE_DIR}/tools/ham_convert/ham_convert*.jar)
+function(hamconvert SOURCE DESTINATION MODE)
+  get_filename_component(SOURCEFILE_STEM ${SOURCE} NAME_WLE)
+  get_filename_component(SOURCEFILE_DIRECTORY ${SOURCE} DIRECTORY)
+  add_custom_command(
+    OUTPUT ${DESTINATION}
+    COMMAND java -jar ${HAMCONVERT} ${SOURCE} ${MODE} dither black_bkd
+    COMMAND ${CMAKE_COMMAND} -E rename ${SOURCEFILE_DIRECTORY}/${SOURCEFILE_STEM}_indexed_output.png ${DESTINATION}
+    COMMAND ${CMAKE_COMMAND} -E remove ${SOURCEFILE_DIRECTORY}/${SOURCEFILE_STEM}_indexed_output.png
+    COMMAND ${CMAKE_COMMAND} -E remove ${SOURCEFILE_DIRECTORY}/${SOURCEFILE_STEM}_output.png
+    COMMAND ${CMAKE_COMMAND} -E remove ${SOURCEFILE_DIRECTORY}/${SOURCEFILE_STEM}_output.iff
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    DEPENDS ${SOURCE}
+  )
+endfunction()
+
 function(png2gpl SOURCE DESTINATION)
 	add_custom_command(
 		OUTPUT ${DESTINATION}
@@ -100,6 +116,20 @@ function(font2pngs SOURCE DESTINATION)
 	)
   target_sources(${GAME_LINKED} PUBLIC ${DESTINATION})
 endfunction()
+
+# Menu
+
+hamconvert(${PROJECT_SOURCE_DIR}/resources/GUI/menu_background.png ${PROJECT_BINARY_DIR}/tmp/GUI/menu_background.png ocs32)
+png2gpl(${PROJECT_BINARY_DIR}/tmp/GUI/menu_background.png ${PROJECT_BINARY_DIR}/tmp/palettes/menu.gpl)
+convertPalette(${GAME_LINKED} ${PROJECT_BINARY_DIR}/tmp/palettes/menu.gpl ${PROJECT_BINARY_DIR}/resources/palettes/menu.plt)
+convertBitmaps(
+       INTERLEAVED
+       TARGET ${GAME_LINKED}
+       PALETTE ${PROJECT_BINARY_DIR}/resources/palettes/menu.plt
+       MASK_COLOR "#000000"
+       SOURCES ${PROJECT_BINARY_DIR}/tmp/GUI/menu_background.png
+       DESTINATIONS ${PROJECT_BINARY_DIR}/resources/ui/menu_background.bm
+)
 
 # Map
 

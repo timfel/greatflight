@@ -1,5 +1,5 @@
 #include "include/sprites.h"
-#include "game.h"
+#include "include/game.h"
 
 #include <ace/generic/screen.h>
 #include <ace/managers/copper.h>

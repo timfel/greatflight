@@ -1,6 +1,6 @@
 #include <limits.h>
 
-#include "game.h"
+#include "include/game.h"
 #include "include/utils.h"
 #include "include/map.h"
 #include "include/player.h"

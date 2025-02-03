@@ -3,7 +3,7 @@
 #include "include/actions.h"
 #include "include/player.h"
 #include "include/utils.h"
-#include "game.h"
+#include "include/game.h"
 
 tBuildingManager g_BuildingManager;
 

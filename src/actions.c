@@ -3,7 +3,7 @@
 #include "include/buildings.h"
 #include "include/player.h"
 #include "include/utils.h"
-#include "game.h"
+#include "include/game.h"
 
 #include <ace/utils/custom.h>
 #include <ace/managers/log.h>

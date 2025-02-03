@@ -1,6 +1,6 @@
 #include "include/map.h"
 #include "include/resources.h"
-#include "game.h"
+#include "include/game.h"
 #include "string.h"
 
 struct Map g_Map;

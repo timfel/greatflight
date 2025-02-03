@@ -8,24 +8,23 @@
 #include <ace/utils/palette.h>
 #include <ace/managers/system.h>
 
-static tFont *s_pMenuFont;
 static tView *s_pView;
 static tVPort *s_pViewport;
 static tSimpleBufferManager *s_pMenuBuffer;
 
 void menuGSCreate(void) {
     systemUse();
-    s_pMenuFont = fontCreateFromPath("resources/ui/uni54.fnt");
-    s_pView = viewCreate(0, TAG_DONE);
+    viewLoad(0);
+    s_pView = viewCreate(0,
+                        TAG_VIEW_WINDOW_HEIGHT, 240,
+                        TAG_DONE);
     s_pViewport = vPortCreate(0,
                               TAG_VPORT_VIEW, s_pView,
-                              TAG_VPORT_BPP, 5,
+                              TAG_VPORT_BPP, 6,
                               TAG_END);
     s_pMenuBuffer = simpleBufferCreate(0,
                                        TAG_SIMPLEBUFFER_VPORT, s_pViewport,
-                                       TAG_SIMPLEBUFFER_BOUND_WIDTH, 320,
-                                       TAG_SIMPLEBUFFER_BOUND_HEIGHT, 240,
-                                       TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR | BMF_INTERLEAVED,
+                                       TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_INTERLEAVED,
                                        TAG_SIMPLEBUFFER_IS_DBLBUF, 0,
                                        TAG_END);
     paletteLoadFromPath("resources/palettes/menu.plt", s_pViewport->pPalette, 32);
@@ -36,12 +35,11 @@ void menuGSCreate(void) {
 }
 
 void menuGSLoop(void) {
-    if (keyCheck(KEY_ESCAPE)) {
+    if (keyCheck(KEY_Q)) {
         gameExit();
     }
 
     viewProcessManagers(s_pView);
-    copSwapBuffers();
     vPortWaitUntilEnd(s_pViewport);
 }
 
@@ -49,7 +47,6 @@ void menuGSDestroy(void) {
     simpleBufferDestroy(s_pMenuBuffer);
     vPortDestroy(s_pViewport);
     viewDestroy(s_pView);
-    fontDestroy(s_pMenuFont);
 }
 
 void menuGSSuspend(void) {

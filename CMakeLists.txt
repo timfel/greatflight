@@ -55,12 +55,12 @@ execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}
 
 ## Helper functions
 file(GLOB HAMCONVERT ${PROJECT_SOURCE_DIR}/tools/ham_convert/ham_convert*.jar)
-function(hamconvert SOURCE DESTINATION MODE)
+function(hamconvert SOURCE DESTINATION MODE DITHERING)
   get_filename_component(SOURCEFILE_STEM ${SOURCE} NAME_WLE)
   get_filename_component(SOURCEFILE_DIRECTORY ${SOURCE} DIRECTORY)
   add_custom_command(
     OUTPUT ${DESTINATION}
-    COMMAND java -jar ${HAMCONVERT} ${SOURCE} ${MODE} dither black_bkd
+    COMMAND java -jar ${HAMCONVERT} ${SOURCE} ${MODE} ${DITHERING} black_bkd
     COMMAND ${CMAKE_COMMAND} -E rename ${SOURCEFILE_DIRECTORY}/${SOURCEFILE_STEM}_indexed_output.png ${DESTINATION}
     COMMAND ${CMAKE_COMMAND} -E remove ${SOURCEFILE_DIRECTORY}/${SOURCEFILE_STEM}_indexed_output.png
     COMMAND ${CMAKE_COMMAND} -E remove ${SOURCEFILE_DIRECTORY}/${SOURCEFILE_STEM}_output.png
@@ -119,11 +119,11 @@ endfunction()
 
 # Menu
 
-hamconvert(${PROJECT_SOURCE_DIR}/resources/GUI/menu_background.png ${PROJECT_BINARY_DIR}/tmp/GUI/menu_background.png ocs32)
+hamconvert(${PROJECT_SOURCE_DIR}/resources/GUI/menu_background.png ${PROJECT_BINARY_DIR}/tmp/GUI/menu_background.png ocs32 dither)
 png2gpl(${PROJECT_BINARY_DIR}/tmp/GUI/menu_background.png ${PROJECT_BINARY_DIR}/tmp/palettes/menu.gpl)
 convertPalette(${GAME_LINKED} ${PROJECT_BINARY_DIR}/tmp/palettes/menu.gpl ${PROJECT_BINARY_DIR}/resources/palettes/menu.plt)
 convertBitmaps(
-       INTERLEAVED
+       INTERLEAVED EHB
        TARGET ${GAME_LINKED}
        PALETTE ${PROJECT_BINARY_DIR}/resources/palettes/menu.plt
        MASK_COLOR "#000000"

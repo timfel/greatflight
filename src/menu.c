@@ -3,6 +3,7 @@
 #include <ace/generic/screen.h>
 #include <ace/utils/bitmap.h>
 #include <ace/managers/key.h>
+#include <ace/managers/mouse.h>
 #include <ace/managers/viewport/simplebuffer.h>
 #include <ace/managers/game.h>
 #include <ace/utils/palette.h>
@@ -38,9 +39,21 @@ void menuGSCreate(void) {
 void menuGSLoop(void) {
     static UBYTE cycle = 0;
 
-    if (cycle % 2) {
-        if (keyCheck(KEY_Q)) {
+    if (keyUse(KEY_Q)) {
+        gameExit();
+    }
+    if (mouseUse(MOUSE_PORT_1, MOUSE_LMB)) {
+        if (mouseInRect(MOUSE_PORT_1, (tUwRect){.uwX = 19, .uwY = 146, .uwWidth = 28, .uwHeight = 10})) {
+            // Quit
             gameExit();
+        } else if (mouseInRect(MOUSE_PORT_1, (tUwRect){.uwX = 14, .uwY = 46, .uwWidth = 40, .uwHeight = 11})) {
+            // Options
+        } else if (mouseInRect(MOUSE_PORT_1, (tUwRect){.uwX = 124, .uwY = 85, .uwWidth = 61, .uwHeight = 11})) {
+            // Skirmish
+        } else if (mouseInRect(MOUSE_PORT_1, (tUwRect){.uwX = 128, .uwY = 170, .uwWidth = 74, .uwHeight = 13})) {
+            // Multiplayer
+        } else if (mouseInRect(MOUSE_PORT_1, (tUwRect){.uwX = 233, .uwY = 66, .uwWidth = 63, .uwHeight = 13})) {
+            // Campaign
         }
     }
 

@@ -119,7 +119,7 @@ endfunction()
 
 # Menu
 
-hamconvert(${PROJECT_SOURCE_DIR}/resources/GUI/menu_background.png ${PROJECT_BINARY_DIR}/tmp/GUI/menu_background.png ocs32 dither)
+hamconvert(${PROJECT_SOURCE_DIR}/resources/GUI/menu_background.png ${PROJECT_BINARY_DIR}/tmp/GUI/menu_background.png ehb dither)
 png2gpl(${PROJECT_BINARY_DIR}/tmp/GUI/menu_background.png ${PROJECT_BINARY_DIR}/tmp/palettes/menu.gpl)
 convertPalette(${GAME_LINKED} ${PROJECT_BINARY_DIR}/tmp/palettes/menu.gpl ${PROJECT_BINARY_DIR}/resources/palettes/menu.plt)
 convertBitmaps(

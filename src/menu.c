@@ -17,6 +17,7 @@ void menuGSCreate(void) {
     viewLoad(0);
     s_pView = viewCreate(0,
                         TAG_VIEW_WINDOW_HEIGHT, 240,
+                        TAG_VIEW_GLOBAL_PALETTE, 1,
                         TAG_DONE);
     s_pViewport = vPortCreate(0,
                               TAG_VPORT_VIEW, s_pView,
@@ -35,8 +36,36 @@ void menuGSCreate(void) {
 }
 
 void menuGSLoop(void) {
-    if (keyCheck(KEY_Q)) {
-        gameExit();
+    static UBYTE cycle = 0;
+
+    if (cycle % 2) {
+        if (keyCheck(KEY_Q)) {
+            gameExit();
+        }
+    }
+
+    static UWORD original30, original27;
+    switch (++cycle) {
+        case 50:
+            original30 = s_pViewport->pPalette[30];
+            s_pViewport->pPalette[30] = s_pViewport->pPalette[31];
+            s_pViewport->pPalette[31] = original30;
+            viewUpdateGlobalPalette(s_pView);
+            break;
+        case 100:
+            original27 = s_pViewport->pPalette[27];
+            s_pViewport->pPalette[27] = original30;
+            viewUpdateGlobalPalette(s_pView);
+            break;
+        case 150:
+            s_pViewport->pPalette[31] = s_pViewport->pPalette[30];
+            s_pViewport->pPalette[30] = original30;
+            viewUpdateGlobalPalette(s_pView);
+            break;
+        case 200:
+            s_pViewport->pPalette[27] = original27;
+            viewUpdateGlobalPalette(s_pView);
+            cycle = 0;
     }
 
     viewProcessManagers(s_pView);

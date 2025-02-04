@@ -123,7 +123,7 @@
         0b0000000001000000, 0b0000000001000000,             \
         0b1111111111000000, 0b1111111111000000
 
-static UWORD CHIP s_spriteData[] = {
+static UWORD s_spriteData[] = {
     MOUSE_SPRITE_DATA,
     0, 0,
     SELECTION_SPRITE_DATA,

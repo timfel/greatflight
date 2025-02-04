@@ -9,7 +9,7 @@ if(NOT AMIGA)
 endif()
 
 set(CMAKE_C_STANDARD 11)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DAMIGA -DACE_NO_BOB_WRAP_Y -DACE_DISABLE_SPRITE_MANAGER -Wall -Wextra -fomit-frame-pointer")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DAMIGA -DACE_NO_BOB_WRAP_Y -Wall -Wextra -fomit-frame-pointer")
 # set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DACE_DEBUG -DGENERIC_MAIN_LOG_PATH=\\\"${PROJECT_NAME}.log\\\"")
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DACE_DEBUG -DACE_DEBUG_UAE")
 
@@ -126,9 +126,18 @@ convertBitmaps(
        INTERLEAVED EHB
        TARGET ${GAME_LINKED}
        PALETTE ${PROJECT_BINARY_DIR}/resources/palettes/menu.plt
-       MASK_COLOR "#000000"
        SOURCES ${PROJECT_BINARY_DIR}/tmp/GUI/menu_background.png
        DESTINATIONS ${PROJECT_BINARY_DIR}/resources/ui/menu_background.bm
+)
+
+png2gpl(${PROJECT_SOURCE_DIR}/resources/GUI/mouse.png ${PROJECT_BINARY_DIR}/tmp/palettes/mouse.gpl)
+convertPalette(${GAME_LINKED} ${PROJECT_BINARY_DIR}/tmp/palettes/mouse.gpl ${PROJECT_BINARY_DIR}/tmp/palettes/mouse.plt)
+convertBitmaps(
+       INTERLEAVED
+       TARGET ${GAME_LINKED}
+       PALETTE ${PROJECT_BINARY_DIR}/tmp/palettes/mouse.plt
+       SOURCES ${PROJECT_SOURCE_DIR}/resources/GUI/mouse.png
+       DESTINATIONS ${PROJECT_BINARY_DIR}/resources/ui/mouse.bm
 )
 
 # Map

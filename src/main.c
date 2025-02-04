@@ -31,6 +31,7 @@ void genericProcess(void) {
 
 void genericDestroy(void) {
   stateManagerDestroy(g_pGameStateManager);
+  stateDestroy(g_pMenuState);
   stateDestroy(g_pGameState);
   keyDestroy();
 }

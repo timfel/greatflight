@@ -8,10 +8,12 @@
 #include <ace/managers/game.h>
 #include <ace/utils/palette.h>
 #include <ace/managers/system.h>
+#include <ace/managers/sprite.h>
 
 static tView *s_pView;
 static tVPort *s_pViewport;
 static tSimpleBufferManager *s_pMenuBuffer;
+static tSprite *s_pMouseSprite;
 
 void menuGSCreate(void) {
     systemUse();
@@ -32,6 +34,11 @@ void menuGSCreate(void) {
     paletteLoadFromPath("resources/palettes/menu.plt", s_pViewport->pPalette, 32);
     bitmapLoadFromPath(s_pMenuBuffer->pBack, "resources/ui/menu_background.bm", 0, 0);
 
+    spriteManagerCreate(s_pView, 0);
+    systemSetDmaBit(DMAB_SPRITE, 1);
+    s_pMouseSprite = spriteAdd(0, bitmapCreateFromPath("resources/ui/mouse.bm", 0));
+    spriteSetEnabled(s_pMouseSprite, 1);
+
     viewLoad(s_pView);
     systemUnuse();
 }
@@ -42,6 +49,11 @@ void menuGSLoop(void) {
     if (keyUse(KEY_Q)) {
         gameExit();
     }
+
+    s_pMouseSprite->wX = mouseGetX(MOUSE_PORT_1);
+    s_pMouseSprite->wY = mouseGetY(MOUSE_PORT_1);
+    spriteRequestMetadataUpdate(s_pMouseSprite);
+
     if (mouseUse(MOUSE_PORT_1, MOUSE_LMB)) {
         if (mouseInRect(MOUSE_PORT_1, (tUwRect){.uwX = 19, .uwY = 146, .uwWidth = 28, .uwHeight = 10})) {
             // Quit
@@ -81,13 +93,20 @@ void menuGSLoop(void) {
             cycle = 0;
     }
 
+    spriteProcess(s_pMouseSprite);
+    spriteProcessChannel(0);
     viewProcessManagers(s_pView);
+    copProcessBlocks();
     vPortWaitUntilEnd(s_pViewport);
 }
 
 void menuGSDestroy(void) {
-    simpleBufferDestroy(s_pMenuBuffer);
-    vPortDestroy(s_pViewport);
+    systemSetDmaBit(DMAB_SPRITE, 0);
+    spriteSetEnabled(s_pMouseSprite, 0);
+    bitmapDestroy(s_pMouseSprite->pBitmap);
+    spriteRemove(s_pMouseSprite);
+    spriteManagerDestroy();
+
     viewDestroy(s_pView);
 }
 

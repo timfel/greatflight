@@ -17,8 +17,10 @@ static tView *s_pView;
 static tVPort *s_pViewport;
 static tSimpleBufferManager *s_pMenuBuffer;
 static tSprite *s_pMouseSprite;
+static tState *s_pNewState;
 
 void menuGSCreate(void) {
+    s_pNewState = NULL;
     systemUse();
     viewLoad(0);
     s_pView = viewCreate(0,
@@ -50,7 +52,7 @@ static void skirmish() {
     mapInitialize();
     // TODO: map selection
     g_Map.m_pName = "example";
-    stateChange(g_pGameStateManager, g_pGameState);
+    s_pNewState = g_pGameState;
 }
 
 void menuGSLoop(void) {
@@ -110,6 +112,10 @@ void menuGSLoop(void) {
     viewProcessManagers(s_pView);
     copProcessBlocks();
     vPortWaitUntilEnd(s_pViewport);
+
+    if (s_pNewState) {
+        statePush(g_pGameStateManager, s_pNewState);
+    }
 }
 
 void menuGSDestroy(void) {

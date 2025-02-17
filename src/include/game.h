@@ -6,6 +6,7 @@
 #include "include/units.h"
 #include "include/buildings.h"
 
+#include <ace/managers/state.h>
 #include <ace/generic/screen.h>
 #include <ace/managers/copper.h>
 #include <ace/managers/log.h>

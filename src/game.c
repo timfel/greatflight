@@ -197,6 +197,21 @@ void screenDestroy(void) {
 void gameGsCreate(void) {
     viewLoad(0);
 
+    // mouse uses colors 17, 18
+    g_pCustom->color[17] = 0x0ccc;
+    g_pCustom->color[18] = 0x0888;
+    // minimap rectangle is light gray, using color 1 of sprites 0 and 1 (17 & 21)
+    g_pCustom->color[21] = 0x0ccc;
+    // all the selection rects use the 4th color (glowing green)
+    for (int i = 19; i < 32; i += 4) {
+        g_pCustom->color[i] = 0x02f4;
+    }
+
+    // most everything else is a glowing green
+    for (int i = 23; i < 32; ++i) {
+        g_pCustom->color[i] = 0x02f4;
+    }
+
     screenInit();
 
     // Calculate copperlist size

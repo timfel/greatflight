@@ -9,6 +9,9 @@
 #include <ace/utils/palette.h>
 #include <ace/managers/system.h>
 #include <ace/managers/sprite.h>
+#include <ace/managers/state.h>
+#include "include/main.h"
+#include "include/map.h"
 
 static tView *s_pView;
 static tVPort *s_pViewport;
@@ -43,11 +46,20 @@ void menuGSCreate(void) {
     systemUnuse();
 }
 
+static void skirmish() {
+    mapInitialize();
+    // TODO: map selection
+    g_Map.m_pName = "example";
+    stateChange(g_pGameStateManager, g_pGameState);
+}
+
 void menuGSLoop(void) {
     static UBYTE cycle = 0;
 
     if (keyUse(KEY_Q)) {
         gameExit();
+    } else if (keyUse(KEY_S)) {
+        skirmish();
     }
 
     s_pMouseSprite->wX = mouseGetX(MOUSE_PORT_1);
@@ -61,7 +73,7 @@ void menuGSLoop(void) {
         } else if (mouseInRect(MOUSE_PORT_1, (tUwRect){.uwX = 14, .uwY = 46, .uwWidth = 40, .uwHeight = 11})) {
             // Options
         } else if (mouseInRect(MOUSE_PORT_1, (tUwRect){.uwX = 124, .uwY = 85, .uwWidth = 61, .uwHeight = 11})) {
-            // Skirmish
+            skirmish();
         } else if (mouseInRect(MOUSE_PORT_1, (tUwRect){.uwX = 128, .uwY = 170, .uwWidth = 74, .uwHeight = 13})) {
             // Multiplayer
         } else if (mouseInRect(MOUSE_PORT_1, (tUwRect){.uwX = 233, .uwY = 66, .uwWidth = 63, .uwHeight = 13})) {

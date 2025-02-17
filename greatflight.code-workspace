@@ -1,0 +1,18 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "deps/ACE/tools"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"simplebuffer.h": "c",
+			"game.h": "c",
+			"state.h": "c"
+		},
+		"cmake.options.statusBarVisibility": "visible"
+	}
+}

@@ -3,6 +3,7 @@
 
 #include <ace/managers/state.h>
 
+extern tStateManager *g_pGameStateManager;
 extern tState *g_pGameState;
 
 #endif // MAIN_H

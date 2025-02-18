@@ -170,10 +170,10 @@ void screenInit(void) {
     g_Screen.m_ubBottomPanelDirty = 1;
 
     g_Screen.m_fonts.m_pNormalFont = fontCreateFromPath("resources/ui/uni54.fnt");
-    const char text[RESOURCE_DIGITS + 1] = "000000";
+    const char text[RESOURCE_DIGITS + 1] = {'0'};
     g_Screen.m_panels.m_pGoldTextBitmap = fontCreateTextBitMapFromStr(g_Screen.m_fonts.m_pNormalFont, text);
     g_Screen.m_panels.m_pLumberTextBitmap = fontCreateTextBitMapFromStr(g_Screen.m_fonts.m_pNormalFont, text);
-    g_Screen.m_panels.m_pUnitNameBitmap = fontCreateTextBitMapFromStr(g_Screen.m_fonts.m_pNormalFont, "          ");
+    g_Screen.m_panels.m_pUnitNameBitmap = fontCreateTextBitMapFromStr(g_Screen.m_fonts.m_pNormalFont, text);
 }
 
 void screenDestroy(void) {
@@ -183,7 +183,6 @@ void screenDestroy(void) {
     bitmapDestroy(g_Screen.m_panels.s_pTopPanelBackground);
     bitmapDestroy(g_Screen.m_pIcons);
     bitmapDestroy(g_Screen.m_map.m_pTilemap);
-    bitmapDestroy(g_Screen.m_map.m_pFogOfWarMask);
 
     fontDestroyTextBitMap(g_Screen.m_panels.m_pGoldTextBitmap);
     fontDestroyTextBitMap(g_Screen.m_panels.m_pLumberTextBitmap);
@@ -518,7 +517,6 @@ void drawAllTiles(void) {
 
     // Get pointer to start of drawing area
     PLANEPTR pDstPlane = g_Screen.m_map.m_pBuffer->pBack->Planes[0];
-    PLANEPTR pFogPlane = g_Screen.m_map.m_pFogOfWarMask->Planes[0];
 
     // setup blitter registers that won't change
     systemSetDmaBit(DMAB_BLITHOG, 1);
@@ -530,7 +528,6 @@ void drawAllTiles(void) {
 	g_pCustom->bltamod = wSrcModulo;
     g_pCustom->bltbmod = 0;
 	g_pCustom->bltdmod = wDstModulo;
-    g_pCustom->bltbpt = pFogPlane;
     g_pCustom->bltbdat = uwBdat;
 
     // draw as fast as we can

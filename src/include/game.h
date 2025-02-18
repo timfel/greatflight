@@ -116,7 +116,6 @@ struct Screen {
         tSimpleBufferManager *m_pBuffer;
         tCameraManager *m_pCamera;
         tBitMap *m_pTilemap;
-        tBitMap *m_pFogOfWarMask;
         UWORD m_pPalette[COLORS];
     } m_map;
 

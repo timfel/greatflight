@@ -17,7 +17,7 @@
 #define CAMERA_MOVE_DELTA 4
 #define RESOURCE_DIGITS 6
 
-static tState *s_pNewState;
+static enum GameState s_newState;
 
 struct Screen g_Screen;
 
@@ -197,7 +197,7 @@ void screenDestroy(void) {
 }
 
 void gameGsCreate(void) {
-    s_pNewState = NULL;
+    s_newState = STATE_INGAME;
     viewLoad(0);
 
     // mouse uses colors 17, 18
@@ -999,7 +999,7 @@ void handleInput() {
 #endif
 
     if (keyCheck(KEY_ESCAPE)) {
-        s_pNewState = g_pGameState;
+        s_newState = STATE_PREV;
 #ifdef ACE_DEBUG
     } else if (keyCheck(KEY_C)) {
         copDumpBfr(g_Screen.m_pView->pCopList->pBackBfr);
@@ -1311,11 +1311,11 @@ void displayLoop(void) {
 void gameGsLoop(void) {
     displayLoop();
     logicLoop();
-    if (s_pNewState) {
-        if (s_pNewState == g_pGameState) {
+    if (s_newState) {
+        if (s_newState == STATE_PREV) {
             statePop(g_pGameStateManager);
         } else {
-            statePush(g_pGameStateManager, s_pNewState);
+            statePush(g_pGameStateManager, &g_pGameStates[s_newState]);
         }        
     }
 }

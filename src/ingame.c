@@ -4,119 +4,153 @@
 #include <ace/managers/joy.h>
 #include <ace/managers/key.h>
 #include <ace/managers/blit.h>
+#include <ace/managers/sprite.h>
+#include <ace/managers/mouse.h>
 #include <ace/utils/custom.h>
 #include <ace/utils/font.h>
+#include <ace/utils/palette.h>
 
-// Viewports
-static tVPort *s_pVpTop;
-static tVPort *s_pVpMain;
-static tVPort *s_pVpBottom;
+#include "include/main.h"
 
-// Buffers
-static tSimpleBufferManager *s_pTopBuffer;
-static tSimpleBufferManager *s_pMainBuffer;
-static tSimpleBufferManager *s_pBottomBuffer;
-
-// Font
-static tFont *s_pFont;
-
-// Mouse cursor from menu.c
-extern tBitMap *s_pCursorBitmap;
-extern UWORD s_uwCursorX;
-extern UWORD s_uwCursorY;
-
-// Add this at the top of the file
-tState g_sStateIngame = {
-    .cbCreate = ingameGsCreate,
-    .cbLoop = ingameGsLoop,
-    .cbDestroy = ingameGsDestroy
+struct TopBar {
+    tSimpleBufferManager *m_pTopBuffer;
+    tVPort *m_pTopViewport;
+    tTextBitMap *m_pGoldTextBitmap;
+    tTextBitMap *m_pLumberTextBitmap;
+    tCopBlock *m_pCopBlock;
 };
 
-void ingameGsCreate(void) {
-    // Create view
-    s_pView = viewCreate(0,
-        TAG_VIEW_GLOBAL_CLUT, 1,
-        TAG_END
-    );
+static tView *s_pView;
+static struct TopBar s_topBar;
 
-    // Top panel - 8 colors
-    s_pVpTop = vPortCreate(0,
+static tVPort *s_pMainViewport, *s_pBottomViewport;
+static tSimpleBufferManager *s_pMainBuffer, *s_pBottomBuffer;
+static tSprite *s_pMouseSprite;
+static tFont *s_pNormalFont;
+static tTextBitMap *s_pGoldTextBitmap, *s_pLumberTextBitmap, *s_pUnitNameBitmap;
+static enum GameState s_newState;
+
+static void createTopBar(void) {
+    s_topBar.m_pTopViewport = vPortCreate(0,
         TAG_VPORT_VIEW, s_pView,
-        TAG_VPORT_BPP, 3,  // 8 colors
-        TAG_VPORT_HEIGHT, 32,  // Adjust height as needed
+        TAG_VPORT_BPP, 2,
+        TAG_VPORT_HEIGHT, 10,
         TAG_END
     );
-    s_pTopBuffer = simpleBufferCreate(0,
-        TAG_SIMPLEBUFFER_VPORT, s_pVpTop,
+    s_topBar.m_pTopBuffer = simpleBufferCreate(0,
+        TAG_SIMPLEBUFFER_VPORT, s_topBar.m_pTopViewport,
         TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_INTERLEAVED,
+        TAG_SIMPLEBUFFER_IS_DBLBUF, 0,
         TAG_END
     );
+    bitmapLoadFromPath(s_topBar.m_pTopBuffer->pBack, "resources/ui/top.bm", 0, 0);
+    s_topBar.m_pCopBlock = copBlockCreate(s_topBar.m_pTopViewport->pView->pCopList,
+        4,  // move 4 colors
+        1, 1
+    );
+    UWORD palette[4];
+    paletteLoadFromPath("resources/palettes/top.plt", palette, 4);
+    copMove(s_topBar.m_pTopViewport->pView->pCopList, s_topBar.m_pCopBlock, &g_pCustom->color[0], palette[0]);
+    copMove(s_topBar.m_pTopViewport->pView->pCopList, s_topBar.m_pCopBlock, &g_pCustom->color[1], palette[1]);
+    copMove(s_topBar.m_pTopViewport->pView->pCopList, s_topBar.m_pCopBlock, &g_pCustom->color[2], palette[2]);
+    copMove(s_topBar.m_pTopViewport->pView->pCopList, s_topBar.m_pCopBlock, &g_pCustom->color[3], palette[3]);
+}
 
-    // Main map view - 16 colors
-    s_pVpMain = vPortCreate(0,
+static void createView(void) {
+    viewLoad(0);
+    s_pView = viewCreate(0,
+        TAG_VIEW_WINDOW_HEIGHT, 220,
+        TAG_COPPER_LIST_MODE, COPPER_MODE_BLOCK,
+        TAG_END);
+    createTopBar();
+    s_pMainViewport = vPortCreate(0,
         TAG_VPORT_VIEW, s_pView,
-        TAG_VPORT_BPP, 4,  // 16 colors
-        TAG_VPORT_HEIGHT, 160,  // Adjust height as needed
+        TAG_VPORT_BPP, 4,
+        TAG_VPORT_HEIGHT, 140,
+        TAG_END
+    );
+    s_pBottomViewport = vPortCreate(0,
+        TAG_VPORT_VIEW, s_pView,
+        TAG_VPORT_BPP, 2,
+        TAG_VPORT_HEIGHT, 70,
         TAG_END
     );
     s_pMainBuffer = simpleBufferCreate(0,
-        TAG_SIMPLEBUFFER_VPORT, s_pVpMain,
+        TAG_SIMPLEBUFFER_VPORT, s_pMainViewport,
         TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_INTERLEAVED,
-        TAG_END
-    );
-
-    // Bottom panel - 8 colors
-    s_pVpBottom = vPortCreate(0,
-        TAG_VPORT_VIEW, s_pView,
-        TAG_VPORT_BPP, 3,  // 8 colors
-        TAG_VPORT_HEIGHT, 48,  // Adjust height as needed
+        TAG_SIMPLEBUFFER_IS_DBLBUF, 1,
         TAG_END
     );
     s_pBottomBuffer = simpleBufferCreate(0,
-        TAG_SIMPLEBUFFER_VPORT, s_pVpBottom,
+        TAG_SIMPLEBUFFER_VPORT, s_pBottomViewport,
         TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_INTERLEAVED,
+        TAG_SIMPLEBUFFER_IS_DBLBUF, 0,
         TAG_END
     );
+}
 
-    // Load font
-    s_pFont = fontCreate("data/fonts/topaz.fnt");
+static void destroyView(void) {
+    viewDestroy(s_pView);
+}
 
-    // Set up copper lists for different color depths
+void ingameGsCreate(void) {
+    s_newState = STATE_INGAME;
+    systemUse();
+
+    createView();
+
+    spriteManagerCreate(s_pView, 0, NULL);
+    systemSetDmaBit(DMAB_SPRITE, 1);
+    s_pMouseSprite = spriteAdd(0, bitmapCreateFromPath("resources/ui/mouse.bm", 0));
+    spriteSetEnabled(s_pMouseSprite, 1);
+
+    s_pNormalFont = fontCreateFromPath("resources/ui/uni54.fnt");
+    const char *text = "0000000";
+    s_pGoldTextBitmap = fontCreateTextBitMapFromStr(s_pNormalFont, text);
+    s_pLumberTextBitmap = fontCreateTextBitMapFromStr(s_pNormalFont, text);
+    s_pUnitNameBitmap = fontCreateTextBitMapFromStr(s_pNormalFont, text);
+
     viewLoad(s_pView);
+    systemUnuse();
 }
 
 void ingameGsLoop(void) {
-    // Update cursor position
-    s_uwCursorX = joyGetMouseX();
-    s_uwCursorY = joyGetMouseY();
+    s_pMouseSprite->wX = mouseGetX(MOUSE_PORT_1);
+    s_pMouseSprite->wY = mouseGetY(MOUSE_PORT_1);
+    spriteRequestMetadataUpdate(s_pMouseSprite);
 
-    // Draw cursor at current position
-    blitCopy(
-        s_pCursorBitmap, 0, 0,
-        s_pMainBuffer->pBack, s_uwCursorX, s_uwCursorY,
-        16, 16, MINTERM_COOKIE
-    );
-
-    // Process input
     if(keyCheck(KEY_ESCAPE)) {
-        gameExit();
-        return;
+        s_newState = STATE_MAIN_MENU;
     }
 
+    spriteProcess(s_pMouseSprite);
+    spriteProcessChannel(0);
     viewProcessManagers(s_pView);
     copProcessBlocks();
-    vPortWaitForEnd(s_pVpMain);
+    systemIdleBegin();
+    vPortWaitUntilEnd(s_pBottomViewport);
+    systemIdleEnd();
+
+    if (s_newState != STATE_INGAME) {
+        if (s_newState == STATE_PREV) {
+            statePop(g_pGameStateManager);
+        } else {
+            statePush(g_pGameStateManager, &g_pGameStates[s_newState]);
+        }
+    }
 }
 
 void ingameGsDestroy(void) {
+    if (s_pView == NULL) {
+        return;
+    }
+    systemSetDmaBit(DMAB_SPRITE, 0);
+    bitmapDestroy(s_pMouseSprite->pBitmap);
+    spriteManagerDestroy();
+
     // Destroy font
-    fontDestroy(s_pFont);
-
-    // Destroy buffers
-    simpleBufferDestroy(s_pBottomBuffer);
-    simpleBufferDestroy(s_pMainBuffer);
-    simpleBufferDestroy(s_pTopBuffer);
-
-    // Destroy view
-    viewDestroy(s_pView);
+    fontDestroy(s_pNormalFont);
+    
+    destroyView();
+    s_pView = NULL;
 }

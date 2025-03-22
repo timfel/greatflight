@@ -55,12 +55,13 @@ execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}
 
 ## Helper functions
 file(GLOB HAMCONVERT ${PROJECT_SOURCE_DIR}/tools/ham_convert/ham_convert*.jar)
-function(hamconvert SOURCE DESTINATION MODE DITHERING)
+function(hamconvert SOURCE DESTINATION MODE)
   get_filename_component(SOURCEFILE_STEM ${SOURCE} NAME_WLE)
   get_filename_component(SOURCEFILE_DIRECTORY ${SOURCE} DIRECTORY)
+
   add_custom_command(
     OUTPUT ${DESTINATION}
-    COMMAND java -jar ${HAMCONVERT} ${SOURCE} ${MODE} ${DITHERING} black_bkd
+    COMMAND java -jar ${HAMCONVERT} ${SOURCE} ${MODE} VERBATIM
     COMMAND ${CMAKE_COMMAND} -E rename ${SOURCEFILE_DIRECTORY}/${SOURCEFILE_STEM}_indexed_output.png ${DESTINATION}
     COMMAND ${CMAKE_COMMAND} -E remove ${SOURCEFILE_DIRECTORY}/${SOURCEFILE_STEM}_indexed_output.png
     COMMAND ${CMAKE_COMMAND} -E remove ${SOURCEFILE_DIRECTORY}/${SOURCEFILE_STEM}_output.png
@@ -119,7 +120,7 @@ endfunction()
 
 # Menu
 
-hamconvert(${PROJECT_SOURCE_DIR}/resources/GUI/menu_background.png ${PROJECT_BINARY_DIR}/tmp/GUI/menu_background.png ehb dither)
+hamconvert(${PROJECT_SOURCE_DIR}/resources/GUI/menu_background.png ${PROJECT_BINARY_DIR}/tmp/GUI/menu_background.png ehb dither black_bkd)
 png2gpl(${PROJECT_BINARY_DIR}/tmp/GUI/menu_background.png ${PROJECT_BINARY_DIR}/tmp/palettes/menu.gpl)
 convertPalette(${GAME_LINKED} ${PROJECT_BINARY_DIR}/tmp/palettes/menu.gpl ${PROJECT_BINARY_DIR}/resources/palettes/menu.plt)
 convertBitmaps(
@@ -146,71 +147,83 @@ map2bin(${PROJECT_SOURCE_DIR}/resources/maps/example.map ${PROJECT_BINARY_DIR}/r
 
 # Viewport
 
-convertPalette(${GAME_LINKED} ${PROJECT_SOURCE_DIR}/resources/Palettes/Woodland.gpl ${PROJECT_BINARY_DIR}/resources/palettes/for.plt)
+# convertPalette(${GAME_LINKED} ${PROJECT_SOURCE_DIR}/resources/Palettes/Woodland.gpl ${PROJECT_BINARY_DIR}/resources/palettes/for.plt)
 
-convertTileset(
-  INTERLEAVED
-  TARGET ${GAME_LINKED}
-  SOURCE ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Woodland.png
-  TILE_PATHS ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Woodland.png
-  DESTINATION ${PROJECT_BINARY_DIR}/resources/tilesets/for.bm
-  SIZE 32
-  PALETTE ${PROJECT_BINARY_DIR}/resources/palettes/for.plt
-)
+# convertTileset(
+#   INTERLEAVED
+#   TARGET ${GAME_LINKED}
+#   SOURCE ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Woodland.png
+#   TILE_PATHS ${PROJECT_SOURCE_DIR}/resources/Tiles/Woodland/Woodland.png
+#   DESTINATION ${PROJECT_BINARY_DIR}/resources/tilesets/for.bm
+#   SIZE 32
+#   PALETTE ${PROJECT_BINARY_DIR}/resources/palettes/for.plt
+# )
 
-convertBitmaps(
-       INTERLEAVED
-       TARGET ${GAME_LINKED}
-       PALETTE ${PROJECT_BINARY_DIR}/resources/palettes/for.plt
-       MASK_COLOR "#000000"
-       SOURCES ${PROJECT_SOURCE_DIR}/resources/Tiles/fow.png
-       DESTINATIONS ${PROJECT_BINARY_DIR}/resources/tilesets/fow.bm
-       MASKS ${PROJECT_BINARY_DIR}/resources/tilesets/fow.msk
-)
+# convertBitmaps(
+#        INTERLEAVED
+#        TARGET ${GAME_LINKED}
+#        PALETTE ${PROJECT_BINARY_DIR}/resources/palettes/for.plt
+#        MASK_COLOR "#000000"
+#        SOURCES ${PROJECT_SOURCE_DIR}/resources/Tiles/fow.png
+#        DESTINATIONS ${PROJECT_BINARY_DIR}/resources/tilesets/fow.bm
+#        MASKS ${PROJECT_BINARY_DIR}/resources/tilesets/fow.msk
+# )
 
 # Human UI
+
+hamconvert(${PROJECT_SOURCE_DIR}/resources/GUI/Top_GUI.png ${PROJECT_BINARY_DIR}/tmp/GUI/Top_GUI.png ocs4 dither)
+png2gpl(${PROJECT_BINARY_DIR}/tmp/GUI/Top_GUI.png ${PROJECT_BINARY_DIR}/tmp/palettes/Top_GUI.gpl)
+convertPalette(${GAME_LINKED} ${PROJECT_BINARY_DIR}/tmp/palettes/Top_GUI.gpl ${PROJECT_BINARY_DIR}/resources/palettes/top.plt)
+convertBitmaps(
+       INTERLEAVED
+       TARGET ${GAME_LINKED}
+       PALETTE ${PROJECT_BINARY_DIR}/resources/palettes/top.plt
+       SOURCES ${PROJECT_BINARY_DIR}/tmp/GUI/Top_GUI.png
+       DESTINATIONS ${PROJECT_BINARY_DIR}/resources/ui/top.bm
+)
+
 convertPalette(${GAME_LINKED} ${PROJECT_SOURCE_DIR}/resources/Palettes/HumanGUI.gpl ${PROJECT_BINARY_DIR}/resources/palettes/hgui.plt)
 
-convertBitmaps(
-  INTERLEAVED
-  TARGET ${GAME_LINKED}
-  PALETTE ${PROJECT_BINARY_DIR}/resources/palettes/hgui.plt
-  SOURCES ${PROJECT_SOURCE_DIR}/resources/GUI/Bottom_GUI.png
-          ${PROJECT_SOURCE_DIR}/resources/GUI/Top_GUI.png
-  DESTINATIONS ${PROJECT_BINARY_DIR}/resources/ui/bottompanel.bm
-               ${PROJECT_BINARY_DIR}/resources/ui/toppanel.bm
-)
+# convertBitmaps(
+#   INTERLEAVED
+#   TARGET ${GAME_LINKED}
+#   PALETTE ${PROJECT_BINARY_DIR}/resources/palettes/hgui.plt
+#   SOURCES ${PROJECT_SOURCE_DIR}/resources/GUI/Bottom_GUI.png
+#           ${PROJECT_SOURCE_DIR}/resources/GUI/Top_GUI.png
+#   DESTINATIONS ${PROJECT_BINARY_DIR}/resources/ui/bottompanel.bm
+#                ${PROJECT_BINARY_DIR}/resources/ui/toppanel.bm
+# )
 
-convertTileset(
-  INTERLEAVED
-  TARGET ${GAME_LINKED}
-  SOURCE ${PROJECT_SOURCE_DIR}/resources/GUI/icons.png
-  TILE_PATHS ${PROJECT_SOURCE_DIR}/resources/GUI/icons.png
-  DESTINATION ${PROJECT_BINARY_DIR}/resources/ui/icons.bm
-  SIZE 32
-  HEIGHT 18
-  PALETTE ${PROJECT_BINARY_DIR}/resources/palettes/hgui.plt
-)
+# convertTileset(
+#   INTERLEAVED
+#   TARGET ${GAME_LINKED}
+#   SOURCE ${PROJECT_SOURCE_DIR}/resources/GUI/icons.png
+#   TILE_PATHS ${PROJECT_SOURCE_DIR}/resources/GUI/icons.png
+#   DESTINATION ${PROJECT_BINARY_DIR}/resources/ui/icons.bm
+#   SIZE 32
+#   HEIGHT 18
+#   PALETTE ${PROJECT_BINARY_DIR}/resources/palettes/hgui.plt
+# )
 
-convertTileset(
-       INTERLEAVED
-       TARGET ${GAME_LINKED}
-       SOURCE ${PROJECT_SOURCE_DIR}/resources/Units/peasant.png
-       TILE_PATHS ${PROJECT_SOURCE_DIR}/resources/Units/peasant.png
-       DESTINATION ${PROJECT_BINARY_DIR}/tmp/Units/peasant.tileset.png
-       SIZE 16
-       PALETTE ${PROJECT_BINARY_DIR}/resources/palettes/for.plt
-)
+# convertTileset(
+#        INTERLEAVED
+#        TARGET ${GAME_LINKED}
+#        SOURCE ${PROJECT_SOURCE_DIR}/resources/Units/peasant.png
+#        TILE_PATHS ${PROJECT_SOURCE_DIR}/resources/Units/peasant.png
+#        DESTINATION ${PROJECT_BINARY_DIR}/tmp/Units/peasant.tileset.png
+#        SIZE 16
+#        PALETTE ${PROJECT_BINARY_DIR}/resources/palettes/for.plt
+# )
 
-convertBitmaps(
-       INTERLEAVED
-       TARGET ${GAME_LINKED}
-       PALETTE ${PROJECT_BINARY_DIR}/resources/palettes/for.plt
-       MASK_COLOR "#000000"
-       SOURCES ${PROJECT_BINARY_DIR}/tmp/Units/peasant.tileset.png
-       DESTINATIONS ${PROJECT_BINARY_DIR}/resources/units/peasant.bm
-       MASKS ${PROJECT_BINARY_DIR}/resources/units/peasant.msk
-)
+# convertBitmaps(
+#        INTERLEAVED
+#        TARGET ${GAME_LINKED}
+#        PALETTE ${PROJECT_BINARY_DIR}/resources/palettes/for.plt
+#        MASK_COLOR "#000000"
+#        SOURCES ${PROJECT_BINARY_DIR}/tmp/Units/peasant.tileset.png
+#        DESTINATIONS ${PROJECT_BINARY_DIR}/resources/units/peasant.bm
+#        MASKS ${PROJECT_BINARY_DIR}/resources/units/peasant.msk
+# )
 
 convertFont(
        TARGET ${GAME_LINKED}

@@ -39,7 +39,7 @@ void menuGSCreate(void) {
     paletteLoadFromPath("resources/palettes/menu.plt", s_pViewport->pPalette, 32);
     bitmapLoadFromPath(s_pMenuBuffer->pBack, "resources/ui/menu_background.bm", 0, 0);
 
-    spriteManagerCreate(s_pView, 0);
+    spriteManagerCreate(s_pView, 0, NULL);
     systemSetDmaBit(DMAB_SPRITE, 1);
     s_pMouseSprite = spriteAdd(0, bitmapCreateFromPath("resources/ui/mouse.bm", 0));
     spriteSetEnabled(s_pMouseSprite, 1);
@@ -119,13 +119,15 @@ void menuGSLoop(void) {
 }
 
 void menuGSDestroy(void) {
+    if (s_pView == NULL) {
+        return;
+    }
     systemSetDmaBit(DMAB_SPRITE, 0);
-    spriteSetEnabled(s_pMouseSprite, 0);
     bitmapDestroy(s_pMouseSprite->pBitmap);
-    spriteRemove(s_pMouseSprite);
     spriteManagerDestroy();
 
     viewDestroy(s_pView);
+    s_pView = NULL;
 }
 
 void menuGSSuspend(void) {

@@ -11,7 +11,10 @@
 		"files.associations": {
 			"simplebuffer.h": "c",
 			"game.h": "c",
-			"state.h": "c"
+			"state.h": "c",
+			"font.h": "c",
+			"mouse.h": "c",
+			"menu.h": "c"
 		},
 		"cmake.options.statusBarVisibility": "visible"
 	}

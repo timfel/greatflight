@@ -147,6 +147,18 @@ map2bin(${PROJECT_SOURCE_DIR}/resources/maps/example.map ${PROJECT_BINARY_DIR}/r
 
 # Viewport
 
+png2gpl(${PROJECT_SOURCE_DIR}/resources/Tiles/woodland.png ${PROJECT_BINARY_DIR}/tmp/palettes/woodland.gpl)
+convertPalette(${GAME_LINKED} ${PROJECT_BINARY_DIR}/tmp/palettes/woodland.gpl ${PROJECT_BINARY_DIR}/resources/palettes/woodland.plt)
+convertTileset(
+  INTERLEAVED
+  TARGET ${GAME_LINKED}
+  SOURCE ${PROJECT_SOURCE_DIR}/resources/Tiles/woodland.png
+  TILE_PATHS ${PROJECT_SOURCE_DIR}/resources/Tiles/woodland.png
+  DESTINATION ${PROJECT_BINARY_DIR}/resources/tilesets/woodland.bm
+  SIZE 16
+  PALETTE ${PROJECT_BINARY_DIR}/resources/palettes/woodland.plt
+)
+
 # convertPalette(${GAME_LINKED} ${PROJECT_SOURCE_DIR}/resources/Palettes/Woodland.gpl ${PROJECT_BINARY_DIR}/resources/palettes/for.plt)
 
 # convertTileset(

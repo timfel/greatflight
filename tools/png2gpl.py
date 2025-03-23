@@ -19,3 +19,4 @@ with open(sys.argv[2], "w") as f:
             if idx >= 32:
                 break
             print(r, g, b, "    Index", idx, file=f)
+    print("Found", idx, "colors in", sys.argv[2])

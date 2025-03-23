@@ -18,7 +18,7 @@ void genericCreate(void) {
   keyCreate();
   mouseCreate(MOUSE_PORT_1 | MOUSE_PORT_2);
   g_pGameStateManager = stateManagerCreate();
-  statePush(g_pGameStateManager, &g_pGameStates[STATE_INGAME]);
+  statePush(g_pGameStateManager, &g_pGameStates[STATE_MAIN_MENU]);
   systemUnuse();
 }
 

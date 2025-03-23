@@ -182,6 +182,17 @@ convertBitmaps(
        DESTINATIONS ${PROJECT_BINARY_DIR}/resources/ui/top.bm
 )
 
+hamconvert(${PROJECT_SOURCE_DIR}/resources/GUI/Bottom_GUI.png ${PROJECT_BINARY_DIR}/tmp/GUI/Bottom_GUI.png ocs4 dither)
+png2gpl(${PROJECT_BINARY_DIR}/tmp/GUI/Bottom_GUI.png ${PROJECT_BINARY_DIR}/tmp/palettes/Bottom_GUI.gpl)
+convertPalette(${GAME_LINKED} ${PROJECT_BINARY_DIR}/tmp/palettes/Bottom_GUI.gpl ${PROJECT_BINARY_DIR}/resources/palettes/bottom.plt)
+convertBitmaps(
+       INTERLEAVED
+       TARGET ${GAME_LINKED}
+       PALETTE ${PROJECT_BINARY_DIR}/resources/palettes/bottom.plt
+       SOURCES ${PROJECT_BINARY_DIR}/tmp/GUI/Bottom_GUI.png
+       DESTINATIONS ${PROJECT_BINARY_DIR}/resources/ui/bottom.bm
+)
+
 convertPalette(${GAME_LINKED} ${PROJECT_SOURCE_DIR}/resources/Palettes/HumanGUI.gpl ${PROJECT_BINARY_DIR}/resources/palettes/hgui.plt)
 
 # convertBitmaps(

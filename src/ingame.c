@@ -56,6 +56,32 @@ static void createTopBar(void) {
     copMove(s_topBar.m_pTopViewport->pView->pCopList, s_topBar.m_pCopBlock, &g_pCustom->color[3], palette[3]);
 }
 
+static void createBottomBar(void) {
+    s_pBottomViewport = vPortCreate(0,
+        TAG_VPORT_VIEW, s_pView,
+        TAG_VPORT_BPP, 2,
+        TAG_VPORT_HEIGHT, 70,
+        TAG_END
+    );
+    s_pBottomBuffer = simpleBufferCreate(0,
+        TAG_SIMPLEBUFFER_VPORT, s_pBottomViewport,
+        TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_INTERLEAVED,
+        TAG_SIMPLEBUFFER_IS_DBLBUF, 0,
+        TAG_END
+    );
+    bitmapLoadFromPath(s_pBottomBuffer->pBack, "resources/ui/bottom.bm", 0, 0);
+    tCopBlock *pCopBlock = copBlockCreate(s_pBottomViewport->pView->pCopList,
+        4,  // move 4 colors
+        1, s_pMainViewport->uwOffsY + s_pMainViewport->uwHeight + s_pView->ubPosY
+    );
+    UWORD palette[4];
+    paletteLoadFromPath("resources/palettes/bottom.plt", palette, 4);
+    copMove(s_pBottomViewport->pView->pCopList, pCopBlock, &g_pCustom->color[0], palette[0]);
+    copMove(s_pBottomViewport->pView->pCopList, pCopBlock, &g_pCustom->color[1], palette[1]);
+    copMove(s_pBottomViewport->pView->pCopList, pCopBlock, &g_pCustom->color[2], palette[2]);
+    copMove(s_pBottomViewport->pView->pCopList, pCopBlock, &g_pCustom->color[3], palette[3]);
+}
+
 static void createView(void) {
     viewLoad(0);
     s_pView = viewCreate(0,
@@ -69,24 +95,13 @@ static void createView(void) {
         TAG_VPORT_HEIGHT, 140,
         TAG_END
     );
-    s_pBottomViewport = vPortCreate(0,
-        TAG_VPORT_VIEW, s_pView,
-        TAG_VPORT_BPP, 2,
-        TAG_VPORT_HEIGHT, 70,
-        TAG_END
-    );
     s_pMainBuffer = simpleBufferCreate(0,
         TAG_SIMPLEBUFFER_VPORT, s_pMainViewport,
         TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_INTERLEAVED,
         TAG_SIMPLEBUFFER_IS_DBLBUF, 1,
         TAG_END
     );
-    s_pBottomBuffer = simpleBufferCreate(0,
-        TAG_SIMPLEBUFFER_VPORT, s_pBottomViewport,
-        TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_INTERLEAVED,
-        TAG_SIMPLEBUFFER_IS_DBLBUF, 0,
-        TAG_END
-    );
+    createBottomBar();
 }
 
 static void destroyView(void) {

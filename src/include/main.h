@@ -6,7 +6,6 @@
 #define MENU_ST
 
 enum GameState {
-    STATE_PREV = -1,
     STATE_MAIN_MENU,
     STATE_INGAME
 };

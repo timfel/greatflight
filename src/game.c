@@ -999,7 +999,7 @@ void handleInput() {
 #endif
 
     if (keyCheck(KEY_ESCAPE)) {
-        s_newState = STATE_PREV;
+        s_newState = STATE_MAIN_MENU;
 #ifdef ACE_DEBUG
     } else if (keyCheck(KEY_C)) {
         copDumpBfr(g_Screen.m_pView->pCopList->pBackBfr);
@@ -1311,13 +1311,6 @@ void displayLoop(void) {
 void gameGsLoop(void) {
     displayLoop();
     logicLoop();
-    if (s_newState) {
-        if (s_newState == STATE_PREV) {
-            statePop(g_pGameStateManager);
-        } else {
-            statePush(g_pGameStateManager, &g_pGameStates[s_newState]);
-        }        
-    }
 }
 
 void gameGsDestroy(void) {

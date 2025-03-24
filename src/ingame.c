@@ -150,9 +150,13 @@ void ingameGsCreate(void) {
     s_pMouseSprite = spriteAdd(0, bitmapCreateFromPath("resources/ui/mouse.bm", 0));
     spriteSetEnabled(s_pMouseSprite, 1);
 
-
     viewLoad(s_pView);
     systemUnuse();
+
+    g_pCustom->color[16] = 0x0000;
+    g_pCustom->color[17] = 0x0444;
+    g_pCustom->color[18] = 0x0888;
+    g_pCustom->color[19] = 0x0ccc;
 }
 
 void ingameGsLoop(void) {

@@ -221,8 +221,11 @@ static void mapAreaInit(struct Screenpart *self, UWORD *copper_cmds, ...) {
         // now find the offset where 64k alignment starts in plane0 and copy the tilemap->Planes[0] to it
         UWORD offset = (1 << 16) - ((ULONG)plane0 + (1 << 16)) % (1 << 16);
         memcpy(plane0 + offset, this->tilemap->Planes[0], this->tilemap->BytesPerRow * this->tilemap->Rows);
+#ifndef ACE_DEBUG
+        // cannot free if debugging, because metadata is stored before the allocated memory
         memFree(plane0, offset);
         memFree(plane0 + offset + this->tilemap->BytesPerRow * this->tilemap->Rows, (1 << 16) - offset);
+#endif
         bitmapDestroy(this->tilemap);
         this->tilemap_planes = (PLANEPTR)(((ULONG)1 << 31) | (ULONG)(plane0 + offset));
         alignedTilemap = 1;

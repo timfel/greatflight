@@ -442,18 +442,18 @@ static enum GameState s_newState;
 static void createView() {
     UWORD copperListSize = 0;
     s_spriteManager.base.initialize(&s_spriteManager.base, &copperListSize);
-    s_topBar.base.initialize(&s_topBar.base, &copperListSize, 2, 10);
-    s_mapArea.base.initialize(&s_mapArea.base, &copperListSize, 4, 128, 16);
+    // s_topBar.base.initialize(&s_topBar.base, &copperListSize, 2, 10);
+    s_mapArea.base.initialize(&s_mapArea.base, &copperListSize, 4, 144, 16);
     s_bottomBar.base.initialize(&s_bottomBar.base, &copperListSize, 2, 70);
 
     s_pView = viewCreate(0,
-        TAG_VIEW_WINDOW_HEIGHT, 10 + 128 + 70,
+        TAG_VIEW_WINDOW_HEIGHT, /* 10 + */ 144 + 70,
         TAG_COPPER_LIST_MODE, COPPER_MODE_RAW,
         TAG_COPPER_RAW_COUNT, copperListSize,
         TAG_END);
     
     s_spriteManager.base.build(&s_spriteManager.base, s_pView);
-    s_topBar.base.build(&s_topBar.base, s_pView);
+    // s_topBar.base.build(&s_topBar.base, s_pView);
     s_mapArea.base.build(&s_mapArea.base, s_pView);
     s_bottomBar.base.build(&s_bottomBar.base, s_pView);
 }
@@ -507,7 +507,7 @@ void ingameGsDestroy(void) {
     }
 
     s_spriteManager.base.destroy(&s_spriteManager.base);
-    s_topBar.base.destroy(&s_topBar.base);
+    // s_topBar.base.destroy(&s_topBar.base);
     s_mapArea.base.destroy(&s_mapArea.base);
     s_bottomBar.base.destroy(&s_bottomBar.base);
     viewDestroy(s_pView);

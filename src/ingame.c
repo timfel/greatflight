@@ -84,7 +84,7 @@ static void topBarBuild(struct Screenpart *self, tView *view) {
     bitmapLoadFromPath(this->top_buffer->pBack, "resources/ui/top.bm", 0, 0);
     UWORD palette[1 << this->bpp];
     paletteLoadFromPath("resources/palettes/top.plt", palette, 1 << this->bpp);
-    
+
     tCopCmd *copperlist = &this->top_viewport->pView->pCopList->pFrontBfr->pList[this->copListOffset];
     copperlist += simpleBufferGetRawCopperlistInstructionCount(this->bpp);
     copSetMove((tCopMoveCmd *)copperlist++, &g_pCustom->bplcon0, ((UWORD)this->bpp << 12) | BV(9));
@@ -149,7 +149,7 @@ static void bottomBarBuild(struct Screenpart *self, tView *view) {
     bitmapLoadFromPath(this->bottom_buffer->pBack, "resources/ui/bottom.bm", 0, 0);
     UWORD palette[1 << this->bpp];
     paletteLoadFromPath("resources/palettes/bottom.plt", palette, 1 << this->bpp);
-    
+
     tCopCmd *copperlist = &this->bottom_viewport->pView->pCopList->pFrontBfr->pList[this->copListOffset];
     copperlist += simpleBufferGetRawCopperlistInstructionCount(this->bpp);
     copSetMove((tCopMoveCmd *)copperlist++, &g_pCustom->bplcon0, ((UWORD)this->bpp << 12) | BV(9));
@@ -215,11 +215,11 @@ static void mapAreaInit(struct Screenpart *self, UWORD *copper_cmds, ...) {
     this->tilecount = this->tilemap->Rows * this->tilemap->BytesPerRow / (this->tile_size * this->tile_size * this->bpp / 8);
     // we can realign if the tilemap is less than 64k bytes in size
     if (this->tilemap->BytesPerRow * this->tilemap->Rows < (1 << 16)) {
-		PLANEPTR plane0 = (PLANEPTR) memAlloc(this->tilemap->BytesPerRow * this->tilemap->Rows + (1 << 16), MEMF_CHIP);
+        PLANEPTR plane0 = (PLANEPTR) memAlloc(this->tilemap->BytesPerRow * this->tilemap->Rows + (1 << 16), MEMF_CHIP);
         if (!plane0) {
-			logWrite("ERR: Can't alloc aligned tilemap\n");
-			return;
-		}
+            logWrite("ERR: Can't alloc aligned tilemap\n");
+            return;
+        }
         // now find the offset where 64k alignment starts in plane0 and copy the tilemap->Planes[0] to it
         UWORD offset = (1 << 16) - ((ULONG)plane0 + (1 << 16)) % (1 << 16);
         memcpy(plane0 + offset, this->tilemap->Planes[0], this->tilemap->BytesPerRow * this->tilemap->Rows);
@@ -237,9 +237,9 @@ static void mapAreaInit(struct Screenpart *self, UWORD *copper_cmds, ...) {
         // tilemap is too big to be aligned
         PLANEPTR plane0 = (PLANEPTR) memAlloc(this->tilemap->BytesPerRow * this->tilemap->Rows, MEMF_CHIP);
         if (!plane0) {
-			logWrite("ERR: Can't alloc tilemap\n");
-			return;
-		}
+            logWrite("ERR: Can't alloc tilemap\n");
+            return;
+        }
         memcpy(plane0, this->tilemap->Planes[0], this->tilemap->BytesPerRow * this->tilemap->Rows);
         bitmapDestroy(this->tilemap);
         this->tilemap_planes = plane0;
@@ -263,7 +263,7 @@ static void mapAreaInit(struct Screenpart *self, UWORD *copper_cmds, ...) {
             //      move (ULONG)plane0 >> 16, bltapth
         numColumns * 2 + // map area blitter column dptrh and dptrl setup
             //      move CONSTANT, bltdpth
-            //      move CONSTANT, bltdptl    
+            //      move CONSTANT, bltdptl
         numColumns * numRows * (3 + (alignedTilemap ? 0 : 1));
             // each tile needs 3 moves and a wait for non-aligned tilemap planes,
             // or 2 moves and a wait for 64k aligned tilemap planes
@@ -275,10 +275,10 @@ static void mapAreaInit(struct Screenpart *self, UWORD *copper_cmds, ...) {
 }
 
 static tCopperUlong FAR REGPTR s_pBltapt = (tCopperUlong REGPTR)(
-	0xDFF000 + offsetof(tCustom, bltapt)
+    0xDFF000 + offsetof(tCustom, bltapt)
 );
 static tCopperUlong FAR REGPTR s_pBltdpt = (tCopperUlong REGPTR)(
-	0xDFF000 + offsetof(tCustom, bltdpt)
+    0xDFF000 + offsetof(tCustom, bltdpt)
 );
 
 static void mapAreaBuild(struct Screenpart *self, tView *view) {
@@ -451,7 +451,7 @@ static void createView() {
         TAG_COPPER_LIST_MODE, COPPER_MODE_RAW,
         TAG_COPPER_RAW_COUNT, copperListSize,
         TAG_END);
-    
+
     s_spriteManager.base.build(&s_spriteManager.base, s_pView);
     // s_topBar.base.build(&s_topBar.base, s_pView);
     s_mapArea.base.build(&s_mapArea.base, s_pView);

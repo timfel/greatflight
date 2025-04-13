@@ -62,7 +62,7 @@ static void topBarInit(struct Screenpart *self, UWORD *copper_cmds, ...) {
     va_end(args);
 
     this->copListOffset = *copper_cmds;
-    *copper_cmds += simpleBufferGetRawCopperlistInstructionCount(this->bpp) + (1 << this->bpp);
+    *copper_cmds += simpleBufferGetRawCopperlistInstructionCount(this->bpp) + 1 /* bplcon0 */ + (1 << this->bpp);
 }
 
 // build the top bar
@@ -87,15 +87,15 @@ static void topBarBuild(struct Screenpart *self, tView *view) {
     
     tCopCmd *copperlist = &this->top_viewport->pView->pCopList->pFrontBfr->pList[this->copListOffset];
     copperlist += simpleBufferGetRawCopperlistInstructionCount(this->bpp);
+    copSetMove((tCopMoveCmd *)copperlist++, &g_pCustom->bplcon0, ((UWORD)this->bpp << 12) | BV(9));
     for (int i = 0; i < (1 << this->bpp); ++i) {
-        copSetMove((tCopMoveCmd *)copperlist, &g_pCustom->color[i], palette[i]);
-        copperlist++;
+        copSetMove((tCopMoveCmd *)copperlist++, &g_pCustom->color[i], palette[i]);
     }
     copperlist = &this->top_viewport->pView->pCopList->pBackBfr->pList[this->copListOffset];
     copperlist += simpleBufferGetRawCopperlistInstructionCount(this->bpp);
+    copSetMove((tCopMoveCmd *)copperlist++, &g_pCustom->bplcon0, ((UWORD)this->bpp << 12) | BV(9));
     for (int i = 0; i < (1 << this->bpp); ++i) {
-        copSetMove((tCopMoveCmd *)copperlist, &g_pCustom->color[i], palette[i]);
-        copperlist++;
+        copSetMove((tCopMoveCmd *)copperlist++, &g_pCustom->color[i], palette[i]);
     }
 
     this->gold_text_bitmap = fontCreateTextBitMapFromStr(s_pNormalFont, "0000000");
@@ -128,7 +128,7 @@ static void bottomBarInit(struct Screenpart *self, UWORD *copper_cmds, ...) {
     this->height = (UBYTE)va_arg(args, ULONG);
     va_end(args);
     this->copListOffset = *copper_cmds;
-    *copper_cmds += simpleBufferGetRawCopperlistInstructionCount(this->bpp) + (1 << this->bpp);
+    *copper_cmds += simpleBufferGetRawCopperlistInstructionCount(this->bpp) + 1 /* bplcon0 */ + (1 << this->bpp);
 }
 
 static void bottomBarBuild(struct Screenpart *self, tView *view) {
@@ -152,12 +152,14 @@ static void bottomBarBuild(struct Screenpart *self, tView *view) {
     
     tCopCmd *copperlist = &this->bottom_viewport->pView->pCopList->pFrontBfr->pList[this->copListOffset];
     copperlist += simpleBufferGetRawCopperlistInstructionCount(this->bpp);
+    copSetMove((tCopMoveCmd *)copperlist++, &g_pCustom->bplcon0, ((UWORD)this->bpp << 12) | BV(9));
     for (int i = 0; i < (1 << this->bpp); ++i) {
         copSetMove((tCopMoveCmd *)copperlist, &g_pCustom->color[i], palette[i]);
         copperlist++;
     }
     copperlist = &this->bottom_viewport->pView->pCopList->pBackBfr->pList[this->copListOffset];
     copperlist += simpleBufferGetRawCopperlistInstructionCount(this->bpp);
+    copSetMove((tCopMoveCmd *)copperlist++, &g_pCustom->bplcon0, ((UWORD)this->bpp << 12) | BV(9));
     for (int i = 0; i < (1 << this->bpp); ++i) {
         copSetMove((tCopMoveCmd *)copperlist, &g_pCustom->color[i], palette[i]);
         copperlist++;
@@ -247,6 +249,7 @@ static void mapAreaInit(struct Screenpart *self, UWORD *copper_cmds, ...) {
     }
 
     *copper_cmds += simpleBufferGetRawCopperlistInstructionCount(4) +
+        1 /* bplcon0 */ +
         (1 << this->bpp) + // colors
         7 + // map area blitter setup
             //      wait bltbusy
@@ -294,6 +297,7 @@ static void mapAreaBuild(struct Screenpart *self, tView *view) {
         TAG_SIMPLEBUFFER_VPORT, this->main_viewport,
         TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_INTERLEAVED,
         TAG_SIMPLEBUFFER_COPLIST_OFFSET, this->copListOffset,
+        TAG_SIMPLEBUFFER_USE_X_SCROLLING, 0,
         TAG_SIMPLEBUFFER_IS_DBLBUF, 1,
         TAG_END
     );
@@ -316,6 +320,7 @@ static void mapAreaBuild(struct Screenpart *self, tView *view) {
     // setup front copperlist
     tCopCmd *copperlist = &this->main_viewport->pView->pCopList->pFrontBfr->pList[this->copListOffset];
     copperlist += simpleBufferGetRawCopperlistInstructionCount(4);
+    copSetMove((tCopMoveCmd *)copperlist++, &g_pCustom->bplcon0, ((UWORD)this->bpp << 12) | BV(9));
     for (int i = 0; i < (1 << this->bpp); ++i) {
         copSetMove((tCopMoveCmd *)copperlist, &g_pCustom->color[i], palette[i]);
         copperlist++;
@@ -360,6 +365,7 @@ static void mapAreaBuild(struct Screenpart *self, tView *view) {
     // setup back copperlist
     copperlist = &this->main_viewport->pView->pCopList->pBackBfr->pList[this->copListOffset];
     copperlist += simpleBufferGetRawCopperlistInstructionCount(4);
+    copSetMove((tCopMoveCmd *)copperlist++, &g_pCustom->bplcon0, ((UWORD)this->bpp << 12) | BV(9));
     for (int i = 0; i < (1 << this->bpp); ++i) {
         copSetMove((tCopMoveCmd *)copperlist, &g_pCustom->color[i], palette[i]);
         copperlist++;

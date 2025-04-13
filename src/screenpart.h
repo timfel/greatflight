@@ -50,6 +50,9 @@ struct MapArea {
         tBitMap *tilemap; // bitmap for the tilemap
         PLANEPTR tilemap_planes;
     };
+#ifdef ACE_DEBUG
+    UWORD planeAlignmentOffset;
+#endif
     UBYTE tilecount;
     UBYTE tile_size; // size of the tiles in the tilemap
     UBYTE height;

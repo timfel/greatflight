@@ -14,7 +14,9 @@
 			"state.h": "c",
 			"font.h": "c",
 			"mouse.h": "c",
-			"menu.h": "c"
+			"menu.h": "c",
+			"dmabits.h": "c",
+			"file.h": "c"
 		},
 		"cmake.options.statusBarVisibility": "visible"
 	}

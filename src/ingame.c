@@ -225,6 +225,8 @@ static void mapAreaInit(struct Screenpart *self, UWORD *copper_cmds, ...) {
         // cannot free if debugging, because metadata is stored before the allocated memory
         memFree(plane0, offset);
         memFree(plane0 + offset + this->tilemap->BytesPerRow * this->tilemap->Rows, (1 << 16) - offset);
+#else
+        this->planeAlignmentOffset = offset;
 #endif
         bitmapDestroy(this->tilemap);
         this->tilemap_planes = (PLANEPTR)(((ULONG)1 << 31) | (ULONG)(plane0 + offset));
@@ -239,6 +241,9 @@ static void mapAreaInit(struct Screenpart *self, UWORD *copper_cmds, ...) {
         memcpy(plane0, this->tilemap->Planes[0], this->tilemap->BytesPerRow * this->tilemap->Rows);
         bitmapDestroy(this->tilemap);
         this->tilemap_planes = plane0;
+#ifdef ACE_DEBUG
+        this->planeAlignmentOffset = (UWORD)-1;
+#endif
     }
 
     *copper_cmds += simpleBufferGetRawCopperlistInstructionCount(4) +
@@ -400,7 +405,15 @@ static void mapAreaBuild(struct Screenpart *self, tView *view) {
 static void mapAreaDestroy(struct Screenpart *self) {
     struct MapArea *this = (struct MapArea *)self;
     vPortDestroy(this->main_viewport);
+#ifndef ACE_DEBUG
     memFree(this->tilemap_planes, this->tilecount * this->tile_size * this->tile_size * this->bpp / 8);
+#else
+    if (this->planeAlignmentOffset != (UWORD)-1) {
+        memFree(this->tilemap_planes - this->planeAlignmentOffset, this->tilecount * this->tile_size * this->tile_size * this->bpp / 8 + (1 << 16));
+    } else {
+        memFree(this->tilemap_planes, this->tilecount * this->tile_size * this->tile_size * this->bpp / 8);
+    }
+#endif
 }
 
 // static map area instance

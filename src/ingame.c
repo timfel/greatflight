@@ -303,7 +303,7 @@ static void mapAreaBuild(struct Screenpart *self, tView *view) {
     );
 
     UBYTE waitX = 0xdc;
-    UBYTE waitY = this->main_viewport->uwOffsY + view->ubPosY - 1;
+    UBYTE waitY = 0;
     UBYTE numColumns = 320 / this->tile_size;
     UBYTE numRows = this->height / this->tile_size;
     UWORD palette[1 << this->bpp];

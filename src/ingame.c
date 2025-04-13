@@ -188,11 +188,55 @@ static void mapAreaInit(struct Screenpart *self, UWORD *copper_cmds, ...) {
     this->bpp = (UBYTE)va_arg(args, ULONG);
     this->height = (UBYTE)va_arg(args, ULONG);
     this->tile_size = (UBYTE)va_arg(args, ULONG);
-    bitmapLoadFromPath(this->tilemap, va_arg(args, const char *), 0, 0);
     va_end(args);
 
     UBYTE numColumns = 320 / this->tile_size;
     UBYTE numRows = this->height / this->tile_size;
+
+    this->tilemap = bitmapCreateFromPath("resources/tilesets/woodland.bm", 1);
+    #if ACE_DEBUG
+    if ((this->tilemap->Flags & BMF_INTERLEAVED) == 0) {
+        logWrite("ERR: tilemap must be interleaved for copper driven tilebuffer\n");
+        return;
+    }
+    if (bitmapGetByteWidth(this->tilemap) != this->tile_size / 8) {
+        logWrite("ERR: tilemap size must match tilebuffer tile size\n");
+        return;
+    }
+    if (this->tilemap->Depth != this->bpp) {
+        logWrite("ERR: tilemap depth must match tilebuffer bpp\n");
+        return;
+    }
+    #endif
+
+    UBYTE alignedTilemap = 0;
+    this->tilecount = this->tilemap->Rows * this->tilemap->BytesPerRow / (this->tile_size * this->tile_size * this->bpp / 8);
+    // we can realign if the tilemap is less than 64k bytes in size
+    if (this->tilemap->BytesPerRow * this->tilemap->Rows < (1 << 16)) {
+		PLANEPTR plane0 = (PLANEPTR) memAlloc(this->tilemap->BytesPerRow * this->tilemap->Rows + (1 << 16), MEMF_CHIP);
+        if (!plane0) {
+			logWrite("ERR: Can't alloc aligned tilemap\n");
+			return;
+		}
+        // now find the offset where 64k alignment starts in plane0 and copy the tilemap->Planes[0] to it
+        UWORD offset = (1 << 16) - ((ULONG)plane0 + (1 << 16)) % (1 << 16);
+        memcpy(plane0 + offset, this->tilemap->Planes[0], this->tilemap->BytesPerRow * this->tilemap->Rows);
+        memFree(plane0, offset);
+        memFree(plane0 + offset + this->tilemap->BytesPerRow * this->tilemap->Rows, (1 << 16) - offset);
+        bitmapDestroy(this->tilemap);
+        this->tilemap_planes = (PLANEPTR)(((ULONG)1 << 31) | (ULONG)(plane0 + offset));
+        alignedTilemap = 1;
+    } else {
+        // tilemap is too big to be aligned
+        PLANEPTR plane0 = (PLANEPTR) memAlloc(this->tilemap->BytesPerRow * this->tilemap->Rows, MEMF_CHIP);
+        if (!plane0) {
+			logWrite("ERR: Can't alloc tilemap\n");
+			return;
+		}
+        memcpy(plane0, this->tilemap->Planes[0], this->tilemap->BytesPerRow * this->tilemap->Rows);
+        bitmapDestroy(this->tilemap);
+        this->tilemap_planes = plane0;
+    }
 
     *copper_cmds += simpleBufferGetRawCopperlistInstructionCount(4) +
         (1 << this->bpp) + // colors
@@ -204,14 +248,17 @@ static void mapAreaInit(struct Screenpart *self, UWORD *copper_cmds, ...) {
             //      move 0xffff, bltalwm
             //      move 0, bltamod
             //      move bitmapGetByteWidth(buffer->pBack) - (tilesize / 8), bltdmod
+        (alignedTilemap ? 1 : 0) + // source plane high word setup if tilemap is aligned to 64k
+            //      move (ULONG)plane0 >> 16, bltapth
         numColumns * 2 + // map area blitter column dptrh and dptrl setup
             //      move CONSTANT, bltdpth
             //      move CONSTANT, bltdptl    
-        numColumns * numRows * 4; // map area blitter tile wait, bltapth, blitaptl, bltsize
-            // each tile needs 3 moves and a wait (could be two moves if tilemap is 64k aligned)
+        numColumns * numRows * (3 + (alignedTilemap ? 0 : 1));
+            // each tile needs 3 moves and a wait for non-aligned tilemap planes,
+            // or 2 moves and a wait for 64k aligned tilemap planes
             // we use the fact that bltdpt is left in the right spot if we draw column-wise
             //      wait bltbusy
-            //      move VARIABLE, bltapth
+            //      (move VARIABLE, bltapth)
             //      move VARIABLE, bltaptl
             //      move uwBltsize = ((tilesize * bpp) << 6) | (tilesize / 16), bltsize
 }
@@ -250,9 +297,14 @@ static void mapAreaBuild(struct Screenpart *self, tView *view) {
     UWORD palette[1 << this->bpp];
     paletteLoadFromPath("resources/palettes/woodland.plt", palette, 1 << this->bpp);
 
-    PLANEPTR pSrcPlane = this->tilemap->Planes[0];
+    // I set the high bit in the plane ptr if the bitplane is aligned, get it out again
+    UBYTE isAligned = (((ULONG)this->tilemap_planes) & ((ULONG)1 << 31)) != 0;
+    this->tilemap_planes = (PLANEPTR)((ULONG)this->tilemap_planes & ~((ULONG)1 << 31));
+
+    const UWORD tileFrameBytes = this->tile_size * this->tile_size * this->bpp / 8;
+    PLANEPTR pSrcPlane = this->tilemap_planes + tileFrameBytes * 1;
     UWORD bltsize = ((this->tile_size * this->bpp) << 6) | (this->tile_size / 16);
-    
+
     // setup front copperlist
     tCopCmd *copperlist = &this->main_viewport->pView->pCopList->pFrontBfr->pList[this->copListOffset];
     copperlist += simpleBufferGetRawCopperlistInstructionCount(4);
@@ -269,21 +321,28 @@ static void mapAreaBuild(struct Screenpart *self, tView *view) {
     copSetMove((tCopMoveCmd*)copperlist++, &g_pCustom->bltalwm, 0xFFFF);
     copSetMove((tCopMoveCmd*)copperlist++, &g_pCustom->bltamod, 0);
     copSetMove((tCopMoveCmd*)copperlist++, &g_pCustom->bltdmod, bitmapGetByteWidth(this->main_buffer->pFront) - (this->tile_size / 8));
+    if (isAligned) {
+        copSetMove((tCopMoveCmd*)copperlist++, &s_pBltapt->uwHi, (UWORD)((ULONG)pSrcPlane >> 16));
+    }
     PLANEPTR pDstPlane = this->main_buffer->pFront->Planes[0];
     for (UWORD c = 0; c < numColumns; ++c) {
         copSetWait((tCopWaitCmd*)copperlist, waitX, waitY);
         ((tCopWaitCmd*)copperlist)->bfBlitterIgnore = 0;
         copperlist++;
-        copSetMove((tCopMoveCmd*)copperlist++, &s_pBltdpt->uwHi, (UWORD)(ULONG)pDstPlane >> 16);
+        copSetMove((tCopMoveCmd*)copperlist++, &s_pBltdpt->uwHi, (UWORD)((ULONG)pDstPlane >> 16));
         copSetMove((tCopMoveCmd*)copperlist++, &s_pBltdpt->uwLo, (UWORD)((ULONG)pDstPlane));
-        copSetMove((tCopMoveCmd*)copperlist++, &s_pBltapt->uwHi, (UWORD)(ULONG)pSrcPlane >> 16);
+        if (!isAligned) {
+            copSetMove((tCopMoveCmd*)copperlist++, &s_pBltapt->uwHi, (UWORD)((ULONG)pSrcPlane >> 16));
+        }
         copSetMove((tCopMoveCmd*)copperlist++, &s_pBltapt->uwLo, (UWORD)((ULONG)pSrcPlane));
         copSetMove((tCopMoveCmd*)copperlist++, &g_pCustom->bltsize, bltsize);
         for (UWORD r = 1; r < numRows; ++r) {
             copSetWait((tCopWaitCmd*)copperlist, waitX, waitY);
             ((tCopWaitCmd*)copperlist)->bfBlitterIgnore = 0;
             copperlist++;
-            copSetMove((tCopMoveCmd*)copperlist++, &s_pBltapt->uwHi, (UWORD)(ULONG)pSrcPlane >> 16);
+            if (!isAligned) {
+                copSetMove((tCopMoveCmd*)copperlist++, &s_pBltapt->uwHi, (UWORD)((ULONG)pSrcPlane >> 16));
+            }
             copSetMove((tCopMoveCmd*)copperlist++, &s_pBltapt->uwLo, (UWORD)((ULONG)pSrcPlane));
             copSetMove((tCopMoveCmd*)copperlist++, &g_pCustom->bltsize, bltsize);
         }
@@ -306,21 +365,28 @@ static void mapAreaBuild(struct Screenpart *self, tView *view) {
     copSetMove((tCopMoveCmd*)copperlist++, &g_pCustom->bltalwm, 0xFFFF);
     copSetMove((tCopMoveCmd*)copperlist++, &g_pCustom->bltamod, 0);
     copSetMove((tCopMoveCmd*)copperlist++, &g_pCustom->bltdmod, bitmapGetByteWidth(this->main_buffer->pBack) - (this->tile_size / 8));
+    if (isAligned) {
+        copSetMove((tCopMoveCmd*)copperlist++, &s_pBltapt->uwHi, (UWORD)((ULONG)pSrcPlane >> 16));
+    }
     pDstPlane = this->main_buffer->pBack->Planes[0];
     for (UWORD c = 0; c < numColumns; ++c) {
         copSetWait((tCopWaitCmd*)copperlist, waitX, waitY);
         ((tCopWaitCmd*)copperlist)->bfBlitterIgnore = 0;
         copperlist++;
-        copSetMove((tCopMoveCmd*)copperlist++, &s_pBltdpt->uwHi, (UWORD)(ULONG)pDstPlane >> 16);
+        copSetMove((tCopMoveCmd*)copperlist++, &s_pBltdpt->uwHi, (UWORD)((ULONG)pDstPlane >> 16));
         copSetMove((tCopMoveCmd*)copperlist++, &s_pBltdpt->uwLo, (UWORD)((ULONG)pDstPlane));
-        copSetMove((tCopMoveCmd*)copperlist++, &s_pBltapt->uwHi, (UWORD)(ULONG)pSrcPlane >> 16);
+        if (!isAligned) {
+            copSetMove((tCopMoveCmd*)copperlist++, &s_pBltapt->uwHi, (UWORD)((ULONG)pSrcPlane >> 16));
+        }
         copSetMove((tCopMoveCmd*)copperlist++, &s_pBltapt->uwLo, (UWORD)((ULONG)pSrcPlane));
         copSetMove((tCopMoveCmd*)copperlist++, &g_pCustom->bltsize, bltsize);
         for (UWORD r = 1; r < numRows; ++r) {
             copSetWait((tCopWaitCmd*)copperlist, waitX, waitY);
             ((tCopWaitCmd*)copperlist)->bfBlitterIgnore = 0;
             copperlist++;
-            copSetMove((tCopMoveCmd*)copperlist++, &s_pBltapt->uwHi, (UWORD)(ULONG)pSrcPlane >> 16);
+            if (!isAligned) {
+                copSetMove((tCopMoveCmd*)copperlist++, &s_pBltapt->uwHi, (UWORD)((ULONG)pSrcPlane >> 16));
+            }
             copSetMove((tCopMoveCmd*)copperlist++, &s_pBltapt->uwLo, (UWORD)((ULONG)pSrcPlane));
             copSetMove((tCopMoveCmd*)copperlist++, &g_pCustom->bltsize, bltsize);
         }
@@ -331,7 +397,7 @@ static void mapAreaBuild(struct Screenpart *self, tView *view) {
 static void mapAreaDestroy(struct Screenpart *self) {
     struct MapArea *this = (struct MapArea *)self;
     vPortDestroy(this->main_viewport);
-    bitmapDestroy(this->tilemap);
+    memFree(this->tilemap_planes, this->tilecount * this->tile_size * this->tile_size * this->bpp / 8);
 }
 
 // static map area instance
@@ -350,7 +416,7 @@ static void createView() {
     UWORD copperListSize = 0;
     s_spriteManager.base.initialize(&s_spriteManager.base, &copperListSize);
     s_topBar.base.initialize(&s_topBar.base, &copperListSize, 2, 10);
-    s_mapArea.base.initialize(&s_mapArea.base, &copperListSize, 4, 128, 16, "resources/ui/tiles.bm");
+    s_mapArea.base.initialize(&s_mapArea.base, &copperListSize, 4, 128, 16);
     s_bottomBar.base.initialize(&s_bottomBar.base, &copperListSize, 2, 70);
 
     s_pView = viewCreate(0,

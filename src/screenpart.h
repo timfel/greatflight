@@ -46,7 +46,11 @@ struct MapArea {
     struct Screenpart base; // inherit from Screenpart
     tVPort *main_viewport; // viewport for the map area
     tSimpleBufferManager *main_buffer; // buffer manager for the map area
-    tBitMap *tilemap; // bitmap for the tilemap
+    union {
+        tBitMap *tilemap; // bitmap for the tilemap
+        PLANEPTR tilemap_planes;
+    };
+    UBYTE tilecount;
     UBYTE tile_size; // size of the tiles in the tilemap
     UBYTE height;
     UBYTE bpp;

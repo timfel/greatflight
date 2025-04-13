@@ -12,125 +12,357 @@
 
 #include "include/main.h"
 
-struct TopBar {
-    tSimpleBufferManager *m_pTopBuffer;
-    tVPort *m_pTopViewport;
-    tTextBitMap *m_pGoldTextBitmap;
-    tTextBitMap *m_pLumberTextBitmap;
-    tCopBlock *m_pCopBlock;
-};
+#include "screenpart.h"
 
-struct BottomBar {
-    tSimpleBufferManager *m_pBottomBuffer;
-    tVPort *m_pBottomViewport;
-    tTextBitMap *m_pUnitNameBitmap;
-    tCopBlock *m_pCopBlock;
-};
-
-struct MapArea {
-    tSimpleBufferManager *m_pMainBuffer;
-    tVPort *m_pMainViewport;
-    tCopBlock *m_pCopBlock;
-};
-
-static tView *s_pView;
-static struct TopBar s_topBar;
-static struct BottomBar s_bottomBar;
-static struct MapArea s_mapArea;
-
-static tSprite *s_pMouseSprite;
 static tFont *s_pNormalFont;
-static enum GameState s_newState;
 
-static void createTopBar(void) {
-    const int bpp = 2;
-    s_topBar.m_pTopViewport = vPortCreate(0,
-        TAG_VPORT_VIEW, s_pView,
-        TAG_VPORT_BPP, bpp,
-        TAG_VPORT_HEIGHT, 10,
+// initialize method for my sprite manager
+static void spriteManagerInit(struct Screenpart *self, UWORD *copper_cmds, ...) {
+    struct SpriteManager *this = (struct SpriteManager *)self;
+    this->coplistOffset = *copper_cmds;
+    *copper_cmds += 16; // 16 copper commands for the sprite manager
+}
+
+// destroy the sprite manager
+static void spriteManagerDest(struct Screenpart *self) {
+    struct SpriteManager *this = (struct SpriteManager *)self;
+    systemSetDmaBit(DMAB_SPRITE, 0);
+    spriteSetEnabled(this->mouse_sprite, 0);
+    bitmapDestroy(this->mouse_sprite->pBitmap);
+    spriteManagerDestroy();
+}
+
+// build the sprite manager
+static void spriteManagerBuild(struct Screenpart *self, tView *view) {
+    struct SpriteManager *this = (struct SpriteManager *)self;
+    spriteManagerCreate(view, this->coplistOffset, NULL);
+    systemSetDmaBit(DMAB_SPRITE, 1);
+    this->mouse_sprite = spriteAdd(0, bitmapCreateFromPath("resources/ui/mouse.bm", 0));
+    spriteSetEnabled(this->mouse_sprite, 1);
+}
+
+// static sprite manager instance
+static struct SpriteManager s_spriteManager = {
+    .base = {
+        .initialize = spriteManagerInit,
+        .destroy = spriteManagerDest,
+        .build = spriteManagerBuild,
+    }
+};
+
+// initialize method for the top bar
+static void topBarInit(struct Screenpart *self, UWORD *copper_cmds, ...) {
+    struct TopBar *this = (struct TopBar *)self;
+
+    // get the UBYTE bpp from the first variadic argument, the UBYTE height from the second
+    va_list args;
+    va_start(args, copper_cmds);
+    this->bpp = (UBYTE)va_arg(args, ULONG);
+    this->height = (UBYTE)va_arg(args, ULONG);
+    va_end(args);
+
+    this->copListOffset = *copper_cmds;
+    *copper_cmds += simpleBufferGetRawCopperlistInstructionCount(this->bpp) + (1 << this->bpp);
+}
+
+// build the top bar
+static void topBarBuild(struct Screenpart *self, tView *view) {
+    struct TopBar *this = (struct TopBar *)self;
+    this->top_viewport = vPortCreate(0,
+        TAG_VPORT_VIEW, view,
+        TAG_VPORT_BPP, this->bpp,
+        TAG_VPORT_HEIGHT, this->height,
         TAG_END
     );
-    s_topBar.m_pTopBuffer = simpleBufferCreate(0,
-        TAG_SIMPLEBUFFER_VPORT, s_topBar.m_pTopViewport,
+    this->top_buffer = simpleBufferCreate(0,
+        TAG_SIMPLEBUFFER_VPORT, this->top_viewport,
         TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_INTERLEAVED,
+        TAG_SIMPLEBUFFER_COPLIST_OFFSET, this->copListOffset,
         TAG_SIMPLEBUFFER_IS_DBLBUF, 0,
         TAG_END
     );
-    bitmapLoadFromPath(s_topBar.m_pTopBuffer->pBack, "resources/ui/top.bm", 0, 0);
-    s_topBar.m_pCopBlock = copBlockCreate(s_topBar.m_pTopViewport->pView->pCopList,
-        1 << bpp,  // move colors
-        1, 1
-    );
-    UWORD palette[1 << bpp];
-    paletteLoadFromPath("resources/palettes/top.plt", palette, 1 << bpp);
-    for (int i = 0; i < (1 << bpp); ++i) {
-        copMove(s_topBar.m_pTopViewport->pView->pCopList, s_topBar.m_pCopBlock, &g_pCustom->color[i], palette[i]);
+    bitmapLoadFromPath(this->top_buffer->pBack, "resources/ui/top.bm", 0, 0);
+    UWORD palette[1 << this->bpp];
+    paletteLoadFromPath("resources/palettes/top.plt", palette, 1 << this->bpp);
+    
+    tCopCmd *copperlist = &this->top_viewport->pView->pCopList->pFrontBfr->pList[this->copListOffset];
+    copperlist += simpleBufferGetRawCopperlistInstructionCount(this->bpp);
+    for (int i = 0; i < (1 << this->bpp); ++i) {
+        copSetMove((tCopMoveCmd *)copperlist, &g_pCustom->color[i], palette[i]);
+        copperlist++;
     }
-    s_topBar.m_pGoldTextBitmap = fontCreateTextBitMapFromStr(s_pNormalFont, "0000000");
-    s_topBar.m_pLumberTextBitmap = fontCreateTextBitMapFromStr(s_pNormalFont, "0000000");
+    copperlist = &this->top_viewport->pView->pCopList->pBackBfr->pList[this->copListOffset];
+    copperlist += simpleBufferGetRawCopperlistInstructionCount(this->bpp);
+    for (int i = 0; i < (1 << this->bpp); ++i) {
+        copSetMove((tCopMoveCmd *)copperlist, &g_pCustom->color[i], palette[i]);
+        copperlist++;
+    }
+
+    this->gold_text_bitmap = fontCreateTextBitMapFromStr(s_pNormalFont, "0000000");
+    this->lumber_text_bitmap = fontCreateTextBitMapFromStr(s_pNormalFont, "0000000");
 }
 
-static void createBottomBar(void) {
-    const int bpp = 2;
-    s_bottomBar.m_pBottomViewport = vPortCreate(0,
-        TAG_VPORT_VIEW, s_pView,
-        TAG_VPORT_BPP, bpp,
-        TAG_VPORT_HEIGHT, 70,
+// top bar destroy function
+static void topBarDest(struct Screenpart *self) {
+    struct TopBar *this = (struct TopBar *)self;
+    vPortDestroy(this->top_viewport);
+    fontDestroyTextBitMap(this->gold_text_bitmap);
+    fontDestroyTextBitMap(this->lumber_text_bitmap);
+}
+
+// static top bar instance
+static struct TopBar s_topBar = {
+    .base = {
+        .initialize = topBarInit,
+        .destroy = topBarDest,
+        .build = topBarBuild,
+    }
+};
+
+// initialize method for the bottom bar
+static void bottomBarInit(struct Screenpart *self, UWORD *copper_cmds, ...) {
+    struct BottomBar *this = (struct BottomBar *)self;
+    va_list args;
+    va_start(args, copper_cmds);
+    this->bpp = (UBYTE)va_arg(args, ULONG);
+    this->height = (UBYTE)va_arg(args, ULONG);
+    va_end(args);
+    this->copListOffset = *copper_cmds;
+    *copper_cmds += simpleBufferGetRawCopperlistInstructionCount(this->bpp) + (1 << this->bpp);
+}
+
+static void bottomBarBuild(struct Screenpart *self, tView *view) {
+    struct BottomBar *this = (struct BottomBar *)self;
+    this->bottom_viewport = vPortCreate(0,
+        TAG_VPORT_VIEW, view,
+        TAG_VPORT_BPP, this->bpp,
+        TAG_VPORT_HEIGHT, this->height,
         TAG_END
     );
-    s_bottomBar.m_pBottomBuffer = simpleBufferCreate(0,
-        TAG_SIMPLEBUFFER_VPORT, s_bottomBar.m_pBottomViewport,
+    this->bottom_buffer = simpleBufferCreate(0,
+        TAG_SIMPLEBUFFER_VPORT, this->bottom_viewport,
         TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_INTERLEAVED,
+        TAG_SIMPLEBUFFER_COPLIST_OFFSET, this->copListOffset,
         TAG_SIMPLEBUFFER_IS_DBLBUF, 0,
         TAG_END
     );
-    bitmapLoadFromPath(s_bottomBar.m_pBottomBuffer->pBack, "resources/ui/bottom.bm", 0, 0);
-    s_bottomBar.m_pCopBlock = copBlockCreate(s_bottomBar.m_pBottomViewport->pView->pCopList,
-        1 << bpp,  // move colors
-        0xdc, s_mapArea.m_pMainViewport->uwOffsY + s_mapArea.m_pMainViewport->uwHeight + s_pView->ubPosY - 1
-    );
-    UWORD palette[1 << bpp];
-    paletteLoadFromPath("resources/palettes/bottom.plt", palette, 1 << bpp);
-    for (int i = 0; i < (1 << bpp); ++i) {
-        copMove(s_bottomBar.m_pBottomViewport->pView->pCopList, s_bottomBar.m_pCopBlock, &g_pCustom->color[i], palette[i]);
+    bitmapLoadFromPath(this->bottom_buffer->pBack, "resources/ui/bottom.bm", 0, 0);
+    UWORD palette[1 << this->bpp];
+    paletteLoadFromPath("resources/palettes/bottom.plt", palette, 1 << this->bpp);
+    
+    tCopCmd *copperlist = &this->bottom_viewport->pView->pCopList->pFrontBfr->pList[this->copListOffset];
+    copperlist += simpleBufferGetRawCopperlistInstructionCount(this->bpp);
+    for (int i = 0; i < (1 << this->bpp); ++i) {
+        copSetMove((tCopMoveCmd *)copperlist, &g_pCustom->color[i], palette[i]);
+        copperlist++;
     }
-    s_bottomBar.m_pUnitNameBitmap = fontCreateTextBitMapFromStr(s_pNormalFont, "Unit name");
+    copperlist = &this->bottom_viewport->pView->pCopList->pBackBfr->pList[this->copListOffset];
+    copperlist += simpleBufferGetRawCopperlistInstructionCount(this->bpp);
+    for (int i = 0; i < (1 << this->bpp); ++i) {
+        copSetMove((tCopMoveCmd *)copperlist, &g_pCustom->color[i], palette[i]);
+        copperlist++;
+    }
 }
 
-static void createMapArea(void) {
-    const int bpp = 4;
-    s_mapArea.m_pMainViewport = vPortCreate(0,
-        TAG_VPORT_VIEW, s_pView,
-        TAG_VPORT_BPP, bpp,
-        TAG_VPORT_HEIGHT, 140,
+static void bottomBarDestroy(struct Screenpart *self) {
+    struct BottomBar *this = (struct BottomBar *)self;
+    vPortDestroy(this->bottom_viewport);
+}
+
+// static bottom bar instance
+static struct BottomBar s_bottomBar = {
+    .base = {
+        .initialize = bottomBarInit,
+        .destroy = bottomBarDestroy,
+        .build = bottomBarBuild,
+    }
+};
+
+// initialize method for the map area
+static void mapAreaInit(struct Screenpart *self, UWORD *copper_cmds, ...) {
+    struct MapArea *this = (struct MapArea *)self;
+    this->copListOffset = *copper_cmds;
+
+    va_list args;
+    va_start(args, copper_cmds);
+    this->bpp = (UBYTE)va_arg(args, ULONG);
+    this->height = (UBYTE)va_arg(args, ULONG);
+    this->tile_size = (UBYTE)va_arg(args, ULONG);
+    bitmapLoadFromPath(this->tilemap, va_arg(args, const char *), 0, 0);
+    va_end(args);
+
+    UBYTE numColumns = 320 / this->tile_size;
+    UBYTE numRows = this->height / this->tile_size;
+
+    *copper_cmds += simpleBufferGetRawCopperlistInstructionCount(4) +
+        (1 << this->bpp) + // colors
+        7 + // map area blitter setup
+            //      wait bltbusy
+            //      move USEA|USED|MINTERM_A, bltcon0
+            //      move 0, bltcon1
+            //      move 0xffff, bltafwm
+            //      move 0xffff, bltalwm
+            //      move 0, bltamod
+            //      move bitmapGetByteWidth(buffer->pBack) - (tilesize / 8), bltdmod
+        numColumns * 2 + // map area blitter column dptrh and dptrl setup
+            //      move CONSTANT, bltdpth
+            //      move CONSTANT, bltdptl    
+        numColumns * numRows * 4; // map area blitter tile wait, bltapth, blitaptl, bltsize
+            // each tile needs 3 moves and a wait (could be two moves if tilemap is 64k aligned)
+            // we use the fact that bltdpt is left in the right spot if we draw column-wise
+            //      wait bltbusy
+            //      move VARIABLE, bltapth
+            //      move VARIABLE, bltaptl
+            //      move uwBltsize = ((tilesize * bpp) << 6) | (tilesize / 16), bltsize
+}
+
+static tCopperUlong FAR REGPTR s_pBltapt = (tCopperUlong REGPTR)(
+	0xDFF000 + offsetof(tCustom, bltapt)
+);
+static tCopperUlong FAR REGPTR s_pBltdpt = (tCopperUlong REGPTR)(
+	0xDFF000 + offsetof(tCustom, bltdpt)
+);
+
+static void mapAreaBuild(struct Screenpart *self, tView *view) {
+    // set copper danger bit so it can drive the blitter
+    g_pCustom->copcon |= 0x02;
+    systemSetDmaBit(DMAB_BLITHOG, 1);
+
+    struct MapArea *this = (struct MapArea *)self;
+    this->main_viewport = vPortCreate(0,
+        TAG_VPORT_VIEW, view,
+        TAG_VPORT_BPP, this->bpp,
+        TAG_VPORT_HEIGHT, this->height,
         TAG_END
     );
-    s_mapArea.m_pMainBuffer = simpleBufferCreate(0,
-        TAG_SIMPLEBUFFER_VPORT, s_mapArea.m_pMainViewport,
+    this->main_buffer = simpleBufferCreate(0,
+        TAG_SIMPLEBUFFER_VPORT, this->main_viewport,
         TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_INTERLEAVED,
+        TAG_SIMPLEBUFFER_COPLIST_OFFSET, this->copListOffset,
         TAG_SIMPLEBUFFER_IS_DBLBUF, 1,
         TAG_END
     );
-    s_mapArea.m_pCopBlock = copBlockCreate(s_mapArea.m_pMainViewport->pView->pCopList,
-        1 << bpp, // move colors
-        0xdc, s_mapArea.m_pMainViewport->uwOffsY + s_pView->ubPosY - 1
-    );
-    UWORD palette[1 << bpp];
-    paletteLoadFromPath("resources/palettes/woodland.plt", palette, 1 << bpp);
-    for (int i = 0; i < (1 << bpp); ++i) {
-        copMove(s_mapArea.m_pMainViewport->pView->pCopList, s_mapArea.m_pCopBlock, &g_pCustom->color[i], palette[i]);
+
+    UBYTE waitX = 0xdc;
+    UBYTE waitY = this->main_viewport->uwOffsY + view->ubPosY - 1;
+    UBYTE numColumns = 320 / this->tile_size;
+    UBYTE numRows = this->height / this->tile_size;
+    UWORD palette[1 << this->bpp];
+    paletteLoadFromPath("resources/palettes/woodland.plt", palette, 1 << this->bpp);
+
+    PLANEPTR pSrcPlane = this->tilemap->Planes[0];
+    UWORD bltsize = ((this->tile_size * this->bpp) << 6) | (this->tile_size / 16);
+    
+    // setup front copperlist
+    tCopCmd *copperlist = &this->main_viewport->pView->pCopList->pFrontBfr->pList[this->copListOffset];
+    copperlist += simpleBufferGetRawCopperlistInstructionCount(4);
+    for (int i = 0; i < (1 << this->bpp); ++i) {
+        copSetMove((tCopMoveCmd *)copperlist, &g_pCustom->color[i], palette[i]);
+        copperlist++;
+    }
+    copSetWait((tCopWaitCmd*)copperlist, waitX, waitY);
+    ((tCopWaitCmd*)copperlist)->bfBlitterIgnore = 0;
+    copperlist++;
+    copSetMove((tCopMoveCmd*)copperlist++, &g_pCustom->bltcon0, USEA|USED|MINTERM_A);
+    copSetMove((tCopMoveCmd*)copperlist++, &g_pCustom->bltcon1, 0);
+    copSetMove((tCopMoveCmd*)copperlist++, &g_pCustom->bltafwm, 0xFFFF);
+    copSetMove((tCopMoveCmd*)copperlist++, &g_pCustom->bltalwm, 0xFFFF);
+    copSetMove((tCopMoveCmd*)copperlist++, &g_pCustom->bltamod, 0);
+    copSetMove((tCopMoveCmd*)copperlist++, &g_pCustom->bltdmod, bitmapGetByteWidth(this->main_buffer->pFront) - (this->tile_size / 8));
+    PLANEPTR pDstPlane = this->main_buffer->pFront->Planes[0];
+    for (UWORD c = 0; c < numColumns; ++c) {
+        copSetWait((tCopWaitCmd*)copperlist, waitX, waitY);
+        ((tCopWaitCmd*)copperlist)->bfBlitterIgnore = 0;
+        copperlist++;
+        copSetMove((tCopMoveCmd*)copperlist++, &s_pBltdpt->uwHi, (UWORD)(ULONG)pDstPlane >> 16);
+        copSetMove((tCopMoveCmd*)copperlist++, &s_pBltdpt->uwLo, (UWORD)((ULONG)pDstPlane));
+        copSetMove((tCopMoveCmd*)copperlist++, &s_pBltapt->uwHi, (UWORD)(ULONG)pSrcPlane >> 16);
+        copSetMove((tCopMoveCmd*)copperlist++, &s_pBltapt->uwLo, (UWORD)((ULONG)pSrcPlane));
+        copSetMove((tCopMoveCmd*)copperlist++, &g_pCustom->bltsize, bltsize);
+        for (UWORD r = 1; r < numRows; ++r) {
+            copSetWait((tCopWaitCmd*)copperlist, waitX, waitY);
+            ((tCopWaitCmd*)copperlist)->bfBlitterIgnore = 0;
+            copperlist++;
+            copSetMove((tCopMoveCmd*)copperlist++, &s_pBltapt->uwHi, (UWORD)(ULONG)pSrcPlane >> 16);
+            copSetMove((tCopMoveCmd*)copperlist++, &s_pBltapt->uwLo, (UWORD)((ULONG)pSrcPlane));
+            copSetMove((tCopMoveCmd*)copperlist++, &g_pCustom->bltsize, bltsize);
+        }
+        pDstPlane += this->tile_size / 8;
+    }
+
+    // setup back copperlist
+    copperlist = &this->main_viewport->pView->pCopList->pBackBfr->pList[this->copListOffset];
+    copperlist += simpleBufferGetRawCopperlistInstructionCount(4);
+    for (int i = 0; i < (1 << this->bpp); ++i) {
+        copSetMove((tCopMoveCmd *)copperlist, &g_pCustom->color[i], palette[i]);
+        copperlist++;
+    }
+    copSetWait((tCopWaitCmd*)copperlist, waitX, waitY);
+    ((tCopWaitCmd*)copperlist)->bfBlitterIgnore = 0;
+    copperlist++;
+    copSetMove((tCopMoveCmd*)copperlist++, &g_pCustom->bltcon0, USEA|USED|MINTERM_A);
+    copSetMove((tCopMoveCmd*)copperlist++, &g_pCustom->bltcon1, 0);
+    copSetMove((tCopMoveCmd*)copperlist++, &g_pCustom->bltafwm, 0xFFFF);
+    copSetMove((tCopMoveCmd*)copperlist++, &g_pCustom->bltalwm, 0xFFFF);
+    copSetMove((tCopMoveCmd*)copperlist++, &g_pCustom->bltamod, 0);
+    copSetMove((tCopMoveCmd*)copperlist++, &g_pCustom->bltdmod, bitmapGetByteWidth(this->main_buffer->pBack) - (this->tile_size / 8));
+    pDstPlane = this->main_buffer->pBack->Planes[0];
+    for (UWORD c = 0; c < numColumns; ++c) {
+        copSetWait((tCopWaitCmd*)copperlist, waitX, waitY);
+        ((tCopWaitCmd*)copperlist)->bfBlitterIgnore = 0;
+        copperlist++;
+        copSetMove((tCopMoveCmd*)copperlist++, &s_pBltdpt->uwHi, (UWORD)(ULONG)pDstPlane >> 16);
+        copSetMove((tCopMoveCmd*)copperlist++, &s_pBltdpt->uwLo, (UWORD)((ULONG)pDstPlane));
+        copSetMove((tCopMoveCmd*)copperlist++, &s_pBltapt->uwHi, (UWORD)(ULONG)pSrcPlane >> 16);
+        copSetMove((tCopMoveCmd*)copperlist++, &s_pBltapt->uwLo, (UWORD)((ULONG)pSrcPlane));
+        copSetMove((tCopMoveCmd*)copperlist++, &g_pCustom->bltsize, bltsize);
+        for (UWORD r = 1; r < numRows; ++r) {
+            copSetWait((tCopWaitCmd*)copperlist, waitX, waitY);
+            ((tCopWaitCmd*)copperlist)->bfBlitterIgnore = 0;
+            copperlist++;
+            copSetMove((tCopMoveCmd*)copperlist++, &s_pBltapt->uwHi, (UWORD)(ULONG)pSrcPlane >> 16);
+            copSetMove((tCopMoveCmd*)copperlist++, &s_pBltapt->uwLo, (UWORD)((ULONG)pSrcPlane));
+            copSetMove((tCopMoveCmd*)copperlist++, &g_pCustom->bltsize, bltsize);
+        }
+        pDstPlane += this->tile_size / 8;
     }
 }
 
-static void createView(void) {
-    viewLoad(0);
+static void mapAreaDestroy(struct Screenpart *self) {
+    struct MapArea *this = (struct MapArea *)self;
+    vPortDestroy(this->main_viewport);
+    bitmapDestroy(this->tilemap);
+}
+
+// static map area instance
+static struct MapArea s_mapArea = {
+    .base = {
+        .initialize = mapAreaInit,
+        .destroy = mapAreaDestroy,
+        .build = mapAreaBuild,
+    }
+};
+
+static tView *s_pView;
+static enum GameState s_newState;
+
+static void createView() {
+    UWORD copperListSize = 0;
+    s_spriteManager.base.initialize(&s_spriteManager.base, &copperListSize);
+    s_topBar.base.initialize(&s_topBar.base, &copperListSize, 2, 10);
+    s_mapArea.base.initialize(&s_mapArea.base, &copperListSize, 4, 128, 16, "resources/ui/tiles.bm");
+    s_bottomBar.base.initialize(&s_bottomBar.base, &copperListSize, 2, 70);
+
     s_pView = viewCreate(0,
-        TAG_VIEW_WINDOW_HEIGHT, 220,
-        TAG_COPPER_LIST_MODE, COPPER_MODE_BLOCK,
+        TAG_VIEW_WINDOW_HEIGHT, 10 + 128 + 70,
+        TAG_COPPER_LIST_MODE, COPPER_MODE_RAW,
+        TAG_COPPER_RAW_COUNT, copperListSize,
         TAG_END);
-    createTopBar();
-    createMapArea();
-    createBottomBar();
+    
+    s_spriteManager.base.build(&s_spriteManager.base, s_pView);
+    s_topBar.base.build(&s_topBar.base, s_pView);
+    s_mapArea.base.build(&s_mapArea.base, s_pView);
+    s_bottomBar.base.build(&s_bottomBar.base, s_pView);
 }
 
 static void destroyView(void) {
@@ -145,11 +377,6 @@ void ingameGsCreate(void) {
 
     createView();
 
-    spriteManagerCreate(s_pView, 0, NULL);
-    systemSetDmaBit(DMAB_SPRITE, 1);
-    s_pMouseSprite = spriteAdd(0, bitmapCreateFromPath("resources/ui/mouse.bm", 0));
-    spriteSetEnabled(s_pMouseSprite, 1);
-
     viewLoad(s_pView);
     systemUnuse();
 
@@ -160,20 +387,20 @@ void ingameGsCreate(void) {
 }
 
 void ingameGsLoop(void) {
-    s_pMouseSprite->wX = mouseGetX(MOUSE_PORT_1);
-    s_pMouseSprite->wY = mouseGetY(MOUSE_PORT_1);
-    spriteRequestMetadataUpdate(s_pMouseSprite);
+    s_spriteManager.mouse_sprite->wX = mouseGetX(MOUSE_PORT_1);
+    s_spriteManager.mouse_sprite->wY = mouseGetY(MOUSE_PORT_1);
+    spriteRequestMetadataUpdate(s_spriteManager.mouse_sprite);
 
     if(keyCheck(KEY_ESCAPE)) {
         s_newState = STATE_MAIN_MENU;
     }
 
-    spriteProcess(s_pMouseSprite);
+    spriteProcess(s_spriteManager.mouse_sprite);
     spriteProcessChannel(0);
     viewProcessManagers(s_pView);
-    copProcessBlocks();
+    copSwapBuffers();
     systemIdleBegin();
-    vPortWaitUntilEnd(s_bottomBar.m_pBottomViewport);
+    vPortWaitUntilEnd(s_bottomBar.bottom_viewport);
     systemIdleEnd();
 
     if (s_newState != STATE_INGAME) {
@@ -185,13 +412,13 @@ void ingameGsDestroy(void) {
     if (s_pView == NULL) {
         return;
     }
-    systemSetDmaBit(DMAB_SPRITE, 0);
-    bitmapDestroy(s_pMouseSprite->pBitmap);
-    spriteManagerDestroy();
 
-    // Destroy font
+    s_spriteManager.base.destroy(&s_spriteManager.base);
+    s_topBar.base.destroy(&s_topBar.base);
+    s_mapArea.base.destroy(&s_mapArea.base);
+    s_bottomBar.base.destroy(&s_bottomBar.base);
+    viewDestroy(s_pView);
     fontDestroy(s_pNormalFont);
-    
-    destroyView();
+
     s_pView = NULL;
 }

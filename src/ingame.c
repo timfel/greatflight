@@ -304,6 +304,11 @@ static void mapAreaBuild(struct Screenpart *self, tView *view) {
 
     UBYTE waitX = 0xdc;
     UBYTE waitY = 0;
+    if (this->main_viewport->uwOffsY == 0) {
+        // this is the first viewport, modify the initial wait so we can start blitting immediately
+        copSetWait((tCopWaitCmd*)&this->main_viewport->pView->pCopList->pFrontBfr->pList[this->copListOffset], 0xdc, 1);
+        copSetWait((tCopWaitCmd*)&this->main_viewport->pView->pCopList->pBackBfr->pList[this->copListOffset], 0xdc, 1);
+    }
     UBYTE numColumns = 320 / this->tile_size;
     UBYTE numRows = this->height / this->tile_size;
     UWORD palette[1 << this->bpp];
